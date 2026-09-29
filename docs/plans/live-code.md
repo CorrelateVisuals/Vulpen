@@ -27,7 +27,7 @@ For GLSL the swap needs no loader at all: SPIR-V is data, and Vulkan builds a pi
 
 ## Nodes
 
-A node is one `[node]` entry in the manifest (V00). It names the recipe it comes from (the view's own copy, V03), and in that recipe's folder at most one C++ operator class and its shader: one compute shader today, a vertex and a fragment shader once draws land. It holds its params and its log level (V09). Connections are entries of their own, each one buffer from one node's port to other nodes' ports.
+A node is one `[node]` entry in the manifest (V00). It names the recipe it comes from (the view's own copy, V03), and in that recipe's folder at most one C++ operator class and its shaders: one compute shader, or a vertex and a fragment shader, which make the node a draw of `invocations` vertices. A view with a draw opens a window; any other runs headless (V07). It holds its params and its log level (V09). Connections are entries of their own, each one buffer from one node's port to other nodes' ports.
 
 ```ini
 [node "wave"]
@@ -47,7 +47,8 @@ to   = probe.values
 
 - every param is read by the shader or by the operator;
 - every value in the pass block is set by a param or by the operator, never both;
-- every buffer a shader only reads is connected;
+- every buffer a shader only reads is connected or written by the operator, never both;
+- a node's shaders declare the same pass block, and a draw's shaders only read buffers;
 - both ends of a connection agree on the element type and size;
 - the invocations fill whole workgroups.
 
@@ -57,7 +58,7 @@ A mismatch is logged with a message that names the node, the name and the fix (A
 
 **Seam: by name, checked at load, with the C++ type checked there too.** `node.value<float>("phase")` fails at load if the shader declares `phase` as a `uint`, or not at all. A compile-time check would need a C++ copy of each GLSL layout, kept by hand (RA03 forbids that) or generated from reflection by the build. Generation would make every recipe's C++ compile depend on its shaders, so a GLSL edit that touches the pass block would recompile and swap C++ too, and it would fix in C++ which shader a class runs with, which the manifest decides at load (V00). RV05 already has C++ read contracts by reflection. A02 accepts a mistake found at load, which comes before the first frame, and the frame pays nothing for it: `bind` turns each name into an offset once. The cost is that the loader, not the compiler, finds a misspelled name, about a second after the save; a build step that loads every view headless, as the `wave` test does, would find it at build.
 
-**Reach: handles it borrows, never an object that owns the GPU.** A recipe's C++ includes only `runtime/Operator.h`. While it binds it gets names in and handles out: a `Value<T>` is an offset, a `Readback<T>` an index, and a param comes parsed as `T`. Each frame it writes values, reads a read-back span that is valid for that call, and logs. It never sees `Engine`, `Resources`, `Buffer`, `Pipelines` or a Vulkan handle. The schedule owns every buffer, block and pipeline (A01). A recipe that needs more gets a general port, not the engine (V05). Its module then needs no engine symbol, and a swap cannot leave it holding a pointer to a GPU object the schedule replaced: `bind` resolves its handles again. The engine also places each buffer from the declarations: one an operator reads back lives where the CPU can map it, a first step towards [D5](../architecture/migration-and-implementation.md#open-decisions).
+**Reach: handles it borrows, never an object that owns the GPU.** A recipe's C++ includes only `runtime/Operator.h`. While it binds it gets names in and handles out: a `Value<T>` is an offset, a `Readback<T>` or an `Upload<T>` an index, and a param comes parsed as `T`. `T` is a scalar or, from glm, a vector, and the loader checks it against the GLSL type. Each frame it writes values, fills upload spans, reads a read-back span that is valid for that call, and logs. It never sees `Engine`, `Resources`, `Buffer`, `Pipelines` or a Vulkan handle. The schedule owns every buffer, block and pipeline (A01). A recipe that needs more gets a general port, not the engine (V05). Its module then needs no engine symbol, and a swap cannot leave it holding a pointer to a GPU object the schedule replaced: `bind` resolves its handles again. The engine also places each buffer from the declarations: one an operator writes or reads back lives where the CPU can map it, a first step towards [D5](../architecture/migration-and-implementation.md#open-decisions).
 
 ## How it works
 
@@ -87,7 +88,7 @@ Two traps. libstdc++ puts the file clock's epoch in the year 2174, so a scan tha
 
 ## Proof of concept
 
-A headless compute engine in `src/baseclasses/` and `src/runtime/`, and one view, [`src/examples/wave/`](../../src/examples/wave/view.vlp), with two recipes that each hold an operator and a shader:
+An engine in `src/baseclasses/` and `src/runtime/` that computes headless and draws into a window, and two views. The first, [`src/examples/wave/`](../../src/examples/wave/view.vlp), runs headless with two recipes that each hold an operator and a shader:
 
 - `wave` keeps a phase on the CPU and turns it into 1,024 values on the GPU. The values glide towards their target, so they live in the buffer across frames.
 - `probe` samples eight of the values on the GPU, reads them back and prints them once a second.
@@ -95,6 +96,8 @@ A headless compute engine in `src/baseclasses/` and `src/runtime/`, and one view
 ```bash
 ./run.sh src/examples/wave/view.vlp --log info    # then save any file under src/examples/wave/
 ```
+
+A second view, [`src/examples/triangle/`](../../src/examples/triangle/view.vlp), opens a window and draws. Its one recipe's operator writes a triangle's corners into a buffer and its tint into a `vec4` every frame, and its vertex and fragment shaders only draw them. It swaps like `wave`, on NVIDIA, RADV and llvmpipe, without validation errors, and it runs clean through a swapchain remade every 20 frames (forced in a test build).
 
 Measured on this machine (RTX 5070 Laptop, g++ 13, Make, Debug), from the save to the swap, over three sessions:
 
@@ -121,7 +124,7 @@ Also verified:
 - the run is free of validation errors, and an error does reach the log;
 - `ctest` passes on both presets.
 
-The engine (`src/baseclasses/`, `src/runtime/` with its CMake, and `main.cpp`) is 2,420 lines of code. Of them, 244 exist only so code can change while it runs:
+When this was proposed, before the window and draws landed, the engine (`src/baseclasses/`, `src/runtime/` with its CMake, and `main.cpp`) was 2,420 lines of code. Of them, 244 existed only so code can change while it runs:
 
 | Where | Lines |
 | --- | --: |
@@ -141,7 +144,7 @@ These change structure, so they wait for the project lead (A00):
 - **Include map:** 13 new files and 4 new edges: `main.cpp` → `runtime/Runtime.h`, `runtime/Recipes.h` → `baseclasses/Platform.h` and `runtime/Operator.h`, and `runtime/Schedule.h` → `runtime/Recipes.h`.
 - **Manifest words (V04):**
   - `[manifest]` with `version`;
-  - `[node]` with `recipe`, `operator`, `shader`, `invocations`, `param` and `log`;
+  - `[node]` with `recipe`, `operator`, `shader` (once for a compute shader, twice for a vertex and a fragment shader), `invocations`, `param` and `log`;
   - `[connection]` with `from` and `to`.
 - **D2** as above: linked in release, one module per recipe in dev.
 
@@ -151,6 +154,7 @@ These change structure, so they wait for the project lead (A00):
 - **D5.** An operator reads a struct buffer back as its size only; reading its members by reflection is the next step towards operator ends of a connection.
 - **V08 in a dev session.** A command log pins the graph, and the commit pins release code, but a session with code swaps runs code no commit holds. Logging each swap with a hash of what it loaded would let a replay refuse to run on different code.
 - **Commands (V06).** A swap is not a command: nothing registers commands in this tree yet.
+- **Frame block.** The GPU layout's frame block (time, resolution, cursor) does not exist yet, so a draw cannot follow the window's aspect: the triangle stretches with the window.
 - **Frames in flight.** One: the CPU waits for each frame before the next, so the frame loop and the GPU never overlap.
 - **Windows.** A loader beside the POSIX one in the platform files, and an export macro from CMake's `generate_export_header` in place of the GCC attribute, so no OS `#ifdef` lands in recipe code (RA01). Windows locks a loaded DLL, so the build cannot replace it (rule 7); the loader loads a copy instead.
 - **Gates first.** Recipe targets do not wait for the gates, so a live build compiles while the include-map gate runs; a failing gate still fails the build, and nothing swaps. Making them wait keeps the rule in `CMakeLists.txt` that a broken rule fails the build before any object is built, and adds up to 50 ms to a swap.
