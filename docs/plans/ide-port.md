@@ -50,7 +50,7 @@ The engine today (`baseclasses/`, `runtime/` and `main.cpp`) is about 3,300 line
 - **No central command table.** The POC keeps each verb's spec in `command_spec.cpp` and its wiring in `commands.cpp`, 997 lines between them. Here a command registers with its spec where it is handled (RV04), and parts register their own commands.
 - **Layout by params.** A dock seam is a param of `split`, so `param set` moves it and replaying the log puts it back. Tearing tabs out and dragging them between panels is a later row (D18).
 - **Monospace text.** A glyph's place is its index times the font's advance, computed on the GPU, so no part shapes text on the CPU (C00).
-- **`runtime/Operator.h` stays the only engine header a recipe includes.** It sets how fast a C++ swap is ([handoff 2026-09-30](../logs/development-20260930T075251Z.md)), so each port goes in as a small interface there and brings no heavy standard header with it.
+- **`runtime/Operator.h` stays the only engine header most recipes include.** It sets how fast a C++ swap is ([handoff 2026-09-30](../logs/development-20260930T075251Z.md)), so each port goes in as a small interface there and brings no heavy standard header with it. A part that reads the graph also includes `runtime/View.h` (B8), which includes nothing of ours. Recipe code has no rows in the include map; one rule checks it ([CLI examples](cli-examples.md#recipe-code-has-no-rows-in-the-include-map)).
 
 ## 1. GPU data: C++ and GLSL share every buffer
 
@@ -70,7 +70,7 @@ Of the POC's 13 channel kinds, `UBO`, `SSBO`, `STAGING_UPLOAD` and `READBACK` ar
 | [x] | A1 | Frame block (time, frame index, resolution, cursor): a buffer whose address goes in the push constant, as the GPU layout says (RV02). Every UI draw needs it to map pixels. | – | 40 | — | core |
 | [x] | A2 | Struct elements: a C++ struct names its members once, and the loader checks their names, types and offsets against reflection. Today only the size is checked. Contracts need this (RV05). | 198 (emitter) | 100 | — | core |
 | [x] | A3 | CPU ends of a connection: one operator writes a buffer and a later operator reads it in the same frame, and the buffer lives where both can reach it. This is the first step of D5. The POC used a typed publish port per feature instead. | – | 80 | A2, D5 | core |
-| [x] | A4 | Counts per frame: a draw's vertex count follows the used length of a buffer it reads, and the buffer's writer sets that length. Text and rects change length every frame. | – | 40 | A3 | core |
+| [x] | A4 | Counts per frame: a draw runs `instance_count` instances, a number or a port whose buffer's used length sets it, and the buffer's writer sets that length each frame. `invocations` then counts the vertices of one instance. Text and rects change length every frame. | – | 40 | A3 | core |
 | [x] | A5 | Images: the set 0 arrays (`texture2D[]`, `sampler[]`, `image2D[]`), images the schedule owns (A01), a `Texture` handle in the pass block that the loader fills from a connection, and a one-time upload from the CPU. | 1,061 | 250 | — | core |
 | [x] | A6 | One blend mode: every draw blends premultiplied `over`. Draws already run in graph order, then manifest order, so no order word is needed. | – | 10 | — | core |
 | [x] | A7 | Offscreen targets: a draw's fragment output is a port. Connected to another node's `Texture`, the draw renders into an image the size of the window. Unconnected, it renders into the window, so which node reaches the screen stays a manifest fact. The Perform panel and child views show their output this way. | 365 | 200 | A5 | core |
@@ -139,7 +139,7 @@ The engine registers only the primitive edits, the log, save and migrate, hostin
 | [x] | D12 | `clear` | `clear` | part `command-line` | 5 | E12 | core |
 | [ ] | D13 | `undo`, `redo` | `undo`, `redo` | engine | in B10 | B10 | later |
 | [ ] | D14 | `schedule`: the passes, what each reads and writes, and sizes | `engine flatten`, `engine audit chain`, `probe passes` | part `inspect` | 40 | D7 | later |
-| [ ] | D15 | `recipe new <name>`: a recipe folder with its C++ and shaders, plus the include-map rows it needs, printed for a person to add (A00) | `file new`, `operator new`, `operator remove` | part `library` | 80 | E18 | later |
+| [ ] | D15 | `recipe new <name> <kind>`: a recipe folder with its C++ and shaders, from the [template](cli-examples.md#a-recipe-file-shows-what-it-can-reach), every line of its menu commented | `file new`, `operator new`, `operator remove` | part `library` | 80 | E18 | later; proposed for core, since the template is how a recipe starts |
 | [ ] | D16 | `node rename` (a primitive: it renames a section and every endpoint that names it), `node duplicate`, `file rename` (renames the file and its `shader` word in one group) | `node rename`, `node duplicate`, `file rename`, `file move` | engine (`node rename`); part `library` (the others) | 50 | B2, E18 | later |
 | [ ] | D17 | `recipe publish`: copy a view's recipe into the library, with a `view.vlp` for its nodes | `recipe save`, `recipe publish`, `recipe import` | part `library` | 50 | C2 | later |
 | [ ] | D18 | `tab split`, `tab merge`, `panel move`: tearing out tabs and dragging them between panels | `panel tab split`, `panel tab merge`, `panel move`, `panel place` | part `split` | 250 | D10 | later |
@@ -247,12 +247,14 @@ The ticked rows, in the order they would land. Each step needs only rows from ea
 | | 24 | E3, E13, F5 | curves and graph: the graph editor |
 | | 25 | G2 | the `ide` app |
 
-[Example 2](cli-examples.md#example-2-instanced-cubes-on-the-triangle) needs phase 1, A1 and A5 (steps 12 and 14) and A7 (step 22), plus three later rows: A9 (`mat4` values), A14 (depth) and D17 (`recipe publish`). It needs nothing else from phases 2 to 4, so it could run straight after phase 1 if those six rows came next.
+[Example 1](cli-examples.md#example-1-a-triangle) also needs D15 (`recipe new`), proposed for core at step 10. [Example 2](cli-examples.md#example-2-instanced-cubes-on-the-triangle) needs phase 1, A1 to A5 (steps 12 to 14) and A7 (step 22), plus three later rows: A9 (`mat4` values), A14 (depth) and D17 (`recipe publish`). It needs nothing else from phases 2 to 4, so it could run straight after phase 1 if those nine rows came next.
 
 ## Decisions this needs (A00)
 
 - **D1, graph reads**: needed for B8 (step 9), and so for `inspect`, `graph` and `command-items`.
 - **D5, operator ends of a connection**: needed for A2 and A3 (step 13), and so for every part that hands Rects, Items or Labels to another operator.
+- **The `instance_count` word (V04)**: needed for A4 (step 13). `invocations` then counts one instance ([CLI examples](cli-examples.md#what-view-save-writes)).
+- **The recipe template and `recipe new` (D15)**: whether D15 moves to core, at step 10 with the `library` part ([CLI examples](cli-examples.md#a-recipe-file-shows-what-it-can-reach)).
 - **The deploy word (V04)**: needed for C1 (step 7). The proposal is a `[deploy "<name>"]` section holding `recipe` and `param = <node>.<key>=<value>`, with ports reached as `<name>.<node>.<port>`. [Example 2](cli-examples.md#example-2-instanced-cubes-on-the-triangle) shows one.
 - **How the CLI and the IDE address the project they host (C3)**: a command names the child it edits (`triangle: node add …`), and the command-line part adds that name, so a typed line needs none and every log line stands alone (V08).
 - **The recipe map**: it gains the `inspect` and `library` parts, and `graph-editor` ships without `relations` until E16 lands.
