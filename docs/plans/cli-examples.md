@@ -52,7 +52,7 @@ triangle>
 
 The `cli` app runs headless, with a prompt on the terminal. `view new` hosts an empty view and saves its `view.vlp`, and from then on the prompt names the view that typed lines go to.
 
-Next, the four files [below](#the-files) go into `src/examples/triangle/recipes/triangle/`, typed in any editor. The build refuses them until the include map lists them. For each file, the gate prints the row to add:
+Next, the four files [below](#the-files) go into `src/examples/triangle/recipes/triangle/`, typed in any editor. The build refuses them until the include map lists them. For each file, the gate prints the row to add: // this can not be a manual edit. Recipes are not engine, and therefor should not be included inside in the include map. This step should not be needed and violates implementation leak into engine.
 
 ```text
 examples/triangle/recipes/triangle/Triangle.cpp: new file; once approved, add the row
@@ -78,7 +78,8 @@ From here, every save of a recipe file swaps in while the triangle keeps running
 
 ### The files
 
-`Triangle.cpp`, the operator:
+`Triangle.cpp`, the operator: // c++ files should show which parts of the engine they can access, so that documentation is not needed. We have to think on how fine grained, but think a template with the on_cook, on_trigger, on_init, etc functions. And a commented part at the top that explains (non verbose, just variables) that can be uncommented and used. Only ofcourse while they are not violating any calls, but I imagine there might be aspects of the engine we would like to use from our operators. And if everything is "hidden" how do we know what we can call besides standard c++? Also, think how to resolve this for header and cpp files, perhaps if header files are created together with a cpp file they can be properly tuned and a single cpp files has to carry it all alone.
+
 
 ```cpp
 #include "runtime/Operator.h"
@@ -131,7 +132,7 @@ VP_RECIPE(registry) {
 }
 ```
 
-`Triangle.glsl`, the pass block both shaders include:
+`Triangle.glsl`, the pass block both shaders include: // glsl should have basic template too, so uncomment gets you started fast in passing data between cpp and glsl. 
 
 ```glsl
 // The pass block both of the triangle's shaders read. Each includes this one
@@ -172,7 +173,7 @@ void main() {
 }
 ```
 
-The rows the gate asks for, as the include map holds them today:
+The rows the gate asks for, as the include map holds them today: // see earlier violation comment.
 
 ```text
 | `examples/triangle/recipes/triangle/Triangle.cpp` | `runtime/Operator.h` |
@@ -196,7 +197,7 @@ invocations = 3
 param       = speed=0.01
 ```
 
-The copy in the tree also carries comments a person wrote. The writer keeps them (B4).
+The copy in the tree also carries comments a person wrote. The writer keeps them (B4). // everything will be instanced, so will invocations remain here?
 
 ### The log
 
@@ -282,7 +283,7 @@ cube-screen> view save
 version = 1
 
 [deploy "screen"]
-recipe = triangle
+recipe = triangle 
 
 [node "layout"]
 recipe      = cubes
