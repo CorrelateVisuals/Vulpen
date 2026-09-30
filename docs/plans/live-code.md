@@ -82,7 +82,7 @@ An IDE recipe needs no path of its own: it saves through the file port, and the 
 4. **Unload before load.** A `dlopen` of a path that is still loaded returns the old code.
 5. **A module swap resets its operators' CPU state; a shader swap keeps it.** State that must survive a module swap belongs in params or GPU buffers.
 6. **An engine-header edit needs a restart.** The entry's name carries a hash of every engine header, so a module built against other headers fails to load, saying to restart, instead of crashing the host.
-7. **The build replaces a module file and never writes into it.** GNU ld unlinks the old file before it writes the new one, so a loaded module keeps its pages while the build runs (measured); a linker that wrote in place would change code under the running host.
+7. **The build replaces a module file and never writes into it.** GNU ld unlinks the old file before it writes the new one, so a loaded module keeps its pages while the build runs (measured); a linker that wrote in place would change code under the running host. Windows locks a loaded DLL, so there the build could not replace it at all: the loader maps a copy in the temp folder, one per process and module, deletes it on unload, and before the next load asks the OS whether the copy is still mapped (rule 3).
 
 Two traps. libstdc++ puts the file clock's epoch in the year 2174, so a scan that starts from `file_time_type{}` never sees a change; start from `min()`. And GCC's `-Wextra` flags every designated initializer that leaves fields out, which CPP11 relies on, so the build turns off `-Wmissing-field-initializers`.
 
@@ -122,7 +122,8 @@ Also verified:
 - the modules have no undefined engine symbols, no unique symbols, and one export each;
 - NVIDIA, AMD (RADV) and llvmpipe print the same values;
 - the run is free of validation errors, and an error does reach the log;
-- `ctest` passes on both presets.
+- `ctest` passes on both presets;
+- on Windows (MSVC 17.14, the Visual Studio generator, NVIDIA), both views run, a C++ and a shader edit swap in, a failed build keeps the running code, no module copy outlives the run, and `ctest` passes on both presets.
 
 When this was proposed, before the window and draws landed, the engine (`src/baseclasses/`, `src/runtime/` with its CMake, and `main.cpp`) was 2,420 lines of code. Of them, 244 existed only so code can change while it runs:
 
@@ -156,7 +157,6 @@ These change structure, so they wait for the project lead (A00):
 - **Commands (V06).** A swap is not a command: nothing registers commands in this tree yet.
 - **Frame block.** The GPU layout's frame block (time, resolution, cursor) does not exist yet, so a draw cannot follow the window's aspect: the triangle stretches with the window.
 - **Frames in flight.** One: the CPU waits for each frame before the next, so the frame loop and the GPU never overlap.
-- **Windows.** A loader beside the POSIX one in the platform files, and an export macro from CMake's `generate_export_header` in place of the GCC attribute, so no OS `#ifdef` lands in recipe code (RA01). Windows locks a loaded DLL, so the build cannot replace it (rule 7); the loader loads a copy instead.
 - **Gates first.** Recipe targets do not wait for the gates, so a live build compiles while the include-map gate runs; a failing gate still fails the build, and nothing swaps. Making them wait keeps the rule in `CMakeLists.txt` that a broken rule fails the build before any object is built, and adds up to 50 ms to a swap.
 - **Two builds on one tree.** The POC took a build lock because two hosts, or a host and a terminal, building one tree at once corrupt it. On Linux, `flock` around the build command covers hosts.
 - **Views outside this repo (Goal-03).** A project that attaches Vulpen builds its views with its own CMake, calling the same functions.
