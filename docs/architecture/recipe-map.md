@@ -1,6 +1,6 @@
 # Recipe map
 
-Every recipe in `src/recipes/`: what it deploys, which core ports it uses, and which contracts it reads and writes. Recipes never include each other (RV00), so the [include map](include-map.md) cannot show how they stack; this page does, for the same reason (A00). The rules are RV05–RV07 in the [requirements](requirements.md) and V11 in the [principles](principles.md). It is kept by hand until the `view.vlp` files declare their children; then a gate checks it as `include-map.py` checks the include map.
+Every recipe in `src/recipes/`: what it deploys, which core ports it uses, and which contracts it reads and writes. Recipe code has no rows in the [include map](include-map.md), and recipes never include each other (RV00), so that page cannot show how they stack; this page does, for the same reason (A00). The rules are RV05–RV07 in the [requirements](requirements.md) and V11 in the [principles](principles.md). It is kept by hand until the `view.vlp` files declare their children; then a gate checks it as `include-map.py` checks the include map.
 
 Paths are from `src/recipes/`.
 
@@ -13,9 +13,9 @@ The core (`baseclasses/`, `runtime/`) knows no recipe. These are the ports the r
 | input | keys and pointer | `InputPort` |
 | files | read, watch and save (RA04) | `FilePort` |
 | commands | send text, read the log, list the registered commands (RV04) | `CommandPort` |
-| graph | read the view; writes stay commands (V06) | [D1](migration-and-implementation.md#open-decisions) |
+| graph | read the view; writes stay commands (V06) | `runtime/View.h`, once [D1](migration-and-implementation.md#open-decisions) is settled |
 | connections | the contracts on its connections | [D5](migration-and-implementation.md#open-decisions) |
-| terminal | stdin lines and stdout, for a CLI with no window (V07) | not a port yet; `Terminal` is in `baseclasses/Platform.h` |
+| terminal | stdin lines and stdout, for a CLI with no window (V07) | `TerminalPort` |
 
 ## Contracts
 
@@ -43,6 +43,8 @@ Parts hold all recipe code and deploy nothing (RV06). A drawing part draws into 
 | `graph` | `Graph`, shaders | input, commands, graph | Rect, Relation | Rect, Label, Curve; draws its backdrop |
 | `relations` | `Relations` | files | — | Relation |
 | `modes` | `Modes` | commands | — | — |
+| `inspect` | `Inspect` | commands, graph | — | — |
+| `library` | `Library` | files, commands | — | — |
 
 ## Components
 
@@ -61,5 +63,5 @@ Parts hold all recipe code and deploy nothing (RV06). A drawing part draws into 
 
 | App | Deploys |
 | --- | --- |
-| `cli` | command-line |
-| `ide` | palette, font, keys, modes, image; dock, panel ×4, text-area, find-bar, terminal, graph-editor, menu ×2, tooltip |
+| `cli` | command-line, inspect, library |
+| `ide` | palette, font, keys, modes, image, inspect, library; dock, panel ×4, text-area, find-bar, terminal, graph-editor, menu ×2, tooltip |

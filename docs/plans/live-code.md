@@ -70,7 +70,7 @@ A mismatch is logged with a message that names the node, the name and the fix (A
   - it builds a new schedule, which takes over from the old one what the build left alone: operators of recipes whose module stayed, pipelines of unchanged SPIR-V, and buffers of unchanged shape, contents included.
 
   One path serves a shader swap, a module swap and a graph edit.
-- **Failure.** A failed build swaps nothing, and its compiler output is logged, so the running code stays. The include-map gate fails a build as a compile error does: a new recipe file or include edge swaps in once its row is in the map (A00), at the next save in the view, since the scan does not watch the map. A manifest that does not parse keeps the running graph. A node that fails to bind is left out, with its errors, until a later build fixes it.
+- **Failure.** A failed build swaps nothing, and its compiler output is logged, so the running code stays. The include-map gate fails a build as a compile error does. Recipe code has no rows in the map, so a new recipe file swaps in at its next save, and an include the rule for recipe code refuses keeps the running code until a save fixes it. A manifest that does not parse keeps the running graph. A node that fails to bind is left out, with its errors, until a later build fixes it.
 
 An IDE recipe needs no path of its own: it saves through the file port, and the same scan picks the change up, as it does for an external editor.
 
@@ -116,7 +116,7 @@ Also verified:
 - a shader swap makes a new pipeline but no new buffer, so the buffer's contents carry over;
 - a misspelled name is caught when the schedule loads: after a swap only its node drops out, and at the first load the run stops with exit code 1;
 - a compile error leaves the running code in place;
-- a recipe folder dropped into the running view builds and runs on first use, once its file is in the include map;
+- a recipe folder dropped into the running view builds and runs on first use, with no edit to the include map;
 - an engine-header edit fails the modules loudly;
 - the release build links the same recipes and prints the same values;
 - the modules have no undefined engine symbols, no unique symbols, and one export each;
