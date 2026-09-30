@@ -8,7 +8,10 @@ A row is ticked when its failure is silent and low level (memory, races, GPU syn
 
 ## Today
 
-Every ticked row runs. The tests live in `src/tests/` (C++, test data, the fixture view `mistakes` and the CMake that registers them) and `src/tools/tests/` (the Python that drives vulpen); the gates in `src/tools/gates/`.
+Every ticked row runs. Everything that checks the code lives in `src/tools/`:
+
+- `gates.py` runs the gates in `gates/` before the compile; `mutable-globals.py` reads the objects after the link, beside `fetch-statistics.py`.
+- `tests/` holds what ctest runs: `tests.cmake`, which registers each test; `harness.py` and one Python script per test; `Barriers.cpp`; `wave.golden`; the suppressions and layer settings the presets name; the fixture view `mistakes/`; and `nightly.sh`.
 
 | Command | Runs | Time |
 | --- | --- | --: |
@@ -20,7 +23,7 @@ Every ticked row runs. The tests live in `src/tests/` (C++, test data, the fixtu
 | `ctest --preset gpu-validation` | GPU-assisted validation over the examples, on the machine's GPU (T22) | 3 s |
 | `ctest --preset nightly` | `soak` for 10 minutes (T27) and `swap-soak` for 500 swaps (T28) | 14 min |
 | `ctest --preset asan-nightly` | `fuzz-nightly`: 10,000 manifests, seeded by the date (T25) | 10 min |
-| `src/tools/nightly.sh` | every preset above, building each first | 30 min |
+| `src/tools/tests/nightly.sh` | every preset above, building each first | 30 min |
 
 Every test fails on a validation message or a sanitizer report (T10). Headless runs take `VULPEN_TEST_DRIVER`, which CMake finds: the pinned lavapipe in `../vulpen-lavapipe` (Mesa 25.2.8, from Ubuntu's `mesa-vulkan-drivers` package), else the system's, else none (T33, T34). `wave.golden` changes only through `golden.py --update`.
 
@@ -98,7 +101,7 @@ Fast tests, with every build: about 10 seconds more in all.
 | [ ] | T11 | Title and quiet default | RC07, C09, V09 | the title line names the commit. At the default level, only the header, the footer and the lines of nodes that set their own level appear. | 15 | ctest |
 | [ ] | T12 | Same input, same output | C01 | two runs, and debug against release, read back identical bits | 20, 3 s | ctest |
 | [x] | T13 | Golden output | C01, GLSL02 | `wave`'s probe prints each value as the shortest text that reads back to the same bits. It matches a checked-in golden bit for bit on the reference device (T34), and within a tolerance per view on other drivers. It runs in every preset, so debug and release match as well (T12). | 60 + goldens, 2 s | ctest |
-| [x] | T14 | Fail loud | A02, RV03 | broken manifests and shaders each expect exit 1 and a message naming the cause (the key or file, not the whole text). The cases: the six duplicates, a truncated and an empty `.spv`, a C++ name or type the shader does not declare, mismatched connection elements, invocations that do not fill workgroups, a draw that writes a buffer, and 1,025 passes. The six measured cases already fail loud, and T25 keeps them so. The recipes that get these wrong are the fixture view `src/tests/mistakes/`. | 110, 6 s | ctest |
+| [x] | T14 | Fail loud | A02, RV03 | broken manifests and shaders each expect exit 1 and a message naming the cause (the key or file, not the whole text). The cases: the six duplicates, a truncated and an empty `.spv`, a C++ name or type the shader does not declare, mismatched connection elements, invocations that do not fill workgroups, a draw that writes a buffer, and 1,025 passes. The six measured cases already fail loud, and T25 keeps them so. The recipes that get these wrong are the fixture view `src/tools/tests/mistakes/`. | 110, 6 s | ctest |
 | [ ] | T15 | Working directory | RP02 | the tests also run from another directory | 5 | ctest |
 | [ ] | T16 | Runs change no file | RA04 | the view folders hash the same before and after the tests | 20 | ctest |
 | [x] | T17 | Barriers | V10 | the engine's hazard rule, on made-up pass lists: read after write, write after read and write after write each get a barrier, and read after read gets none. Synchronization validation cannot see buffer addresses, so nothing else checks V10 for buffers. | 80, <1 s | ctest |
@@ -161,9 +164,9 @@ The ticked rows were estimated at about 770 lines of tests and tooling; built, t
 | Section | Estimated | Built | Where |
 | --- | --: | --: | --- |
 | Gates | 125 | 160 | `src/tools/gates/`, `src/tools/mutable-globals.py` |
-| ctest | 260 | 445 | `src/tools/tests/`, `src/tests/`: 220 of Python, 60 of C++, 75 in the fixture view, 95 of CMake |
+| ctest | 260 | 445 | `src/tools/tests/`: 220 of Python, 60 of C++, 75 in the fixture view, 95 of CMake |
 | Presets | 140 | 150 | `CMakePresets.json`, `fuzz.py`, the suppression and layer settings files |
-| Soak and stress | 220 | 175 | `soak.py`, `src/tools/nightly.sh` |
+| Soak and stress | 220 | 175 | `soak.py`, `nightly.sh` |
 | Devices | 20 | – | in the test CMake |
 
 The fixes added about 60 lines to the engine, and moving the barrier rule into `Passes.h` added 20.
@@ -183,5 +186,5 @@ Steps 1 to 5 landed on 2026-09-30.
 
 - **C01 and GLSL02 across drivers.** Either bit-exact per device and driver with a tolerance across drivers (what the baseline shows), or shaders without built-in transcendentals and with `precise`, so every GPU matches bit for bit. The second costs what a shader can use. Built for now: the first, with a tolerance of 0.001.
 - **Signals.** Whether SIGINT and SIGTERM end the run cleanly. It needs a signal handler in the platform files (RA01).
-- **Structure for T17.** Settled: `Pass` and the barrier rule (`Hazards`) moved to `baseclasses/Passes.h`, which `Engine.h` and `tests/Barriers.cpp` include. Tests live in `src/tests/`, their Python in `src/tools/tests/`.
+- **Structure for T17.** Settled: `Pass` and the barrier rule (`Hazards`) moved to `baseclasses/Passes.h`, which `Engine.h` and `tools/tests/Barriers.cpp` include. Tests live in `src/tools/tests/`, beside the gates.
 - **Time budget.** How long ctest may take per build; this page assumes under a minute. The debug tests take 3 s, the asan ones 23 s.
