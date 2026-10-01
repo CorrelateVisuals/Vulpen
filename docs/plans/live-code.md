@@ -66,7 +66,7 @@ A mismatch is logged with a message that names the node, the name and the fix (A
 - **Load.** The runtime reflects each node's SPIR-V when the view loads, never at build time, so reflection, the GPU layout and pipeline creation never learn where the bytes came from (RA03).
 - **Swap.** The runtime scans the view folder every 100 ms. A change seen twice runs `cmake --build --target vulpen_recipes` on a thread, so a half-written file never compiles and the frame loop never waits (VK02). When the build finishes, between frames with the GPU idle:
   - the runtime unloads the modules the build rewrote, after destroying their operators;
-  - it reads the manifest again;
+  - it reads the manifest again if it changed since it was read, so the edits typed since then stay;
   - it builds a new schedule, which takes over from the old one what the build left alone: operators of recipes whose module stayed, pipelines of unchanged SPIR-V, and buffers of unchanged shape, contents included.
 
   One path serves a shader swap, a module swap and a graph edit.

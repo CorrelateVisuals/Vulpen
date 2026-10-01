@@ -18,12 +18,12 @@ Every ticked row runs. Everything that checks the code lives in `src/tools/`:
 | every build | the gates before the compile (include map, T3, T4, T6), `spirv-val` on each shader (T8), and T1 after the link | – |
 | `ctest --preset debug` | `vulpen`, `wave` (T13, T30), `wave-gpu`, `triangle` (T19), `barriers` (T17), `fail-loud` (T14) | 3 s |
 | `ctest --preset release` | the same but `fail-loud`, whose recipes build only as modules | 1.5 s |
-| `ctest --preset asan` | ASan, UBSan and LSan over the debug tests on lavapipe, windows included, `fuzz` (T20, T25) and `fuzz-commands` (T39) | 42 s |
+| `ctest --preset asan` | ASan, UBSan and LSan over the debug tests on lavapipe, windows included, `fuzz` (T20, T25) and `fuzz-commands` (T39) | 45 s |
 | `ctest --preset tsan` | TSan over the headless tests and 6 live swaps (T21) | 6 s |
 | `ctest --preset gpu-validation` | GPU-assisted validation over the examples, on the machine's GPU (T22) | 3 s |
 | `ctest --preset nightly` | `soak` for 10 minutes (T27) and `swap-soak` for 500 swaps (T28) | 14 min |
-| `ctest --preset asan-nightly` | `fuzz-nightly`: 10,000 manifests, seeded by the date (T25) | 10 min |
-| `src/tools/tests/nightly.sh` | every preset above, building each first | 30 min |
+| `ctest --preset asan-nightly` | `fuzz-nightly`: 10,000 manifests, and `fuzz-commands-nightly`: 2,000 scripts, both seeded by the date (T25, T39) | 20 min |
+| `src/tools/tests/nightly.sh` | every preset above, building each first | 40 min |
 
 Every test fails on a validation message or a sanitizer report (T10). Headless runs take `VULPEN_TEST_DRIVER`, which CMake finds: the pinned lavapipe in `../vulpen-lavapipe` (Mesa 25.2.8, from Ubuntu's `mesa-vulkan-drivers` package), else the system's, else none (T33, T34). `wave.golden` changes only through `golden.py --update`.
 
@@ -100,7 +100,7 @@ Fast tests, with every build: about 10 seconds more in all.
 | [x] | T10 | Validation fails the test | RVK00 | every GPU test fails on a validation message (`FAIL_REGULAR_EXPRESSION`) | 5 | ctest |
 | [ ] | T11 | Title and quiet default | RC07, C09, V09 | the title line names the commit. At the default level, only the header, the footer and the lines of nodes that set their own level appear. | 15 | ctest |
 | [ ] | T12 | Same input, same output | C01 | two runs, and debug against release, read back identical bits | 20, 3 s | ctest |
-| [x] | T13 | Golden output | C01, GLSL02 | `wave`'s probe prints each value as the shortest text that reads back to the same bits. It matches a checked-in golden bit for bit on the reference device (T34), and within a tolerance per view on other drivers. It runs in every preset, so debug and release match as well (T12). | 60 + goldens, 2 s | ctest |
+| [x] | T13 | Golden output | C01, GLSL02 | `wave`'s probe prints each value as the shortest text that reads back to the same bits. It matches a checked-in golden bit for bit on the reference device (T34), and within a tolerance per view on other drivers. It runs in every preset, so debug and release match as well (T12). A run whose edits take the graph apart and put it back before the first frame must match too, so every buffer the rebuilds make starts zeroed. | 60 + goldens, 2 s | ctest |
 | [x] | T14 | Fail loud | A02, RV03 | broken manifests and shaders each expect exit 1 and a message naming the cause (the key or file, not the whole text). The cases: the six duplicates, a truncated and an empty `.spv`, a C++ name or type the shader does not declare, mismatched connection elements, invocations that do not fill workgroups, a draw that writes a buffer, and 1,025 passes. The six measured cases already fail loud, and T25 keeps them so. The recipes that get these wrong are the fixture view `src/tools/tests/mistakes/`. | 110, 6 s | ctest |
 | [ ] | T15 | Working directory | RP02 | the tests also run from another directory | 5 | ctest |
 | [ ] | T16 | Runs change no file | RA04 | the view folders hash the same before and after the tests | 20 | ctest |
@@ -150,7 +150,7 @@ Prepared now, added when their step lands.
 | Add | ID | Test | Proves | Step |
 | --- | --- | --- | --- | --- |
 | [ ] | T38 | Replay: record a session, replay it headless, compare the saved manifest and the goldens | V08, C01 | 3 (B3) |
-| [ ] | T39 | Command port: a command without usage, help or completion does not register; command fuzzing on T25's harness. The fuzz runs with B1: `fuzz.py --commands` mutates a script of every command the engine registers, which the wave view runs through `--source`, 60 times in the `asan` preset. The engine registers its own commands at startup, so a refusal fails every run; a recipe's refusal joins T14's fixture view with B5. | RV04, A02 | 1 (B1) |
+| [ ] | T39 | Command port: a command without usage, help or completion does not register; command fuzzing on T25's harness. The fuzz runs with B1: `fuzz.py --commands` mutates a script of every edit (B2), which the wave view runs through `--source`, 60 times in the `asan` preset and 2,000 times nightly. The engine registers its own commands at startup, so a refusal fails every run; a recipe's refusal joins T14's fixture view with B5. | RV04, A02 | 1 (B1) |
 | [ ] | T40 | Save: killing vulpen during a save leaves the old file or the new one, and comments survive a save | RA04 | 4 (B4) |
 | [ ] | T41 | The terminal reader thread under T21 | A01, C13 | 8 (B9) |
 | [ ] | T42 | GUI tests headless: input logs drive them, and offscreen goldens check them. The goldens need A8 (later). | V06, V07 | 15, 22 (B6, A7) |
