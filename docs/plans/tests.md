@@ -18,7 +18,7 @@ Every ticked row runs. Everything that checks the code lives in `src/tools/`:
 | every build | the gates before the compile (include map, T3, T4, T6), `spirv-val` on each shader (T8), and T1 after the link | – |
 | `ctest --preset debug` | `vulpen`, `wave` (T13, T30), `wave-gpu`, `triangle` (T19), `barriers` (T17), `fail-loud` (T14) | 3 s |
 | `ctest --preset release` | the same but `fail-loud`, whose recipes build only as modules | 1.5 s |
-| `ctest --preset asan` | ASan, UBSan and LSan over the debug tests on lavapipe, windows included, and `fuzz` (T20, T25) | 23 s |
+| `ctest --preset asan` | ASan, UBSan and LSan over the debug tests on lavapipe, windows included, `fuzz` (T20, T25) and `fuzz-commands` (T39) | 42 s |
 | `ctest --preset tsan` | TSan over the headless tests and 6 live swaps (T21) | 6 s |
 | `ctest --preset gpu-validation` | GPU-assisted validation over the examples, on the machine's GPU (T22) | 3 s |
 | `ctest --preset nightly` | `soak` for 10 minutes (T27) and `swap-soak` for 500 swaps (T28) | 14 min |
@@ -150,7 +150,7 @@ Prepared now, added when their step lands.
 | Add | ID | Test | Proves | Step |
 | --- | --- | --- | --- | --- |
 | [ ] | T38 | Replay: record a session, replay it headless, compare the saved manifest and the goldens | V08, C01 | 3 (B3) |
-| [ ] | T39 | Command port: a command without usage, help or completion does not register; command fuzzing on T25's harness | RV04, A02 | 1 (B1) |
+| [ ] | T39 | Command port: a command without usage, help or completion does not register; command fuzzing on T25's harness. The fuzz runs with B1: `fuzz.py --commands` mutates a script of every command the engine registers, which the wave view runs through `--source`, 60 times in the `asan` preset. The engine registers its own commands at startup, so a refusal fails every run; a recipe's refusal joins T14's fixture view with B5. | RV04, A02 | 1 (B1) |
 | [ ] | T40 | Save: killing vulpen during a save leaves the old file or the new one, and comments survive a save | RA04 | 4 (B4) |
 | [ ] | T41 | The terminal reader thread under T21 | A01, C13 | 8 (B9) |
 | [ ] | T42 | GUI tests headless: input logs drive them, and offscreen goldens check them. The goldens need A8 (later). | V06, V07 | 15, 22 (B6, A7) |
