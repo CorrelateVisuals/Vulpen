@@ -112,7 +112,7 @@ Components and apps are only a `view.vlp` that deploys other recipes (RV06), and
 
 | Port | ID | Function | POC | New | Needs | Advice |
 | --- | --- | --- | --: | --: | --- | --- |
-| [x] | C1 | Deploy: a `view.vlp` deploys a recipe in a `[deploy]` section, sets params there (`param = <node>.<key>=<value>`), and connects its ports as `<deploy>.<node>.<port>`. The loader flattens the result: a deploy brings the nodes and connections of its recipe's `view.vlp`, from the view's `recipes/`, named `<deploy>.<name>`, and a recipe deploys others but never itself (RV06). `deploy add` and `deploy remove` join the primitive edits, and `param set` on `<deploy>.<node>` sets the deploy's param. The build compiles the library's parts, so an app runs from the library; that half lands at step 8, with the first library part that has code. No component or app loads without this. | 290 + 628 | 270 | a manifest word (V04) | core |
+| [x] | C1 | Deploy: a `view.vlp` deploys a recipe in a `[deploy]` section, sets params there (`param = <node>.<key>=<value>`), and connects its ports as `<deploy>.<node>.<port>`. The loader flattens the result: a deploy brings the nodes and connections of its recipe's `view.vlp`, from the view's `recipes/`, named `<deploy>.<name>`, and a recipe deploys others but never itself (RV06). `deploy add` and `deploy remove` join the primitive edits, and `param set` on `<deploy>.<node>` sets the deploy's param. The build compiles the library's recipes as one view, `library`, so an app runs from the library: a recipe of the library run as a view finds the recipes it deploys in the library's kind folders. No component or app loads without this. | 290 + 628 | 270 | a manifest word (V04) | core |
 | [x] | C2 | `recipe list` and `recipe drop`, registered by the part `library` (E18). A drop copies a library recipe into the view with the contracts it includes (V02, V03), and deploys it, in one log group. | 750 | 80 | B2, B7, C1 | core |
 | [x] | C3 | Hosted views: a view hosts another view (V03), so the CLI and the IDE host the project they edit. Adds `child add`, `child remove` and `child list`. Hosting is session state, kept in the log and not in the host's manifest. A command reaches a child by the child's name, and the live scan watches every hosted view's folder. A child's draws reach the window unless A7 routes them into an image. | 395 | 200 | C1 | core |
 | [ ] | C4 | The nest tree: `promote`, `demote`, `group`, `wrap`, `merge`, `split`, `ungroup`, `expose`, `cd`, `pwd`. | 875 | 0 | — | cut: deploys and folders give the structure |
@@ -227,8 +227,8 @@ The ticked rows, in the order they would land. Each step needs only rows from ea
 | | 4 | B4 | save |
 | | 5 | B14 | the first draw opens the window |
 | | 6 | B5 | operators register commands |
-| | 7 | C1 | deploys within a view |
-| | 8 | B9, E12, D1, D12 | the terminal port and the command-line part, which the build compiles from the library (C1) |
+| | 7 | C1 | deploys |
+| | 8 | B9, E12, D1, D12 | the terminal port and the command-line part, which the build compiles from the library |
 | | 9 | B8, E17, D7 | graph reads; `ls` and `info` |
 | | 10 | B7, C3, E18, C2, D4, D5, D6 | the file port, hosted views and the library part |
 | | 11 | G1 | the `cli` app. [Example 1](cli-examples.md#example-1-a-triangle) runs |
