@@ -92,7 +92,7 @@ The engine's general ports ([recipe map](../architecture/recipe-map.md#core-port
 | Port | ID | Function | POC | New | Needs | Advice |
 | --- | --- | --- | --: | --: | --- | --- |
 | [x] | B1 | Command port: a command registers with its usage, help and completion, or it does not register at all (RV04). The port dispatches text, lists what is registered, and provides `quit`. | 1,424 | 200 | — | core |
-| [x] | B2 | Primitive edits, which are the manifest's own words: `node add`, `node remove`, `node set`, `connect`, `disconnect`, `param set` and `param unset`. Loading a `.vlp` runs its lines through these, and each edit reruns the schedule on the swap path. | 2,597 | 200 | B1 | core |
+| [x] | B2 | Primitive edits, which are the manifest's own words: `node add`, `node remove`, `node set`, `connect`, `disconnect`, `param set` and `param unset`. Loading a `.vlp` runs its lines through these. The schedule reruns on the swap path before the next frame, once for all the edits since the last, so a script is checked as a whole, and each error names the line that last added or changed its node. | 2,597 | 200 | B1 | core |
 | [x] | B3 | Command log in groups: `source <log>` replays a log and `log save <file>` writes one (V08). | 142 | 80 | B1 | core |
 | [x] | B4 | Save: the manifest writer, which writes a temp file and renames it (RA04) and keeps the comments a person wrote. Adds `view save`. `view migrate` lands with the manifest's version 2, since no older manifest exists to migrate (RV03, C00). | 522 | 150 | B2 | core |
 | [x] | B5 | Recipe commands: an operator registers its own commands (V05). | 797 (not ported) | 60 | B1 | core |
