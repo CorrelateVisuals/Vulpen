@@ -173,7 +173,8 @@ class Triangle final : public VP::Operator {
   //   if (call.is(_reset)) {}
   //   const std::span<const std::string_view> arguments = call.arguments();
   //   call.reply("text");
-  //   call.send("param set triangle speed 0");
+  //   call.commands().send("param set triangle speed 0");
+  //   const VP::View &view = call.view(); // with #include "runtime/View.h"
   // }
 };
 
