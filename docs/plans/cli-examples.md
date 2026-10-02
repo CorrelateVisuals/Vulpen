@@ -60,7 +60,7 @@ The engine already has placeholders for most of what the examples need:
 | the set 0 layout, with no arrays yet | `baseclasses/Pipelines.h` | `textures[]`, `samplers[]` and `image2D[]` | A5 | 2 |
 | `InputPort`, empty | `runtime/Operator.h` | keys, text and pointer | B6 | neither |
 
-Deploys (C1), hosted views (C3) and the `inspect` and `library` parts have no stub yet. Everything in the table is engine or library code; neither example writes any of it.
+Hosted views (C3) and the `inspect` and `library` parts have no stub yet. Everything in the table is engine or library code; neither example writes any of it.
 
 ## Example 1: a triangle
 
