@@ -94,14 +94,14 @@ The engine's general ports ([recipe map](../architecture/recipe-map.md#core-port
 | [x] | B1 | Command port: a command registers with its usage, help and completion, or it does not register at all (RV04). The port dispatches text, lists what is registered, and provides `quit`. | 1,424 | 200 | — | core |
 | [x] | B2 | Primitive edits, which are the manifest's own words: `node add`, `node remove`, `node set`, `connect`, `disconnect`, `param set` and `param unset`. Loading a `.vlp` runs its lines through these, and each edit reruns the schedule on the swap path. | 2,597 | 200 | B1 | core |
 | [x] | B3 | Command log in groups: `source <log>` replays a log and `log save <file>` writes one (V08). | 142 | 80 | B1 | core |
-| [x] | B4 | Save: the manifest writer, which writes a temp file and renames it (RA04) and keeps the comments a person wrote. Adds `view save`, and `view migrate` for an older manifest (RV03). | 522 | 150 | B2 | core |
+| [x] | B4 | Save: the manifest writer, which writes a temp file and renames it (RA04) and keeps the comments a person wrote. Adds `view save`. `view migrate` lands with the manifest's version 2, since no older manifest exists to migrate (RV03, C00). | 522 | 150 | B2 | core |
 | [x] | B5 | Recipe commands: an operator registers its own commands (V05). | 797 (not ported) | 60 | B1 | core |
 | [x] | B6 | Input port: keys, text, pointer, wheel and focus. The `input` command produces the same events without a window (V07). | 763 | 130 | B1 | core |
 | [x] | B7 | File port: read, watch and save (RA04), built on the existing live scan. | 586 | 80 | — | core |
 | [x] | B8 | Graph reads (D1): operators get a `const View&` during cook. It replaces the POC's graph mirror, which is part of E13's figure. | (in E13's) | 30 | D1 | core |
 | [x] | B9 | Terminal port: lines from stdin, text to stdout. | 279 | 60 | — | core |
 | [x] | B14 | Window on demand: an edit that adds the first draw opens the window, and one that removes the last draw closes it. Today a draw added while vulpen runs asks for a restart. | – | 30 | B2 | core |
-| [ ] | B10 | Undo and redo, one log group at a time. | 83 | 80 | B3 | later |
+| [ ] | B10 | Undo and redo, one log group at a time. The log keeps `view save`, so a rebuild for undo skips saves. | 83 | 80 | B3 | later |
 | [ ] | B11 | Terminal raw mode, so TAB completion works in a shell. | (in B9's) | 80 | B9 | later |
 | [ ] | B12 | Clipboard, through GLFW. | 19 | 20 | B6 | later |
 | [ ] | B13 | Named command blocks in the `.vlp`: the manifest word decided on 2026-09-27. | – | 80 | B1 | later, until a recipe needs one |
@@ -224,7 +224,7 @@ The ticked rows, in the order they would land. Each step needs only rows from ea
 | 1. CLI, headless (about 1,730) | 1 | B1 | the command port: a script of commands runs headless (`--source FILE`) |
 | | 2 | B2, D2 | primitive edits; a `.vlp` loads through them |
 | | 3 | B3, D3 | the log in groups; `log save` writes it and `source` replays it |
-| | 4 | B4 | save and migrate |
+| | 4 | B4 | save |
 | | 5 | B14 | the first draw opens the window |
 | | 6 | B5 | operators register commands |
 | | 7 | C1 | deploys; the build compiles the library's parts |
