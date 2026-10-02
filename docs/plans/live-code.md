@@ -27,7 +27,7 @@ For GLSL the swap needs no loader at all: SPIR-V is data, and Vulkan builds a pi
 
 ## Nodes
 
-A node is one `[node]` entry in the manifest (V00). It names the recipe it comes from (the view's own copy, V03), and in that recipe's folder at most one C++ operator class and its shaders: one compute shader, or a vertex and a fragment shader, which make the node a draw of `invocations` vertices. A view with a draw opens a window; any other runs headless (V07). It holds its params and its log level (V09). Connections are entries of their own, each one buffer from one node's port to other nodes' ports.
+A node is one `[node]` entry in the manifest (V00). It names the recipe it comes from (the view's own copy, V03), and in that recipe's folder at most one C++ operator class and its shaders: one compute shader, or a vertex and a fragment shader, which make the node a draw of `invocations` vertices. A view has a window while a node draws, and runs headless otherwise (V07). It holds its params and its log level (V09). Connections are entries of their own, each one buffer from one node's port to other nodes' ports.
 
 ```ini
 [node "wave"]

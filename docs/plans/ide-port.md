@@ -100,7 +100,7 @@ The engine's general ports ([recipe map](../architecture/recipe-map.md#core-port
 | [x] | B7 | File port: read, watch and save (RA04), built on the existing live scan. | 586 | 80 | — | core |
 | [x] | B8 | Graph reads (D1): operators get a `const View&` during cook. It replaces the POC's graph mirror, which is part of E13's figure. | (in E13's) | 30 | D1 | core |
 | [x] | B9 | Terminal port: lines from stdin, text to stdout. | 279 | 60 | — | core |
-| [x] | B14 | Window on demand: an edit that adds the first draw opens the window, and one that removes the last draw closes it. Today a draw added while vulpen runs asks for a restart. | – | 30 | B2 | core |
+| [x] | B14 | Window on demand: an edit that adds the first draw opens the window, and one that removes the last draw closes it. The instance takes every surface extension the loader offers and the device its swapchain where it has one, so a run that starts headless can open a window; a window at start still steers the choice of GPU. | – | 30 | B2 | core |
 | [ ] | B10 | Undo and redo, one log group at a time. The log keeps `view save`, so a rebuild for undo skips saves. | 83 | 80 | B3 | later |
 | [ ] | B11 | Terminal raw mode, so TAB completion works in a shell. | (in B9's) | 80 | B9 | later |
 | [ ] | B12 | Clipboard, through GLFW. | 19 | 20 | B6 | later |

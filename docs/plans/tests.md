@@ -21,7 +21,7 @@ Every ticked row runs. Everything that checks the code lives in `src/tools/`:
 | `ctest --preset asan` | ASan, UBSan and LSan over the debug tests on lavapipe, windows included, `fuzz` (T20, T25) and `fuzz-commands` (T39) | 45 s |
 | `ctest --preset tsan` | TSan over the headless tests and 6 live swaps (T21) | 6 s |
 | `ctest --preset gpu-validation` | GPU-assisted validation over the examples, on the machine's GPU (T22) | 3 s |
-| `ctest --preset nightly` | `soak` for 10 minutes (T27) and `swap-soak` for 500 swaps (T28) | 14 min |
+| `ctest --preset nightly` | `soak` for 10 minutes (T27), `swap-soak` for 500 swaps (T28) and `window-soak` for 100 windows (T43) | 15 min |
 | `ctest --preset asan-nightly` | `fuzz-nightly`: 10,000 manifests, and `fuzz-commands-nightly`: 2,000 scripts, both seeded by the date (T25, T39) | 20 min |
 | `src/tools/tests/nightly.sh` | every preset above, building each first | 40 min |
 
@@ -154,7 +154,7 @@ Prepared now, added when their step lands.
 | [ ] | T40 | Save: killing vulpen during a save leaves the old file or the new one, and comments survive a save. Built with B4 as a gate in `code-rules.py`: no file but the platform files writes or moves a file, so every save goes through `Files::save`, which writes a temp file and renames it over the old one. A test that kills runs would rarely land inside a small file's write, so it would pass an unsafe save too. T38 checks that comments survive. | RA04 | 4 (B4) |
 | [ ] | T41 | The terminal reader thread under T21 | A01, C13 | 8 (B9) |
 | [ ] | T42 | GUI tests headless: input logs drive them, and offscreen goldens check them. The goldens need A8 (later). | V06, V07 | 15, 22 (B6, A7) |
-| [ ] | T43 | Windows and hosted views opened and closed in a soak | A03 | 5, 10 (B14, C3) |
+| [ ] | T43 | Windows and hosted views opened and closed in a soak. Built with B14 as `soak.py --windows`: a copy of the triangle view loses its draw and gets it back through its manifest, 100 times nightly, so the window closes and opens each time. It fails on growth after warm-up and on a validation message, and is skipped where no display exists. Hosted views join with C3. | A03 | 5, 10 (B14, C3) |
 | [ ] | T44 | Synchronization validation over images and attachments | V10, RVK00 | 14, 22 (A5, A7) |
 
 ## Cost
