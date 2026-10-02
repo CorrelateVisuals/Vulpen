@@ -261,7 +261,7 @@ triangle: param set triangle speed 0.01
 triangle: view save
 ```
 
-The first two lines are one group: what `view new` expanded to. Every line is a primitive and names the view it edits, so `source` replays the log headless, with no recipe loaded (V08). `recipe new` wrote files and edited no graph, so it left no line; a replay finds its files in the tree.
+The first two lines are one group: what `view new` expanded to. Every line is a primitive and names the view it edits, so `source` replays the log headless, with no recipe loaded (V08). The file keeps no groups: `source` makes each line a group of its own, so undo after a replay steps back one command at a time. `recipe new` wrote files and edited no graph, so it left no line; a replay finds its files in the tree.
 
 ### What the engine does with it
 

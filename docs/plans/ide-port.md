@@ -223,7 +223,7 @@ The ticked rows, in the order they would land. Each step needs only rows from ea
 | --- | --: | --- | --- |
 | 1. CLI, headless (about 1,730) | 1 | B1 | the command port: a script of commands runs headless (`--source FILE`) |
 | | 2 | B2, D2 | primitive edits; a `.vlp` loads through them |
-| | 3 | B3, D3 | the log in groups; `source` replays it |
+| | 3 | B3, D3 | the log in groups; `log save` writes it and `source` replays it |
 | | 4 | B4 | save and migrate |
 | | 5 | B14 | the first draw opens the window |
 | | 6 | B5 | operators register commands |
