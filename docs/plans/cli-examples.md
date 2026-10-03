@@ -128,7 +128,7 @@ class Triangle final : public VP::Operator {
   float _speed = 0;
   // VP::Texture _atlas;           // an image C++ fills once
   // VP::Command _reset;           // a command the node answers
-  // VP::File _settings;           // a file the node reads, watches or saves
+  // std::string _folder;          // where the recipe's own files are
   float _angle = 0;
 
   // At load, and again after every swap: names in, handles out.
@@ -139,7 +139,7 @@ class Triangle final : public VP::Operator {
     _speed = node.param<float>("speed");
     // _atlas = node.texture("atlas");
     // _reset = node.command("reset", "turns the node back to its start");
-    // _settings = node.files().open("settings.ini");
+    // _folder = node.folder();
   }
 
   // Every frame, before the node's pass runs.
@@ -163,8 +163,9 @@ class Triangle final : public VP::Operator {
     // for (const VP::Event &event : frame.input().events()) {}
     // for (const std::string_view line : frame.terminal().lines()) {}
     // frame.terminal().print("text");
-    // const std::string_view settings = frame.files().text(_settings);
-    // frame.files().save(_settings, "text");
+    // const std::string settings = frame.files().read(_folder + "/settings.ini");
+    // frame.files().save(_folder + "/settings.ini", "text");
+    // const std::vector<std::string> names = frame.files().list(_folder);
     // const VP::View &view = frame.view(); // with #include "runtime/View.h"
   }
 
@@ -173,6 +174,7 @@ class Triangle final : public VP::Operator {
   //   if (call.is(_reset)) {}
   //   const std::span<const std::string_view> arguments = call.arguments();
   //   call.reply("text");
+  //   const std::string text = call.files().read(arguments.front()); // a <file> argument
   //   call.commands().send("param set triangle speed 0");
   //   const VP::View &view = call.view(); // with #include "runtime/View.h"
   // }
