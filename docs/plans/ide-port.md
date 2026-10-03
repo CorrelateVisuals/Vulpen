@@ -67,7 +67,7 @@ Of the POC's 13 channel kinds, `UBO`, `SSBO`, `STAGING_UPLOAD` and `READBACK` ar
 
 | Port | ID | Function | POC | New | Needs | Advice |
 | --- | --- | --- | --: | --: | --- | --- |
-| [x] | A1 | Frame block (time, frame index, resolution, cursor): a buffer whose address goes in the push constant, as the GPU layout says (RV02). Every UI draw needs it to map pixels. | – | 40 | — | core |
+| [x] | A1 | Frame block (time, frame index, resolution, cursor): a buffer whose address goes in the push constant, as the GPU layout says (RV02). Every UI draw needs it to map pixels. `Pipelines` owns the one block and takes its layout from reflection (RA03); the engine writes it after acquiring the window's image, so a resize shows at once. Time counts frames at the run's rate, so a replay matches (C01); the cursor stays zero until B6. | – | 40 | — | core |
 | [x] | A2 | Struct elements: a C++ struct names its members once, and the loader checks their names, types and offsets against reflection. Today only the size is checked. Contracts need this (RV05). | 198 (emitter) | 100 | — | core |
 | [x] | A3 | CPU ends of a connection: one operator writes a buffer and a later operator reads it in the same frame, and the buffer lives where both can reach it. This is the first step of D5. The POC used a typed publish port per feature instead. | – | 80 | A2, D5 | core |
 | [x] | A4 | Counts per frame: a draw runs `instance_count` instances, a number or a port whose buffer's used length sets it, and the buffer's writer sets that length each frame. `invocations` then counts the vertices of one instance. Text and rects change length every frame. | – | 40 | A3 | core |
