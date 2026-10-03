@@ -252,8 +252,8 @@ The ticked rows, in the order they would land. Each step needs only rows from ea
 ## Decisions this needs (A00)
 
 - **D1, graph reads**: needed for B8 (step 9), and so for `inspect`, `graph` and `command-items`.
-- **D5, operator ends of a connection**: needed for A2 and A3 (step 13), and so for every part that hands Rects, Items or Labels to another operator.
-- **The `instance_count` word (V04)**: needed for A4 (step 13). `invocations` then counts one instance ([CLI examples](cli-examples.md#what-view-save-writes)).
+- **D5, operator ends of a connection**: needed for A2 and A3 (step 13), and so for every part that hands Rects, Items or Labels to another operator. On 2026-10-03 the lead chose native C++ between C++ nodes: recipes include each other's headers, and objects pass by reference. [Native C++](native-cpp.md) proposes how, and the principle changes it needs, for the lead to approve.
+- **The `instance_count` word (V04)**: needed for A4 (step 13). `invocations` then counts one instance ([CLI examples](cli-examples.md#what-view-save-writes)). Approved on 2026-10-03; the number form is built.
 - **The recipe template and `recipe new` (D15)**: moved to core by the lead on 2026-10-03, and built at step 10 with the `library` part ([CLI examples](cli-examples.md#a-recipe-file-shows-what-it-can-reach)).
 - **The deploy word (V04)**: needed for C1 (step 7). The proposal is a `[deploy "<name>"]` section holding `recipe` and `param = <node>.<key>=<value>`, with ports reached as `<name>.<node>.<port>`. [Example 2](cli-examples.md#example-2-instanced-cubes-on-the-triangle) shows one. Built as proposed at step 7, for the lead to confirm before a library recipe uses it.
 - **How the CLI and the IDE address the project they host (C3)**: a command names the child it edits (`triangle: node add …`), and the command-line part adds that name, so a typed line needs none and every log line stands alone (V08). Built so at step 10, with `:` alone for the host.
