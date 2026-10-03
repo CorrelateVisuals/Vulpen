@@ -264,7 +264,7 @@ triangle: param set triangle speed 0.01
 triangle: view save
 ```
 
-The first two lines are one group: what `view new` expanded to. Every line is a primitive and names the view it edits, so `source` replays the log headless, with no recipe loaded (V08). The file keeps no groups: `source` makes each line a group of its own, so undo after a replay steps back one command at a time. `recipe new` wrote files and edited no graph, so it left no line; a replay finds its files in the tree.
+The first two lines are one group: what `view new` expanded to. `child add` of a `view.vlp` not written yet hosts an empty view, which `view save` then writes, so the log replays from an empty folder. Every line is a primitive and names the view it edits, so `source` replays the log headless, with no recipe loaded (V08). The log keeps a `<file>` argument as the command port resolved it, an absolute path; it is shortened here. The file keeps no groups: `source` makes each line a group of its own, so undo after a replay steps back one command at a time. `recipe new` wrote files and edited no graph, so it left no line; a replay finds its files in the tree.
 
 ### What the engine does with it
 
@@ -311,13 +311,13 @@ invocations = 3
 param       = speed=0.01
 ```
 
-The part runs its own node, so it can be dropped by itself: `recipe drop triangle` into an empty view gives example 1 back. The [recipe map](../architecture/recipe-map.md) gains a row for it under Parts.
+The part runs its own node, so it can be dropped by itself: `recipe drop triangle triangle` into an empty view gives example 1 back, as a deploy named `triangle`. The [recipe map](../architecture/recipe-map.md) gains a row for it under Parts.
 
 ### The session
 
 ```text
 triangle> view new src/examples/cube-screen
-cube-screen> recipe drop triangle as screen
+cube-screen> recipe drop triangle screen
 cube-screen> recipe new cubes draw
 cube-screen> node add layout recipe=cubes shader=Layout.comp invocations=64
 cube-screen> param set layout spacing 0.6
@@ -328,7 +328,7 @@ cube-screen> connect picture cubes.color screen.triangle.picture
 cube-screen> view save
 ```
 
-- **The drop.** `recipe drop triangle as screen` copies the part into the view as `recipes/triangle/` (V03) and deploys it as `screen` (C1). The triangle runs at once, as in example 1.
+- **The drop.** `recipe drop triangle screen` copies the part into the view as `recipes/triangle/` (V03) and deploys it as `screen` (C1). The triangle runs at once, as in example 1.
 - **The new files.** `recipe new cubes draw` writes the draw's four files into `recipes/cubes/`, and `Layout.comp` is written beside them. The view's copy of the triangle is edited to show a picture, before the two `connect` lines. Until then, the loader names what is missing, and the rest of the view keeps running.
 - **The counts.** `layout` runs one invocation per cube and writes one offset each. `cubes` draws 36 vertices per instance and one instance per offset, so 64 is written once.
 
