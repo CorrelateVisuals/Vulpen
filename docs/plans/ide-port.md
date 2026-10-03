@@ -97,7 +97,7 @@ The engine's general ports ([recipe map](../architecture/recipe-map.md#core-port
 | [x] | B4 | Save: the manifest writer, which writes a temp file and renames it (RA04) and keeps the comments a person wrote. Adds `view save`. `view migrate` lands with the manifest's version 2, since no older manifest exists to migrate (RV03, C00). | 522 | 150 | B2 | core |
 | [x] | B5 | Recipe commands: an operator registers its own commands in `bind` (V05). They last while the node runs: each rebuild registers them again, and a node that goes, is swapped or stops in error takes them along, so the port never calls code that is gone. A name stays one command, so a second node registering it is refused. | 797 (not ported) | 60 | B1 | core |
 | [x] | B6 | Input port: keys, text, pointer, wheel and focus. The `input` command produces the same events without a window (V07). | 763 | 130 | B1 | core |
-| [x] | B7 | File port: read, save (RA04) and list, by absolute path, so the working directory never counts (RP02). A recipe names its own files from its folder, `node.folder()`, and a command's `<file>` arguments arrive resolved, beside the script that runs them. The watch comes with its first user, the palette (E6): nothing before it reads a file twice (C00). | 586 | 80 | — | core |
+| [x] | B7 | File port: read, watch and save (RA04). `node.file(path)` in `bind` opens a file the node holds, in its recipe's folder when the path is relative (RP02): `text(file)` reads it again once it changed on disk, and `save(file, text)` writes it. A rebuild's open shares the file, so the set stays bounded (A03). `read`, `save` and `list` by absolute path serve the files a command names; a `<file>` argument arrives resolved, beside the script that runs it. | 586 | 80 | — | core |
 | [x] | B8 | Graph reads (D1): a command's handler reads the `const View&` it addresses, `call.view()`, as the edits so far left it: what a save would write. It replaces the POC's graph mirror, which is part of E13's figure. Reading it during cook waits for its first user, the graph part (E13); a node never keeps it, since a rebuild replaces it. | (in E13's) | 30 | D1 | core |
 | [x] | B9 | Terminal port: lines from stdin, text to stdout. It reads standard input without a thread, once a frame and only when a node asks, so nothing waits on it at exit and a run in the background never reads the terminal. A node sends a line to the command port and gets back what its command answers. B11 gives it a thread of its own. | 279 | 60 | — | core |
 | [x] | B14 | Window on demand: an edit that adds the first draw opens the window, and one that removes the last draw closes it. The instance takes every surface extension the loader offers and the device its swapchain where it has one, so a run that starts headless can open a window; a window at start still steers the choice of GPU. | – | 30 | B2 | core |
@@ -139,7 +139,7 @@ The engine registers only the primitive edits, the log, save and migrate, hostin
 | [x] | D12 | `clear` | `clear` | part `command-line` | 5 | E12 | core |
 | [ ] | D13 | `undo`, `redo` | `undo`, `redo` | engine | in B10 | B10 | later |
 | [ ] | D14 | `schedule`: the passes, what each reads and writes, and sizes | `engine flatten`, `engine audit chain`, `probe passes` | part `inspect` | 40 | D7 | later |
-| [ ] | D15 | `recipe new <name> <kind>`: a recipe folder with its C++ and shaders, from the [template](cli-examples.md#a-recipe-file-shows-what-it-can-reach), every line of its menu commented | `file new`, `operator new`, `operator remove` | part `library` | 80 | E18 | later; proposed for core, since the template is how a recipe starts |
+| [x] | D15 | `recipe new draw <name>`, `recipe new dispatch <name>`: a recipe folder with its C++ and shaders, from the [template](cli-examples.md#a-recipe-file-shows-what-it-can-reach), every line of its menu commented. The kind is a word of the command, so completion and `help` show both | `file new`, `operator new`, `operator remove` | part `library` | 80 | E18 | core (the lead, 2026-10-03): the template is how a recipe starts |
 | [ ] | D16 | `node rename` (a primitive: it renames a section and every endpoint that names it), `node duplicate`, `file rename` (renames the file and its `shader` word in one group) | `node rename`, `node duplicate`, `file rename`, `file move` | engine (`node rename`); part `library` (the others) | 50 | B2, E18 | later |
 | [ ] | D17 | `recipe publish`: copy a view's recipe into the library, with a `view.vlp` for its nodes | `recipe save`, `recipe publish`, `recipe import` | part `library` | 50 | C2 | later |
 | [ ] | D18 | `tab split`, `tab merge`, `panel move`: tearing out tabs and dragging them between panels | `panel tab split`, `panel tab merge`, `panel move`, `panel place` | part `split` | 250 | D10 | later |
@@ -230,7 +230,7 @@ The ticked rows, in the order they would land. Each step needs only rows from ea
 | | 7 | C1 | deploys |
 | | 8 | B9, E12, D1, D12 | the terminal port and the command-line part, which the build compiles from the library |
 | | 9 | B8, E17, D7 | graph reads; `ls` and `info` |
-| | 10 | B7, C3, E18, C2, D4, D5, D6 | the file port, hosted views and the library part |
+| | 10 | B7, C3, E18, C2, D4, D5, D6, D15 | the file port, hosted views and the library part |
 | | 11 | G1 | the `cli` app. [Example 1](cli-examples.md#example-1-a-triangle) runs |
 | 2. Text in a window (about 1,095) | 12 | A1, A6 | the frame block and one blend mode |
 | | 13 | A2, A3, A4 | contracts on connections, CPU ends and counts per frame |
@@ -247,14 +247,14 @@ The ticked rows, in the order they would land. Each step needs only rows from ea
 | | 24 | E3, E13, F5 | curves and graph: the graph editor |
 | | 25 | G2 | the `ide` app |
 
-[Example 1](cli-examples.md#example-1-a-triangle) also needs D15 (`recipe new`), proposed for core at step 10. [Example 2](cli-examples.md#example-2-instanced-cubes-on-the-triangle) needs phase 1, A1 to A5 (steps 12 to 14) and A7 (step 22), plus three later rows: A9 (`mat4` values), A14 (depth) and D17 (`recipe publish`). It needs nothing else from phases 2 to 4, so it could run straight after phase 1 if those nine rows came next.
+[Example 1](cli-examples.md#example-1-a-triangle) also needs D15 (`recipe new`), which moved to core at step 10. [Example 2](cli-examples.md#example-2-instanced-cubes-on-the-triangle) needs phase 1, A1 to A5 (steps 12 to 14) and A7 (step 22), plus three later rows: A9 (`mat4` values), A14 (depth) and D17 (`recipe publish`). It needs nothing else from phases 2 to 4, so it could run straight after phase 1 if those nine rows came next.
 
 ## Decisions this needs (A00)
 
 - **D1, graph reads**: needed for B8 (step 9), and so for `inspect`, `graph` and `command-items`.
 - **D5, operator ends of a connection**: needed for A2 and A3 (step 13), and so for every part that hands Rects, Items or Labels to another operator.
 - **The `instance_count` word (V04)**: needed for A4 (step 13). `invocations` then counts one instance ([CLI examples](cli-examples.md#what-view-save-writes)).
-- **The recipe template and `recipe new` (D15)**: whether D15 moves to core, at step 10 with the `library` part ([CLI examples](cli-examples.md#a-recipe-file-shows-what-it-can-reach)).
+- **The recipe template and `recipe new` (D15)**: moved to core by the lead on 2026-10-03, and built at step 10 with the `library` part ([CLI examples](cli-examples.md#a-recipe-file-shows-what-it-can-reach)).
 - **The deploy word (V04)**: needed for C1 (step 7). The proposal is a `[deploy "<name>"]` section holding `recipe` and `param = <node>.<key>=<value>`, with ports reached as `<name>.<node>.<port>`. [Example 2](cli-examples.md#example-2-instanced-cubes-on-the-triangle) shows one. Built as proposed at step 7, for the lead to confirm before a library recipe uses it.
 - **How the CLI and the IDE address the project they host (C3)**: a command names the child it edits (`triangle: node add …`), and the command-line part adds that name, so a typed line needs none and every log line stands alone (V08). Built so at step 10, with `:` alone for the host.
 - **The recipe map**: it gains the `inspect` and `library` parts, and `graph-editor` ships without `relations` until E16 lands.

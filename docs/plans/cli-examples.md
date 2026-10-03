@@ -33,7 +33,7 @@ Anything else fails the build, naming the file, the include and the rule (A02). 
 
 ### A recipe file shows what it can reach
 
-`recipe new <name> <kind>` (D15) writes a recipe's first files from a template: its C++, and either a draw's pass block and shaders or a dispatch's shader. The template shows, in the file itself, all of the engine a recipe can reach, so no other page is needed first:
+`recipe new draw <name>` and `recipe new dispatch <name>` (D15) write a recipe's first files from a template: its C++, and either a draw's pass block and shaders or a dispatch's shader. The template shows, in the file itself, all of the engine a recipe can reach, so no other page is needed first:
 
 - **Three hooks.** `bind` runs at load and again after every swap (an on_init), `cook` every frame before the node's pass (on_cook), and `command` when a command the node registered runs (on_trigger). A key, a click or a typed line reaches a node as a command, or as input it reads in `cook` (V06), so no other hook is needed. A module swap destroys the operator and binds a new one ([live code](live-code.md#rules), rule 5).
 - **A menu, commented out.** The top of the class has one line per kind of handle a node can hold, with a few words on each. Each hook has one line per call it can make. Uncommenting a line uses it. The hooks start commented too, so the file compiles without warnings at every step. The lines a finished file does not use stay as its menu, as the triangle's do [below](#the-files).
@@ -44,7 +44,7 @@ Anything else fails the build, naming the file, the include and the rule (A02). 
 
 **GLSL.** A draw's pass block lists each kind of field, commented out, with the C++ call that fills it on the same line: a value, a buffer C++ writes, and an image (A5). A dispatch's also has a buffer C++ reads back. A field C++ does not fill is filled by a param or a connection, as its comment says. Each shader's `main` starts by writing defined values (GLSL02), with commented lines that read the pass block, the vertex or instance index, and the frame block (A1).
 
-The templates live in the `library` part, which registers `recipe new` (E18). They list what `runtime/Operator.h` and `baseclasses/GpuLayout.glsl` declare, so they change with those files in the same commit. D15 is a later row today. This page proposes it for core, at step 10 with the part.
+The templates live in the `library` part, which registers `recipe new` (E18) and opens them through the file port, so an edit to one reaches the next `recipe new`. They list what `runtime/Operator.h` and `baseclasses/GpuLayout.glsl` declare, so they change with those files in the same commit.
 
 ### The engine stubs these examples fill
 
@@ -73,20 +73,20 @@ It needs phase 1 of the [order](ide-port.md#order), steps 1 to 11, and `recipe n
 ```text
 $ ./run.sh src/recipes/apps/cli/view.vlp
 > view new src/examples/triangle
-triangle> recipe new triangle draw
-triangle>
+src/examples/triangle> recipe new draw triangle
+src/examples/triangle>
 ```
 
-The `cli` app runs headless, with a prompt on the terminal. `view new` hosts an empty view and saves its `view.vlp`, and from then on the prompt names the view that typed lines go to. `recipe new triangle draw` writes the template's four files into `src/examples/triangle/recipes/triangle/`, named for the recipe: `Triangle.cpp`, `Triangle.glsl`, `Triangle.vert` and `Triangle.frag`. They build at once, and do nothing yet.
+The `cli` app runs headless, with a prompt on the terminal. `view new` hosts an empty view and saves its `view.vlp`. From then on typed lines go to it, and the prompt shows its folder, as a shell shows the one it is in; the prompt shows only where a person types, so a piped script's output stays clean. `recipe new draw triangle` writes the template's four files into `src/examples/triangle/recipes/triangle/`, named for the recipe: `Triangle.cpp`, `Triangle.glsl`, `Triangle.vert` and `Triangle.frag`. They build at once, and do nothing yet.
 
 Next, the person opens them in any editor, uncomments the lines the triangle uses and writes the rest, as [below](#the-files). Each save builds, with no row to add to the include map. Then the node can be added:
 
 ```text
-triangle> node add triangle recipe=triangle operator=Triangle shader=Triangle.vert shader=Triangle.frag invocations=3
-triangle: the operator reads param speed, which the node does not set
-triangle> param set triangle speed 0.01
-triangle> info triangle
-triangle> view save
+src/examples/triangle> node add triangle recipe=triangle operator=Triangle shader=Triangle.vert shader=Triangle.frag invocations=3
+triangle/view.vlp node triangle: the operator reads param speed, which the node does not set
+src/examples/triangle> param set triangle speed 0.01
+src/examples/triangle> info triangle
+src/examples/triangle> view save
 ```
 
 - `node add` takes the manifest's own words (B2), and the schedule reruns without a restart. The loader finds a mistake at once and names it (A02). The node stays out until `param set` fixes it.
@@ -128,6 +128,7 @@ class Triangle final : public VP::Operator {
   float _speed = 0;
   // VP::Texture _atlas;           // an image C++ fills once
   // VP::Command _reset;           // a command the node answers
+  // VP::File _settings;           // a file the node reads, watches and saves
   // std::string _folder;          // where the recipe's own files are
   float _angle = 0;
 
@@ -139,6 +140,7 @@ class Triangle final : public VP::Operator {
     _speed = node.param<float>("speed");
     // _atlas = node.texture("atlas");
     // _reset = node.command("reset", "turns the node back to its start");
+    // _settings = node.file("settings.ini"); // in the recipe's folder
     // _folder = node.folder();
   }
 
@@ -163,8 +165,8 @@ class Triangle final : public VP::Operator {
     // for (const VP::Event &event : frame.input().events()) {}
     // for (const std::string_view line : frame.terminal().lines()) {}
     // frame.terminal().print("text");
-    // const std::string settings = frame.files().read(_folder + "/settings.ini");
-    // frame.files().save(_folder + "/settings.ini", "text");
+    // const std::string_view settings = frame.files().text(_settings);
+    // frame.files().save(_settings, "text");
     // const std::vector<std::string> names = frame.files().list(_folder);
     // const VP::View &view = frame.view(); // with #include "runtime/View.h"
   }
@@ -264,7 +266,7 @@ triangle: param set triangle speed 0.01
 triangle: view save
 ```
 
-The first two lines are one group: what `view new` expanded to. `child add` of a `view.vlp` not written yet hosts an empty view, which `view save` then writes, so the log replays from an empty folder. Every line is a primitive and names the view it edits, so `source` replays the log headless, with no recipe loaded (V08). The log keeps a `<file>` argument as the command port resolved it, an absolute path; it is shortened here. The file keeps no groups: `source` makes each line a group of its own, so undo after a replay steps back one command at a time. `recipe new` wrote files and edited no graph, so it left no line; a replay finds its files in the tree.
+The first two lines are one group: what `view new` expanded to. `child add` of a `view.vlp` not written yet hosts an empty view, which `view save` then writes, so the log replays from an empty folder. Every line is a primitive and names the view it edits, so `source` replays the log headless, with no recipe loaded (V08). A `<file>` argument is written from the log's own folder, where `source` resolves it, so a log moves with the files it names; this log was saved at the repo's root. The file keeps no groups: `source` makes each line a group of its own, so undo after a replay steps back one command at a time. `recipe new` wrote files and edited no graph, so it left no line; a replay finds its files in the tree.
 
 ### What the engine does with it
 
@@ -292,7 +294,7 @@ It needs nothing else from phases 2 to 4, so it could run straight after phase 1
 ### Publish the triangle
 
 ```text
-triangle> recipe publish triangle
+src/examples/triangle> recipe publish triangle
 ```
 
 This copies `src/examples/triangle/recipes/triangle/` to `src/recipes/parts/triangle/`, and writes the part's `view.vlp` from the node that runs it. A person adds the comment at the top:
@@ -316,20 +318,20 @@ The part runs its own node, so it can be dropped by itself: `recipe drop triangl
 ### The session
 
 ```text
-triangle> view new src/examples/cube-screen
-cube-screen> recipe drop triangle screen
-cube-screen> recipe new cubes draw
-cube-screen> node add layout recipe=cubes shader=Layout.comp invocations=64
-cube-screen> param set layout spacing 0.6
-cube-screen> node add cubes recipe=cubes operator=Cubes shader=Cubes.vert shader=Cubes.frag invocations=36 instance_count=offsets
-cube-screen> param set cubes speed 0.02
-cube-screen> connect offsets layout.offsets cubes.offsets
-cube-screen> connect picture cubes.color screen.triangle.picture
-cube-screen> view save
+src/examples/triangle> view new src/examples/cube-screen
+src/examples/cube-screen> recipe drop triangle screen
+src/examples/cube-screen> recipe new draw cubes
+src/examples/cube-screen> node add layout recipe=cubes shader=Layout.comp invocations=64
+src/examples/cube-screen> param set layout spacing 0.6
+src/examples/cube-screen> node add cubes recipe=cubes operator=Cubes shader=Cubes.vert shader=Cubes.frag invocations=36 instance_count=offsets
+src/examples/cube-screen> param set cubes speed 0.02
+src/examples/cube-screen> connect offsets layout.offsets cubes.offsets
+src/examples/cube-screen> connect picture cubes.color screen.triangle.picture
+src/examples/cube-screen> view save
 ```
 
 - **The drop.** `recipe drop triangle screen` copies the part into the view as `recipes/triangle/` (V03) and deploys it as `screen` (C1). The triangle runs at once, as in example 1.
-- **The new files.** `recipe new cubes draw` writes the draw's four files into `recipes/cubes/`, and `Layout.comp` is written beside them. The view's copy of the triangle is edited to show a picture, before the two `connect` lines. Until then, the loader names what is missing, and the rest of the view keeps running.
+- **The new files.** `recipe new draw cubes` writes the draw's four files into `recipes/cubes/`, and `Layout.comp` is written beside them. The view's copy of the triangle is edited to show a picture, before the two `connect` lines. Until then, the loader names what is missing, and the rest of the view keeps running.
 - **The counts.** `layout` runs one invocation per cube and writes one offset each. `cubes` draws 36 vertices per instance and one instance per offset, so 64 is written once.
 
 ### What `view save` writes
