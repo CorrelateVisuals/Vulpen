@@ -128,7 +128,7 @@ The engine registers only the primitive edits, the log, save and migrate, hostin
 | [x] | D1 | `help`, `complete`, `quit` | `help`, `complete`, `quit` | part `command-line` (`help`, `complete`); engine (`quit`) | in B1, E12 | B1, E12 | core |
 | [x] | D2 | `node add/remove/set`, `connect`, `disconnect`, `param set/unset` | `node new`, `node remove`, `node bind`, `wire connect`, `connect`, `wire disconnect`, `param set`, `param unset` | engine | in B2 | B2 | core |
 | [x] | D3 | `source`, `log save` | `source` | engine | in B3 | B3 | core |
-| [x] | D4 | `view new`, `view load`, `view save` | `view new`, `view load`, `view save`, `view close` | part `library` (`new`, `load`); engine (`save`) | 40 | B4, B7, C3 | core |
+| [x] | D4 | `view new <folder>`, `view load <folder>`, `view save`: new and load host the view in a folder, named for it | `view new`, `view load`, `view save`, `view close` | part `library` (`new`, `load`); engine (`save`) | 40 | B4, B7, C3 | core |
 | [x] | D5 | `recipe list`, `recipe drop` | `recipe list`, `recipe drop`, `lib operators` | part `library` | in C2 | C2 | core |
 | [x] | D6 | `child add/remove/list` | `child mount`, `child unmount`, `child list` | engine | in C3 | C3 | core |
 | [x] | D7 | `ls`, `info <node>`: nodes, params, connections, pass-block fields and errors | `ls`, `node info`, `param list`, `wire show`, `select find`, `present info` | part `inspect` | 80 | B8 | core |
@@ -180,7 +180,7 @@ Parts are the panels' building blocks, with the jobs the [recipe map](../archite
 | [x] | E9 | `hit` | finds the Rect under the pointer: a press sends its Item's command, and hovering names the Item | 133 + 521 | 70 | A3, B1, B6 | core |
 | [x] | E10 | `keys` | turns keymap chords into command text, and sends other keys to the focused part | 517 | 120 | B1, B6, B7 | core |
 | [x] | E11 | `text` | holds the buffer, caret, selection and scroll; opens, writes, closes and finds through the file port; writes Labels and Rects | 1,475 + 467 | 500 | A2, A3, B1, B5, B6, B7 | core |
-| [x] | E12 | `command-line` | one line with history and completion, sent to the command port and addressed to the view it is set to; registers `help`, `complete` and `clear`; on the terminal port it is the CLI, and in a window it reads the input port | 1,227 | 150 | B1, B5, B9 | core |
+| [x] | E12 | `command-line` | one line with history and completion, sent to the command port and addressed to the view hosted most recently, as `view new` and `view load` leave it, unless the line names one; registers `help`, `complete` and `clear`; on the terminal port it is the CLI, and in a window it reads the input port | 1,227 | 150 | B1, B5, B9 | core |
 | [x] | E13 | `graph` | nodes as Rects and Labels, connections as Curves, with pan and zoom; a drag sends a command | 882 + 669 + 2,087 | 510 | A2, A3, B1, B6, B8, E3 | core |
 | [x] | E14 | `modes` | chooses which node reaches the screen: `present`, `mode` | 332 | 50 | B1, B2, B5 | core |
 | [x] | E17 | `inspect` | reads the graph and registers `ls`, `info`, `schedule` and `probe watch` | 582 | in D7 | B5, B8 | core |
