@@ -1,36 +1,35 @@
 # Using Vulpen
 
-How each part of Vulpen works today, shown the way you use it. Each section has a session, a manifest or a recipe's code, with comments that say what happens, where it holds and what comes out. Every session and output here ran at `79c92d1` on 2026-10-03; the log's time column is left out, and long paths are shortened with `…`. Code marked as a sketch shows a call's shape, not a file in the tree. What is planned but not built yet is in the [IDE port](plans/ide-port.md) and the [CLI examples](plans/cli-examples.md).
+How each part of Vulpen works today, shown the way you use it. Each section has a session, a manifest or a node's code, with comments that say what happens, where it holds and what comes out. Every session and output here ran on 2026-10-03, on the tree after `9656e19` that makes every node a folder (RV08); the log's time column is left out, and long paths are shortened with `…`. Code marked as a sketch shows a call's shape, not a file in the tree. What is planned but not built yet is in the [IDE port](plans/ide-port.md) and the [CLI examples](plans/cli-examples.md); how nodes, folders and recipes came to be this way is in [nodes and folders](plans/nodes-and-folders.md).
 
 1. [Words](#1-words)
 2. [Running a view](#2-running-a-view)
 3. [The manifest](#3-the-manifest)
-4. [Recipes: C++ and GLSL](#4-recipes-c-and-glsl)
+4. [Nodes and folders: C++ and GLSL](#4-nodes-and-folders-c-and-glsl)
 5. [The GPU layout](#5-the-gpu-layout)
 6. [Live code](#6-live-code)
 7. [Commands](#7-commands)
 8. [Graph edits](#8-graph-edits)
 9. [Scripts and the log](#9-scripts-and-the-log)
 10. [Saving a view](#10-saving-a-view)
-11. [Deploys](#11-deploys)
+11. [Recipes: drop and sync](#11-recipes-drop-and-sync)
 12. [The CLI](#12-the-cli)
-13. [Hosted views](#13-hosted-views)
+13. [Child views](#13-child-views)
 14. [The library](#14-the-library)
-15. [What a recipe's C++ can reach](#15-what-a-recipes-c-can-reach)
+15. [What a node's C++ can reach](#15-what-a-nodes-c-can-reach)
 16. [When something is wrong](#16-when-something-is-wrong)
 
 ## 1. Words
 
 | Word | What it is | Where |
 | --- | --- | --- |
-| view | a project: a folder with a `view.vlp` and its own `recipes/`. It loads, runs and moves as a whole (V03) | `src/examples/<name>/` |
-| manifest | a view's `view.vlp`: its nodes, connections and deploys (V00) | `<view>/view.vlp` |
-| recipe | a folder of C++ and GLSL that nodes run | `<view>/recipes/<recipe>/` |
-| node | one `[node]` of a manifest: a recipe's C++ class, its shaders, or both | the manifest |
+| view | a project: a folder with a `view.vlp`, a folder for each node, and the views it hosts. It loads, runs and moves as a whole (V03) | `src/examples/<name>/` |
+| manifest | a view's `view.vlp`: its nodes and their files, its connections, and the views it hosts (V00) | `<view>/view.vlp` |
+| node | one `[node]` of a manifest and the folder its name names: a C++ class, shaders, or both, and the nodes inside it (RV08) | `<view>/<node>/` |
 | connection | one buffer: one node's port writes it, other nodes' ports read it | the manifest |
-| deploy | a recipe brought into a view under a name; its nodes become `<deploy>.<node>` | the manifest |
-| library | the recipes every view copies from: parts hold code; components and apps only deploy (RV06) | `src/recipes/{parts,components,apps}/` |
-| host, hosted view | the view vulpen started with hosts other views, which commands reach by name | `child add` |
+| recipe | a node of the library with the nodes inside it, which a drop copies into a view | `src/recipes/<kind>/<name>/` |
+| library | the recipes views copy from: parts hold code; components and apps only use other recipes (RV06) | `src/recipes/{parts,components,apps}/` |
+| child view | a view another view's manifest names, which runs on its own schedule; commands reach it by name | `[view "<name>"]` |
 | command | a line of text that does one thing; every action is one (V06) | the command port |
 | primitive | a command that edits or saves a view; the log keeps exactly these (V08) | the log |
 
@@ -50,7 +49,7 @@ How each part of Vulpen works today, shown the way you use it. Each section has 
 What it prints:
 
 ```text
-{run} vulpen 79c92d1                                                # the commit it was built from (RC07)
+{run} vulpen 9656e19                                                # the commit it was built from (RC07)
 {run} view wave from …/src/examples/wave/view.vlp: no node draws, so it runs headless   # V07
 {gpu} Vulkan validation is on
 {gpu} runs on NVIDIA GeForce RTX 5070 Laptop GPU: discrete, Vulkan 1.4.312
@@ -78,18 +77,18 @@ A view's `view.vlp` is the graph, in a few words with closed sets of values (V04
 [manifest]
 version = 1                 # every manifest states its version; this build reads 1 (RV03)
 
-[node "wave"]               # a node, by a name that is unique in the view
-recipe      = wave          # its recipe: the folder recipes/wave/ of this view (V03)
-operator    = Wave          # the C++ class that recipe registers; leave it out for a shader alone
-shader      = Wave.comp     # one .comp makes a dispatch; a .vert and a .frag make a draw
-invocations = 1024          # a dispatch's threads, or a draw's vertices per instance
+[node "wave"]               # a node, by a name unique in the view; its folder is wave/ (RV08)
+operator    = Wave          # the C++ class wave/Wave.cpp registers; leave it out for shaders alone
+file        = Wave.comp     # the files in wave/: a .comp makes a dispatch, a .vert and a .frag a draw
+file        = Wave.cpp
+invocations = 1024          # a dispatch's threads
 param       = amplitude=1.0 # a value the shader's pass block or the C++ reads, by name
 param       = speed=0.02
 
 [node "probe"]
-recipe      = probe
 operator    = Probe
-shader      = Probe.comp
+file        = Probe.comp
+file        = Probe.cpp
 invocations = 8
 param       = step=128
 param       = every=60
@@ -100,31 +99,35 @@ from = wave.values          # the node.port that writes it
 to   = probe.values         # the node.port that reads it; repeat `to` for more readers
 ```
 
-- **The words.** `[node]` takes `recipe`, `operator`, `shader`, `invocations`, `instance_count`, `param` and `log`; `[connection]` takes `from` and `to`; `[deploy]` takes `recipe` and `param` (section 11). `instance_count = 64` makes a draw draw 64 instances; left out, it draws one.
+- **The words.** `[node]` takes `recipe`, `operator`, `file`, `invocations`, `vertex_count`, `instance_count`, `param` and `log`; `[connection]` takes `from` and `to`; `[view]` takes `file` (section 13). A dispatch counts its `invocations`; a draw counts its `vertex_count`, and `instance_count = 64` draws 64 instances, one when left out (VK04: `vkCmdDraw(vertexCount, instanceCount, …)`). `recipe` names where a dropped node came from (section 11).
+- **The folder decides a node's files.** The `file` lines list what the node's folder holds, and vulpen keeps them so: a file put in `wave/` is one of the node's at the next load, edit or live scan, one taken out is no longer, and `view save` writes the list. A command never names a file. A folder that no node names is a warning at load, since every folder is a node.
 - **Loading runs edits.** Each section goes through the same edits a command makes (section 8), so a loaded view and a typed one pass the same checks.
 - **Order.** Nodes run writers before readers, as the connections order them, then in the manifest's order.
 - **A mistake names its line** and stops the load (A02):
 
   ```text
-  {!!!} wave/view.vlp:19: unknown word invocatons in a node; its words are recipe, operator, shader, invocations, instance_count, param and log
+  {!!!} …/wave/view.vlp:11: unknown word invocatons in a node; its words are recipe, operator, file, invocations, vertex_count, instance_count, param and log
   ```
 
 - **Comments stay.** `view save` writes the manifest back with the comments a person wrote (section 10).
-- **Where:** `src/runtime/Manifest.cpp` reads and writes it; `src/runtime/Edits.cpp` checks each word.
+- **Where:** `src/runtime/Manifest.cpp` reads and writes it, and keeps each node's files; `src/runtime/Edits.cpp` checks each word.
 
-## 4. Recipes: C++ and GLSL
+## 4. Nodes and folders: C++ and GLSL
 
-A recipe is a folder; a node names it and picks a class and shaders from it. The triangle, whose C++ moves the corners and whose shaders draw them:
+A node is the folder its name names (RV08), and its files are what that folder holds. The triangle, whose C++ moves the corners and whose shaders draw them:
 
 ```text
 src/examples/triangle/
-  view.vlp                # [node "triangle"] recipe = triangle, operator = Triangle, shaders below
-  recipes/triangle/
+  view.vlp                # [node "triangle"]: operator = Triangle, its four files, vertex_count = 3
+  triangle/               # the node's folder
     Triangle.cpp          # the operator: C++ that runs every frame
     Triangle.glsl         # the pass block both shaders include
     Triangle.vert         # the vertex shader
     Triangle.frag         # the fragment shader
 ```
+
+- **Nodes inside nodes.** `[node "ui.panel"]` is the folder `ui/panel/`, beside the files of `ui` itself in `ui/`, and its port `rects` is `ui.panel.rects`. Every node has a section, a group too: `[node "ui"]` with no words runs nothing and holds the nodes inside it, and its log level reaches them (V09).
+- **No two nodes share a folder**, so two nodes running one class each hold a copy of it, as two drops of a recipe do (section 11).
 
 The pass block is what C++ and the shaders share, by name:
 
@@ -158,27 +161,39 @@ class Triangle final : public VP::Operator {   // in an unnamed namespace, so co
 
   // Every frame, before the node's pass.
   void cook(VP::Cook &frame) override {
-    const std::span<glm::vec2> corners = frame.write(_corners); // one per invocation
+    const std::span<glm::vec2> corners = frame.write(_corners); // one per vertex
     // … fill the corners, then:
     frame.set(_tint, glm::vec4(1, 0, 0, 1));
   }
 };
 
-VP_RECIPE(registry) {
+VP_OPERATORS(registry) {                       // once in the folder: its module's operators
   registry.add<Triangle>("Triangle");          // the name `operator = Triangle` uses
 }
 ```
+
+Data moves by different routes, told apart by who writes it and how much there is, not by how often they fire:
+
+| From, to | How | In the examples |
+| --- | --- | --- |
+| you, a shader | a param named like a pass-block field: the engine writes it at load and after each edit, with no C++ | wave's `amplitude` |
+| you, C++ | `node.param<T>`, parsed in `bind`, which runs again after an edit | the triangle's `speed` |
+| C++, a shader, one value | `node.value<T>`, set with `frame.set` in `cook`, each frame | the triangle's `tint` |
+| C++, a shader, one per invocation | `node.upload<T>`, filled through `frame.write` in `cook`; it holds until written again | the triangle's `corners` |
+| a shader, C++ | `node.readback<T>`, read a frame after the GPU wrote it | the probe's `samples` |
+| a shader, a shader | a connection, which never leaves the GPU (VK03) | `wave.values` to `probe.values` |
+| the engine, both | the frame block for shaders (section 5), `frame.index()` for C++ | `frame.resolution` |
 
 - **The names meet at load, not at compile time.** The loader reads each shader's SPIR-V (reflection, RA03) and checks every request of `bind` against it, and every param and pass-block field against the node. Nothing is looked up during a frame.
 - **A mismatch leaves the node out**, naming why; the rest of the view runs:
 
   ```text
-  {!!!} triangle/view.vlp node triangle: the operator reads param speed, which the node does not set
+  {!!!} triangle/view.vlp:10 node triangle: the operator reads param speed, which the node does not set
   ```
 
-- **The handles.** `Value<T>` is a pass-block value C++ sets each frame; `Upload<T>` a buffer C++ writes; `Readback<T>` a buffer a shader wrote, which C++ reads a frame later; `param<T>` a param parsed to `T`. `T` is `float`, `int`, `uint` or a glm vector of them, compared with the GLSL type.
-- **The build** compiles each recipe folder: shaders to SPIR-V, C++ to one module per recipe in debug builds, or into `vulpen` in release. They land under `out/build/<preset>/views/<view>/recipes/<recipe>/`.
-- **Where:** `src/runtime/Operator.h` is all a recipe's C++ includes (section 15); `src/runtime/Schedule.cpp` loads and checks; `src/runtime/cmake/recipe.cmake` builds.
+- **The handles.** `T` is `float`, `int`, `uint` or a glm vector of them, compared with the GLSL type.
+- **The build** compiles each node's folder: its shaders to SPIR-V, and its `.cpp` files to one module in debug builds, or into `vulpen` in release. They land under `out/build/<preset>/views/<view>/<the node's folder>/`. One file of the folder registers its operators with `VP_OPERATORS`.
+- **Where:** `src/runtime/Operator.h` is all a node's C++ includes (section 15); `src/runtime/Schedule.cpp` loads and checks; `src/runtime/cmake/nodes.cmake` builds.
 
 ## 5. The GPU layout
 
@@ -194,7 +209,7 @@ layout(buffer_reference, std430) writeonly buffer FloatsOut { float at[]; }; // 
 layout(buffer_reference, std430) readonly buffer FrameBlock {
   uvec2 resolution; // of the window in pixels; zero without one
   vec2 cursor;      // in pixels; zero until the input port feeds it
-  float time;       // seconds, from the frame index at the run's rate (see decision 3)
+  float time;       // seconds, from the frame index at the run's rate
   uint index;       // the frame, as the node's C++ counts it
 };
 layout(push_constant) uniform Push { FrameBlock frame; };
@@ -213,12 +228,12 @@ void main() {
 
 ```ini
 [node "triangle"]
-invocations    = 3      # vertices of one triangle
+vertex_count   = 3      # vertices of one triangle
 instance_count = 4      # four triangles in one draw
 ```
 
 - **Barriers** follow from the qualifiers: a pass waits for what an earlier pass wrote, with no barrier placed by hand.
-- **Memory** follows from who uses a buffer: one C++ writes or reads back lives where the CPU maps it; any other stays on the GPU (VK03). A buffer holds one element per invocation of its writer, and starts zeroed.
+- **Memory** follows from who uses a buffer: one C++ writes or reads back lives where the CPU maps it; any other stays on the GPU (VK03). A buffer holds one element per invocation of its writer, a dispatch's thread or a draw's vertex, and starts zeroed.
 - **Draws** run after the dispatches, in graph order, into the window, each blended premultiplied over what came before: an opaque color covers, and alpha lets what is behind show.
 - **The frame block** is written once a frame, after the window's image is acquired, so a resized window's size shows at once. Its layout comes from reflection, and a shader whose push constant is anything else is refused.
 - **Where:** `src/baseclasses/GpuLayout.glsl`; `src/baseclasses/Pipelines.cpp` reflects and owns the frame block; `src/baseclasses/Engine.cpp` records the frame.
@@ -231,18 +246,18 @@ In a debug build, saving any file of a running view swaps the change in, and the
 $ ./run.sh src/examples/wave/view.vlp --log info
 {mod} live code: a save under …/src/examples/wave swaps in
 {out} probe: frame    120: +0.7930336 +0.7200354 +0.637223 …
-# Save recipes/wave/Wave.comp in any editor:
+# Save wave/Wave.comp in any editor:
 {nod} wave: pipeline from Wave.comp                       # a new pipeline; the buffers stay
 {mod} built in 0.32 s and swapped
 {out} probe: frame    180: -0.2531812 -0.36209437 …       # the wave goes on where it was
-# Save recipes/wave/Wave.cpp:
-{nod} wave: new operator Wave                             # the module is reloaded
+# Save wave/Wave.cpp:
+{nod} wave: new operator Wave                             # the folder's module is reloaded
 {mod} built in 0.65 s and swapped; new modules: wave/wave
-{out} probe: frame    420: +0.9234959 +0.8781266 …        # its phase follows the frame index
+{out} probe: frame    240: -0.97651756 -0.98245066 …      # its phase follows the frame index
 ```
 
-- **How.** The runtime scans the views' folders every 100 ms; a change seen twice runs the build on a thread, so the frame never waits. Between frames, it unloads the modules the build rewrote, reads the manifest again if it changed on disk, and rebuilds.
-- **What stays:** pipelines of unchanged SPIR-V, buffers of unchanged shape with their contents, operators of recipes whose module stayed, and the edits typed since the manifest was read.
+- **How.** The runtime scans the views' folders every 100 ms; a change seen twice runs the build on a thread, so the frame never waits. Between frames, it unloads the modules the build rewrote, reads the manifest again if it changed on disk, takes each node's files from its folder, and rebuilds.
+- **What stays:** pipelines of unchanged SPIR-V, buffers of unchanged shape with their contents, operators whose folder's module stayed, and the edits typed since the manifest was read.
 - **What resets:** a swapped module's operators start over, so state that must survive belongs in params or GPU buffers.
 - **A failed build swaps nothing**, and its compiler output is logged; a manifest that does not load keeps the running graph.
 - **Where:** debug preset only; `src/runtime/Runtime.cpp` (`Live`, `swap`); the plan is [live code](plans/live-code.md).
@@ -252,47 +267,46 @@ $ ./run.sh src/examples/wave/view.vlp --log info
 Every action is a command: a line of text through one port (V06). A command registers with its usage and help, or not at all (RV04). The CLI app lists them with `help`:
 
 ```text
-quit                             ends the run before its next frame
-source <file>                    runs a file's commands, one a line, and stops at the first that fails
-log save <file>                  writes the session's edits to a file, which source replays
-help                             lists every command, with its usage and what it does
-complete <value>...              lists the words that may come next, the last word given being the start of one
-clear                            clears the terminal
-ls                               lists the view's deploys, nodes and connections
-info <node>                      shows a node's words, and the connections it writes and reads
-recipe list                      lists the library's recipes, by kind
-recipe new draw <name>           writes a draw's first files into the view's recipes from the template: its C++, its pass block and its two shaders
-recipe new dispatch <name>       writes a dispatch's first files into the view's recipes from the template: its C++ and its compute shader
-recipe drop <recipe> <name>      copies a library recipe into the view, with the recipes it deploys and the contracts they include, and deploys it
-view new <file>                  hosts a new, empty view in a folder, and saves its view.vlp
-view load <file>                 hosts the view in a folder's view.vlp
-view save                        writes the view over its manifest, keeping the comments in it
-child add <name> <file>          hosts the view a view.vlp holds, or an empty one that view save writes; a line `<name>: <command>` addresses it
-child remove <name>              stops hosting a view; its files stay
-child list                       lists the hosted views, with their files, in the order added
-node add <name> <word=value>...  adds a node, given the manifest's node words
-node remove <node>               removes a node that no connection names
-node set <node> <word=value>...  gives a node the words named, clearing those given empty; shader and param words replace them all
-connect <name> <port> <port>...  joins the port that writes a buffer to the ports that read it
-disconnect <connection>          removes a connection
-param set <node> <key> <value>   sets a param of a node
-param unset <node> <key>         removes a param of a node
-deploy add <name> <recipe>       deploys a recipe of the view under a name: its nodes, as <name>.<node>
-deploy remove <deploy>           removes a deploy that no connection names
+quit                               ends the run before its next frame
+source <file>                      runs a file's commands, one a line, and stops at the first that fails
+log save <file>                    writes the session's edits to a file, which source replays
+help                               lists every command, with its usage and what it does
+complete <value>...                lists the words that may come next, the last word given being the start of one
+clear                              clears the terminal
+ls                                 lists the views the view hosts, its nodes and its connections
+info <node>                        shows a node's words, and the connections it writes and reads
+recipe list                        lists the library's recipes, by kind
+node new draw <name>               adds a draw node, and writes its first files from the template into its folder: …
+node new dispatch <name>           adds a dispatch node, and writes its first files from the template into its folder: …
+recipe drop <recipe> <name>        copies a library recipe into the view as a node of that name, with the nodes inside it …
+recipe sync <node>                 brings a dropped recipe up to the library's, while what it copied is unchanged; …
+view new <file>                    hosts a new, empty view in a folder, and saves its view.vlp
+view load <file>                   hosts the view in a folder's view.vlp
+view save                          writes the view over its manifest, keeping the comments in it
+child list                         lists the hosted views, with their files, in the order hosted
+node add <name> [<word=value>...]  adds a node, given the manifest's node words; its files are what its folder holds
+node remove <node>                 removes a node that no connection names and no node is inside; its folder stays
+node set <node> <word=value>...    gives a node the words named, clearing those given empty; param words replace them all
+connect <name> <port> <port>...    joins the port that writes a buffer to the ports that read it
+disconnect <connection>            removes a connection
+param set <node> <key> <value>     sets a param of a node
+param unset <node> <key>           removes a param of a node
+child add <name> <file>            hosts the view a view.vlp holds, or an empty one that view save writes; …
+child remove <name>                stops hosting a view; its files stay
 ```
 
-- **Who registers them.** The engine registers the edits, the log, save, hosting and `quit`; every other command is a recipe's: `help`, `complete` and `clear` are the command-line part's, `ls` and `info` the inspect part's, and `recipe …` and `view new`/`view load` the library part's (V05).
-- **A usage is its completion.** Its placeholders say what can come there, so `complete` knows:
+- **Who registers them.** The engine registers the edits, the log, save, `child list` and `quit`; every other command is a node's: `help`, `complete` and `clear` are the command-line part's, `ls` and `info` the inspect part's, and `recipe …`, `node new …` and `view new`/`view load` the library part's (V05).
+- **A usage is its completion.** Its placeholders say what can come there, so `complete` knows. The last may end in `...`, one argument or more, and stand in brackets, which a line may leave out: `node add ui` adds a group.
 
   ```text
-  > complete recipe new d     # the word after `recipe new` that starts with d
+  > complete node new d       # the word after `node new` that starts with d
   dispatch
   draw
   > complete param set s      # a <node> comes next: the view's nodes starting with s
   spinner
   ```
 
-- **A line may name the view it addresses** as `<name>: <command>`, and `:` alone names the host (section 13).
+- **A line may name the view it addresses** as `<name>: <command>`, and `:` alone names the one vulpen started with (section 13).
 - **A `<file>` argument arrives resolved:** beside the script that runs the line, or from where vulpen started for a typed line (section 12).
 - **Where:** `src/runtime/Commands.cpp`.
 
@@ -302,23 +316,25 @@ The primitives that change a view are the manifest's own words as commands. Each
 
 ```text
 # edits.txt, run on a copy of the wave example: ./run.sh wave/view.vlp --source edits.txt
-node add probe2 recipe=probe operator=Probe shader=Probe.comp invocations=8 param=step=128 param=every=60
 disconnect values                                         # values had one reader, probe
-connect values wave.values probe.values probe2.values     # now two: one buffer, read twice
-param set probe2 every 30                                 # a param of a node
-node set probe2 log=info                                  # the words named; empty clears one
+node remove probe                                         # out of the graph; probe/ stays
+node add probe operator=Probe invocations=8 param=step=128 param=every=60   # its files: probe/'s
+connect values wave.values probe.values                   # one buffer; more ports may read it
+param set probe every 30                                  # a param of a node
+node set probe log=info                                   # the words named; empty clears one
 view save                                                 # section 10
 log save session.log                                      # section 9
-node remove probe2                                        # refused: values still names it
+node remove wave                                          # refused: values still names it
 ```
 
 ```text
-{!!!} edits.txt:8: node probe2 is connected through values; disconnect it first
+{!!!} …/edits.txt:9: node wave is connected through values; disconnect it first
 ```
 
-The first seven lines applied, and the saved view now holds `[node "probe2"]` and `to = probe2.values`; line 8 stopped the script, and the run with it.
+The first eight lines applied, and the saved view now holds `param = every=30`, the probe's files listed as they were; line 9 stopped the script, and the run with it.
 
-- **What happens.** An edit that breaks the view's shape is refused at once, naming why, and changes nothing: a name used twice, a port in two connections, a connection that would close a cycle. A node whose shaders or C++ disagree is left out at the rebuild, naming its line; the rest runs.
+- **What happens.** An edit that breaks the view's shape is refused at once, naming why, and changes nothing: a name used twice, a port in two connections, a connection that would close a cycle, a node inside no node, a file named by a command. A node whose shaders or C++ disagree is left out at the rebuild, naming its line; the rest runs.
+- **Files stay.** No edit writes or deletes a file: `node remove` leaves the folder, and `node add` takes the files its folder holds.
 - **The window follows.** An edit that adds the first draw opens the window before the rebuild, and one that removes the last closes it:
 
   ```text
@@ -332,7 +348,7 @@ The first seven lines applied, and the saved view now holds `[node "probe2"]` an
   {!!!} spare.txt:1 node wave: param spare: nothing reads it
   ```
 
-- **Other edits:** `param unset <node> <key>` removes a param, and `deploy add` and `deploy remove` change deploys (section 11).
+- **Other edits:** `param unset <node> <key>` removes a param, and `child add` and `child remove` change the views a view hosts (section 13).
 
 - **Where:** `src/runtime/Edits.cpp`; `src/runtime/Views.cpp` keeps the edited view until the rebuild.
 
@@ -348,11 +364,12 @@ The script of section 8 saved this log beside itself, since a relative path in a
 
 ```text
 # session.log: the primitives only, one a line, as typed
-node add probe2 recipe=probe operator=Probe shader=Probe.comp invocations=8 param=step=128 param=every=60
 disconnect values
-connect values wave.values probe.values probe2.values
-param set probe2 every 30
-node set probe2 log=info
+node remove probe
+node add probe operator=Probe invocations=8 param=step=128 param=every=60
+connect values wave.values probe.values
+param set probe every 30
+node set probe log=info
 view save
 ```
 
@@ -361,7 +378,7 @@ view save
 ```
 
 - **`source <file>`** runs a script from inside another, or from a typed line.
-
+- **Files are not commands.** A log rebuilds the graph; the files its nodes hold must be in their folders, as a copy of the view brings them (V03).
 - **Groups.** Each typed or sourced line is a group with the primitives it ran, so a future undo steps back one line at a time. The saved log is flat.
 - **Files in a log are named from the log's own folder**, where `source` resolves them, so a log moves with the files it names:
 
@@ -369,7 +386,7 @@ view save
   # notes.log, saved at the repo's root while a project was hosted
   child add zz-demo src/examples/zz-demo/view.vlp
   zz-demo: view save
-  zz-demo: node add spinner recipe=spinner operator=Spinner shader=Spinner.vert shader=Spinner.frag invocations=3
+  zz-demo: node add spinner operator=Spinner vertex_count=3
   ```
 
 - **A failing line stops the script**, naming the file and line, and nothing after it runs:
@@ -384,85 +401,85 @@ view save
 
 `view save` writes the view over its `view.vlp`, through a temp file and a rename, so a killed run leaves the old file or the new one (RA04).
 
-- **What it writes:** `[manifest]`, then the deploys, nodes and connections in the view's order, keys aligned. A comment a person wrote stays over the line it was written over, and goes with a node that is removed.
+- **What it writes:** `[manifest]`, then the views it hosts, the nodes with the files their folders hold, and the connections, in the view's order, keys aligned. A comment a person wrote stays over the line it was written over, and goes with a node that is removed.
 - **It refuses a file that changed on disk** since vulpen read or saved it, naming the file, since saving would lose that change.
 - **Hosted views** save their own file: `zz-demo: view save`.
 - **Where:** `src/runtime/Manifest.cpp` (`Manifest::save`), `src/baseclasses/Platform.cpp` (`Files::save`).
 
-## 11. Deploys
+## 11. Recipes: drop and sync
 
-A view deploys a recipe of its own copies under a name; the loader unfolds it into nodes named `<deploy>.<node>`. Two views of the test fixture:
-
-```ini
-# recipes/fill/view.vlp: the recipe's own manifest
-[manifest]
-version = 1
-
-[node "fill"]
-recipe      = fill
-shader      = Fill.comp
-invocations = 64
-param       = amount=1
-```
-
-```ini
-# view.vlp: deploys fill as a, and reads what it writes
-[manifest]
-version = 1
-
-[deploy "a"]
-recipe = fill               # recipes/fill/, whose view.vlp gives the nodes
-param  = fill.amount=2      # the recipe's node fill gets amount=2 in place of 1
-
-[node "sum"]
-recipe      = connect
-shader      = Sum.comp
-invocations = 64
-
-[connection "values"]
-from = a.fill.values        # a deployed node's port: <deploy>.<node>.<port>
-to   = sum.values
-```
-
-Reading and changing it from the CLI:
+A recipe is a node of the library, with the nodes inside it. A drop copies it into the view as a node under the name you give, and the copy is yours: every edit works, as if you had typed it (V02).
 
 ```text
-> ls
-deploy a of recipe fill
-node sum of recipe connect
-connection values from a.fill.values to sum.values
-> info a.fill
-comes from deploy a, of recipe fill
-param = amount=2
-> param set a.fill amount 3          # changes the deploy's params; a save writes it there
-> node set a.fill invocations=128
-{!!!} node a.fill comes from deploy a: param set and unset change its params, and its recipe's view.vlp the rest
+src/examples/zz-demo> recipe drop inspect look
+copied inspect into …/src/examples/zz-demo/look, as node look of recipe inspect@abb3239c
+src/examples/zz-demo> info look
+recipe = inspect@abb3239c          # where it came from, and a fingerprint of what was copied
+operator = Inspect
+file = Inspect.cpp                 # copied into look/, which the live build compiles
 ```
 
-- **Recipes deploy recipes.** A component's `view.vlp` deploys parts, an app's deploys components and parts, and never in a cycle (RV06). The unfolded view is what the schedule runs; the view as written is what edits and saves change.
-- **A recipe of the library runs as a view.** `vulpen src/recipes/apps/cli/view.vlp` loads it as the view `library`, finding its deploys in the library's kind folders. That is how the CLI runs.
-- **Where:** `src/runtime/Manifest.cpp` (`Manifest::flatten`).
+- **What a drop copies:** the recipe's files into the node's folder, the recipes it uses into the folders of the nodes inside it, and the contracts their files include into the view's `contracts/` (RV05). A contract the view has already stays as it is.
+- **Nothing links back.** A later edit of the library reaches the copy only through `recipe sync` (V03).
+
+`recipe sync <node>` brings a drop up to the library's version while what it copied is unchanged:
+
+| | Counts as a change | A sync keeps it |
+| --- | --- | --- |
+| the files of the node's folder, and of the nodes inside it | yes | — |
+| the nodes' operators, counts, and the connections between them | yes | — |
+| a param's value | no | yes, while the library's version has the param; one it let go goes, and the sync names it |
+| `log`, and connections to the rest of the view | no | yes |
+
+```text
+# a project holding d, a drop of a component c of two parts, after the library changed a part:
+recipe sync d
+synced node d with the library's c: a8fbfa6e is now b6454ca3
+recipe sync d
+node d is as the library's c is
+# after an edit of d/a/a.ini, and another change in the library:
+recipe sync d
+{!!!} node d changed since it was dropped from c, and a sync would lose that; drop c beside it to take the library's, and make the change there again
+```
+
+- **Refused, too:** a sync the library's version would take a connection from: one from the rest of the view to a node the library let go.
+- **The fingerprint** hashes what was copied, as FNV-1a over 64 bits folded to 32, so it is the same on every machine (C01).
+
+In the library, a recipe uses others as they are, which keeps one copy of each part's code (V11). The CLI app is three parts used that way:
+
+```ini
+# src/recipes/apps/cli/view.vlp
+[node "cli"]                 # the recipe's own node: apps/cli/
+
+[node "cli.command-line"]
+recipe = command-line        # no fingerprint: the library's own part, unfolded at load
+```
+
+- **A recipe is one node named like its folder**, and the nodes inside it; a node that uses it becomes that node, under its own name, and takes `param` and `log` only. Uses never form a cycle (RV06).
+- **Only the library uses recipes so.** A view holds its own copies (V03), so a view's node that names a recipe without a fingerprint is refused, naming the drop that copies it.
+- **Where:** `src/recipes/parts/library/Library.cpp` (drop and sync); `src/runtime/Manifest.cpp` (`Manifest::flatten` unfolds a recipe the library uses).
 
 ## 12. The CLI
 
-The `cli` app is three library parts deployed together: `command-line` (a line in, an answer out), `inspect` (`ls`, `info`) and `library` (recipes and views). It runs headless on the terminal.
+The `cli` app is three library parts used together: `command-line` (a line in, an answer out), `inspect` (`ls`, `info`) and `library` (recipes, nodes and views). It runs headless on the terminal.
 
 ```text
 $ ./run.sh src/recipes/apps/cli/view.vlp
 > view new src/examples/zz-demo          # hosts an empty project and saves its view.vlp
-src/examples/zz-demo> recipe new draw spinner
-wrote Spinner.cpp, Spinner.glsl, Spinner.vert, Spinner.frag in …/src/examples/zz-demo/recipes/spinner
-src/examples/zz-demo> node add spinner recipe=spinner operator=Spinner shader=Spinner.vert shader=Spinner.frag invocations=3
+src/examples/zz-demo> node new draw spinner
+wrote Spinner.cpp, Spinner.glsl, Spinner.vert, Spinner.frag in …/src/examples/zz-demo/spinner, and added node spinner
 src/examples/zz-demo> ls                 # this line went to zz-demo: the prompt says where you are
-node spinner of recipe spinner
+node spinner
 src/examples/zz-demo> : ls               # `:` sends a line to the CLI itself
-deploy command-line of recipe command-line
-deploy inspect of recipe inspect
-deploy library of recipe library
+view zz-demo from …/src/examples/zz-demo/view.vlp
+node cli
+node cli.command-line of recipe command-line
+node cli.inspect of recipe inspect
+node cli.library of recipe library
 src/examples/zz-demo> view save
 src/examples/zz-demo> child remove zz-demo
 > ls                                     # no project now: lines go to the CLI itself
-deploy command-line of recipe command-line
+node cli
 …
 >                                        # ctrl-D ends the input, and the run
 ```
@@ -470,6 +487,7 @@ deploy command-line of recipe command-line
 - **The prompt** shows the folder of the project your lines go to, from where you started vulpen, as a shell shows its folder; `>` alone means the CLI itself. It shows only when you type at a terminal, so a piped script's output stays clean.
 - **Lines go to the newest project.** `view new` and `view load` host a project and make it the one lines go to; `child remove` falls back to the one before, or the CLI. The CLI sends `zz-demo: ls` for your `ls`, so every log line names its view.
 - **`name: …`** sends one line to another hosted project, and **`: …`** to the CLI itself.
+- **A new node builds at once.** In a debug build, the live build compiles `spinner/` a moment after `node new` wrote it, and swaps it in; until then the node is left out, naming the module it waits for (section 16).
 
 **Decision 2 of the 2026-10-03 handoff: where a path you type points.** A relative path in a typed line counts from where you started vulpen, which is also what the prompt's path counts from:
 
@@ -496,22 +514,32 @@ The first keeps every typed path meaning one thing wherever you are, and matches
 
 - **Where:** `src/recipes/apps/cli/view.vlp`; `src/recipes/parts/command-line/CommandLine.cpp`.
 
-## 13. Hosted views
+## 13. Child views
 
-The view vulpen started with can host other views; each runs with its own schedule, and commands reach it by name (V03). Hosting is session state: the log keeps it, the host's manifest does not.
+A view's manifest names the views it hosts (V03). Each runs with its own schedule, and commands reach it by name:
 
-```text
-child add w src/examples/wave/view.vlp     # hosts the wave example as w
-w: param set wave amplitude 0.5            # a line for w
-w: info wave                               # w's view, as the edits left it
-child list                                 # the hosted views, in the order added
-w …/src/examples/wave/view.vlp
-child remove w                             # gone before the next frame; its files stay
+```ini
+# host/view.vlp
+[manifest]
+version = 1
+
+[view "w"]
+file = ../wave/view.vlp      # left out, w/view.vlp beside this manifest
 ```
 
-- **Each frame** cooks the host, then the hosted views in the order added, and runs all their passes. The window opens while a node of any view draws.
+```text
+$ ./run.sh host/view.vlp --source host/lines.txt --frames 61 --log info
+# lines.txt: w: param set wave amplitude 0.5, then child list
+w …/wave/view.vlp                          # child list: the hosted views, in the order hosted
+{run} child w: hosted from …/wave/view.vlp
+{out} probe: frame     60: +0.4141257 +0.442029 …   # half the wave of section 2
+```
+
+- **Hosting follows the manifest.** Loading a view hosts the views it names; `child add` and `child remove` are edits of the view a line addresses, which `view save` writes, and the log keeps. A child's own `[view]` sections host views in turn, and removing a child takes them along.
+- **`child remove <name>` reaches the view that hosts the child** from wherever the line goes, so `child remove zz-demo` typed in zz-demo closes it.
+- **Each frame** cooks the host, then the hosted views in the order hosted, and runs all their passes. The window opens while a node of any view draws.
 - **A view whose `view.vlp` does not exist yet** starts empty, and its `view save` writes it, folder included: so a log can rebuild a project from nothing.
-- **Two views whose folders share a name are refused**, since the build tree mirrors each view by its folder's name.
+- **No two hosted views share a name**, since a line addresses one by it; nor two views' folders, since the build tree mirrors each view by its folder's name.
 - **The live scan** watches every hosted view's folder, so saving a project's file swaps it in.
 - **A line a command sends** goes to the same view as the line that ran it, unless it names one; a script's lines each stand alone.
 - **Where:** `src/runtime/Views.cpp`.
@@ -533,71 +561,62 @@ parts/inspect
 …
 ```
 
-**`recipe new draw <name>` and `recipe new dispatch <name>`** write a recipe's first files into the current project's `recipes/<name>/`, from the template in `src/recipes/parts/library/template/`. The class takes the name in CamelCase, and the node its own name. They build at once and do nothing yet; every line the engine offers waits in them, commented.
+**`node new draw <name>` and `node new dispatch <name>`** write a node's first files into its folder in the current project, from the template in `src/recipes/parts/library/template/`, and add the node: a draw of `vertex_count = 3`, or a dispatch of `invocations = 64`. The class takes the name in CamelCase, and a name may hold the nodes it is inside: `node new draw ui.spinner` writes `ui/spinner/`. The files build at once and do nothing yet; every line the engine offers waits in them, commented. The template's own files end in `.in`, so the library never builds them.
 
 ```text
-src/examples/zz-demo> recipe new draw spinner
-wrote Spinner.cpp, Spinner.glsl, Spinner.vert, Spinner.frag in …/zz-demo/recipes/spinner
-src/examples/zz-demo> recipe new dispatch fill
-wrote Fill.cpp, Fill.comp in …/zz-demo/recipes/fill
+src/examples/zz-demo> node new draw spinner
+wrote Spinner.cpp, Spinner.glsl, Spinner.vert, Spinner.frag in …/zz-demo/spinner, and added node spinner
+src/examples/zz-demo> node new dispatch fill
+wrote Fill.cpp, Fill.comp in …/zz-demo/fill, and added node fill
 ```
 
-**Decision 1 of the 2026-10-03 handoff: the kind is a word of the command.** The plan wrote `recipe new <name> <kind>`. Built that way, the kind would be a free word after the name; built as two commands, it is part of the command, so the CLI knows it:
+**Decision 1 of the 2026-10-03 handoff: the kind is a word of the command.** Built as two commands, the kind is part of the command, so the CLI knows it:
 
 ```text
-# Built: two commands, `recipe new draw <name>` and `recipe new dispatch <name>`
-> complete recipe new d
+# Built: two commands, `node new draw <name>` and `node new dispatch <name>`
+> complete node new d
 dispatch                      # the CLI offers both kinds
 draw
 > help                        # and help explains each on its own line
-recipe new draw <name>       writes a draw's first files … its C++, its pass block and its two shaders
-recipe new dispatch <name>   writes a dispatch's first files … its C++ and its compute shader
+node new draw <name>          adds a draw node, and writes its first files …
+node new dispatch <name>      adds a dispatch node, and writes its first files …
 
-# The plan's form: one command, `recipe new <name> <value>`
-> complete recipe new spinner d
+# One command, `node new <name> <value>`, would take any word:
+> complete node new spinner d
                               # nothing: <value> is any word, so the CLI cannot offer draw or dispatch
-> recipe new spinner drow
+> node new spinner drow
 {!!!} …                       # a typo is found only when the command runs
 ```
 
 The engine's placeholder kinds are a closed list (`name`, `node`, `port`, `file`, …) that completion reads; a `kind` placeholder would add a library-only word to the engine (V05). As two commands, nothing in the engine changes.
 
-**`recipe drop <recipe> <name>`** copies a library recipe into the project, with the recipes it deploys and the contracts their shaders include, then deploys it under the name:
+**`recipe drop <recipe> <name>`** and **`recipe sync <node>`** copy a library recipe into the project and bring the copy up to date (section 11). The library's recipes are its own, so neither works on a view of the library.
 
-```text
-src/examples/zz-demo> recipe drop inspect look
-copied inspect into …/zz-demo/recipes                # the project's own copy now (V03)
-# the view now holds [deploy "look"] recipe = inspect; the live build compiles the copy
-```
-
-- A copy the project has already stays as it is: the project owns its copies, and a later library edit never reaches them.
-- A recipe's contracts (`#include "contracts/Rect.glsl"`) are copied to `recipes/contracts/` with it.
-
-**`view new <folder>` and `view load <folder>`** host a project in a folder, named for the folder, and make it the current one. `view new` also saves its empty `view.vlp`, and refuses a folder that holds one; `view load` refuses a folder that holds none. In the log, both are a `child add`, and `view new` a `view save` too.
+**`view new <folder>` and `view load <folder>`** host a project in a folder, named for the folder, and make it the current one. `view new` also saves its empty `view.vlp`, and refuses a folder that holds one; `view load` refuses a folder that holds none. In the log, both are a `child add` of the CLI's view, and `view new` a `view save` too.
 
 - **Where:** `src/recipes/parts/library/Library.cpp`.
 
-## 15. What a recipe's C++ can reach
+## 15. What a node's C++ can reach
 
-A recipe's C++ includes `runtime/Operator.h`, and `runtime/View.h` when it reads the graph. The template shows every call, commented; these are the ports besides the pass block of section 4.
+A node's C++ includes `runtime/Operator.h`, and `runtime/View.h` when it reads the graph. The template shows every call, commented; these are the ports besides the pass block of section 4.
 
 **Its own commands.** A node registers commands in `bind`; they last while the node runs, and a node that goes takes them along. The inspect part's `ls`, shortened:
 
 ```cpp
 void bind(VP::Bind &node) override {
-  _ls = node.command("ls", "lists the view's deploys, nodes and connections"); // usage, help
+  _ls = node.command("ls", "lists the views the view hosts, its nodes and its connections");
 }
 void command(VP::Call &call) override {
   if (!call.is(_ls))
     return;
-  for (const VP::Node &n : call.view().nodes)   // the view the line addresses, as edited
-    call.reply(std::format("node {} of recipe {}", n.name, n.recipe)); // the answer
+  for (const VP::Node &node : call.view().nodes) // the view the line addresses, as edited
+    call.reply(std::format("node {}", node.name)); // the answer
   // call.commands().send("w: param set wave amplitude 0.5"); // a line inside this one:
   //   it joins this command's log group, and a refusal fails this command too
 }
 ```
 
-A command name is one command: a second node registering it is refused, as in section 14's drop.
+A command name is one command: a second node registering it is refused, as the drop in section 11 shows.
 
 **The terminal** (the command-line part's whole job):
 
@@ -617,7 +636,7 @@ void cook(VP::Cook &frame) override {
 
 ```cpp
 void bind(VP::Bind &node) override {
-  _theme = node.file("theme.ini");        // in this recipe's folder: a relative path
+  _theme = node.file("theme.ini");        // in the node's folder: a relative path
   _folder = node.folder();                // that folder, absolute
 }
 void cook(VP::Cook &frame) override {
@@ -625,12 +644,14 @@ void cook(VP::Cook &frame) override {
   // frame.files().save(_theme, "text");                     // through a temp file (RA04)
   // frame.files().list(_folder);                           // names, folders ending in /
   // frame.files().read(path);                              // any file, by absolute path
+  // frame.files().remove(path);                            // and its folder once empty
+  // frame.files().manifest(path);                          // a manifest's graph, as a view runs it
 }
 ```
 
 **The frame index and the log.** `frame.index()` is the frame, as the frame block's `index` is; `frame.log(VP::Level::info, "text")` logs at the node's level (V09).
 
-- **What a recipe cannot reach today:** the engine's objects, the OS, or another recipe's code (RV00, live code rule 2). The [native C++ plan](plans/native-cpp.md) proposes opening that.
+- **What a node's C++ cannot reach today:** the engine's objects, the OS, or another node's code (RV00, live code rule 2). The [native C++ plan](plans/native-cpp.md) proposes opening that.
 - **Where:** `src/runtime/Operator.h`; the template in `src/recipes/parts/library/template/`.
 
 ## 16. When something is wrong
@@ -639,11 +660,16 @@ Every mistake surfaces at load or at its line, naming its cause (A02):
 
 | Mistake | What you see | What runs |
 | --- | --- | --- |
-| an unknown word or section, a word given twice | `view.vlp:19: unknown word invocatons in a node; its words are …` | nothing: the load stops |
+| an unknown word or section, a word given twice | `view.vlp:11: unknown word invocatons in a node; its words are …` | nothing: the load stops |
+| a node inside no node | `node a.b is inside a, which is no node` | nothing: the load stops |
+| a view's node that uses a recipe as the library does | `node x uses recipe fill as it is, as only the library's own recipes do (V11); …` | nothing: the load stops |
 | C++ and a shader disagree on a name or a type | `node fill: the operator sets amount as a uint, but the shader declares a float` | the rest of the view; that node is left out |
+| shaders that make neither a draw nor a dispatch, or the wrong count | `node fill: it runs a .comp, so it counts its invocations, and no vertex_count` | the rest of the view |
 | a param nothing reads, a field nothing sets | `node wave: param spare: nothing reads it` | the rest of the view |
 | an edit that cannot apply | `refuse.txt:2: node wave is connected through values; disconnect it first` | nothing changes; a script stops there |
 | a command that does not exist, or does not fit its usage | `unknown command frobnicate; the commands are …` | nothing changes |
+| a sync of a copy the view changed | `node d changed since it was dropped from c, and a sync would lose that; …` | nothing changes |
 | a C++ module whose build failed | the compiler's output | the running code stays |
-| two nodes registering one command | `node look.inspect: command \`ls\` registers twice` | the second node is left out |
-| a view whose recipe is not built yet | `recipe zz-demo/inspect has no C++ built: …/recipe.so is missing` | until the live build compiles it |
+| two nodes registering one command | `node look: command \`ls\` registers twice` | the second node is left out |
+| a node whose C++ is not built yet | `zz-demo/look has no C++ built: …/module.so is missing` | until the live build compiles it |
+| a folder no node names | `{ ! } …: folder extra/ is no node's, but every folder is a node: …` | everything: it is a warning |

@@ -1,50 +1,50 @@
 # CLI examples
 
-Two views built from an empty folder with the CLI that the [IDE port](ide-port.md) proposes. For each: what a person types, which files they write, and what the engine does with them. Nothing here runs yet. The commands, the `[deploy]` section, the templates and the engine additions are proposals of the rows each section names.
+Two views built from an empty folder with the CLI that the [IDE port](ide-port.md) proposes. For each: what a person types, which files they write, and what the engine does with them. The commands, the templates and the engine additions are proposals of the rows each section names. Since 2026-10-03 every node is a folder (RV08), and a drop copies a recipe as a node the view owns ([nodes and folders](nodes-and-folders.md)); both examples are laid out so.
 
-- Example 1's recipe code is the code `src/examples/triangle/` runs today, laid out on the [template](#a-recipe-file-shows-what-it-can-reach). Its C++ compiles against today's `runtime/Operator.h`. The template's shaders compile as written and with every line of their menu uncommented.
+- Example 1's code is the code `src/examples/triangle/` runs today, laid out on the [template](#a-nodes-file-shows-what-it-can-reach). Its C++ compiles against today's `runtime/Operator.h`. The template's shaders compile as written and with every line of their menu uncommented.
 - Example 2's shaders and C++ compile with the build's flags against the engine additions shown [below](#what-the-engine-adds). This was checked on 2026-09-30 with glslang 15.1 and g++ 13.
 
 ## Where the engine stops
 
-A recipe reaches the engine through three headers and a folder layout, and nothing else:
+A node reaches the engine through three headers and a folder layout, and nothing else:
 
-| | Engine (the author never edits it) | Recipe (what the author writes) |
+| | Engine (the author never edits it) | Node (what the author writes) |
 | --- | --- | --- |
-| C++ | [`runtime/Operator.h`](../../src/runtime/Operator.h): `Operator` with three hooks, `bind`, `cook` and `command`. `Bind` hands out `Value<T>`, `Upload<T>`, `Readback<T>` and params by name. `Cook` writes and reads them each frame and reaches the general ports. `Registry` and `VP_RECIPE` register a class. A part that reads the graph also includes `runtime/View.h` (B8). | one class per operator, in an unnamed namespace, and one `VP_RECIPE` entry, started from the [template](#a-recipe-file-shows-what-it-can-reach) |
+| C++ | [`runtime/Operator.h`](../../src/runtime/Operator.h): `Operator` with three hooks, `bind`, `cook` and `command`. `Bind` hands out `Value<T>`, `Upload<T>`, `Readback<T>` and params by name. `Cook` writes and reads them each frame and reaches the general ports. `Registry` and `VP_OPERATORS` register a class. A part that reads the graph also includes `runtime/View.h` (B8). | one class per operator, in an unnamed namespace, and one `VP_OPERATORS` entry per folder, started from the [template](#a-nodes-file-shows-what-it-can-reach) |
 | GLSL | [`baseclasses/GpuLayout.glsl`](../../src/baseclasses/GpuLayout.glsl): buffers as device addresses. The pass block lives at set 1, binding 0. | the pass block's fields, and the shaders |
-| Build | [`runtime/cmake/recipe.cmake`](../../src/runtime/cmake/recipe.cmake) compiles each recipe folder: shaders to SPIR-V, and C++ to a module (debug) or into `vulpen` (release). It builds the views in `src/examples/`. | files in `<view>/recipes/<recipe>/` |
+| Build | [`runtime/cmake/nodes.cmake`](../../src/runtime/cmake/nodes.cmake) compiles each node's folder: shaders to SPIR-V, and C++ to a module (debug) or into `vulpen` (release). It builds the views in `src/examples/`. | files in `<view>/<node>/` |
 | Load | `runtime/Schedule` reflects the SPIR-V, runs `bind` and checks every name (A02). It makes the buffers, blocks and pipelines, and places the barriers. | nothing |
 | Graph | the command port: the primitive edits, the log and save | commands, or a `view.vlp` written by hand |
-| Structure | the include-map gate: a row for each engine file, and [one rule](#recipe-code-has-no-rows-in-the-include-map) for all recipe code | nothing |
+| Structure | the include-map gate: a row for each engine file, and [one rule](#node-code-has-no-rows-in-the-include-map) for all node code | nothing |
 
-A recipe's C++ never sees Vulkan, `Engine`, a buffer object or the OS. It gets names in and handles out, so its module has no engine symbol, and a swap never leaves it holding a GPU object that is gone ([live code](live-code.md)).
+A node's C++ never sees Vulkan, `Engine`, a buffer object or the OS. It gets names in and handles out, so its module has no engine symbol, and a swap never leaves it holding a GPU object that is gone ([live code](live-code.md)).
 
-### Recipe code has no rows in the include map
+### Node code has no rows in the include map
 
-The [include map](../architecture/include-map.md) is the one page of the engine's structure (A00): a new engine file or include edge lands once a person writes its row there. A recipe is not engine (V05), so a row per recipe file would turn every new recipe into an edit of the engine's page. Recipe code, meaning any file under a folder named `recipes/`, has no row. The gate checks each of its includes against one rule instead. A recipe file may include:
+The [include map](../architecture/include-map.md) is the one page of the engine's structure (A00): a new engine file or include edge lands once a person writes its row there. A node is not engine (V05), so a row per node file would turn every new node into an edit of the engine's page. Node code, meaning any file of the library or of a view, has no row. The gate checks each of its includes against one rule instead. A node's file may include:
 
 - a file in its own folder;
-- a contract, as `contracts/<Name>.glsl`, which resolves against the nearest `recipes/` folder above the file: the view's copy of the contract (V03, RV05), or the library's for a library part;
-- the engine files the map lists for recipe code: `runtime/Operator.h`, `runtime/View.h` and `baseclasses/GpuLayout.glsl`;
-- the standard library, glm, and a vendored library the map lists for recipe code, such as `<stb_truetype.h>` for the `font` part.
+- a contract, as `contracts/<Name>.glsl`, which resolves against the top of its view or of the library: the view's copy of the contract (V03, RV05), or the library's for a library part;
+- the engine files the map lists for node code: `runtime/Operator.h`, `runtime/View.h` and `baseclasses/GpuLayout.glsl`;
+- the standard library, glm, and a vendored library the map lists for node code, such as `<stb_truetype.h>` for the `font` part.
 
-Anything else fails the build, naming the file, the include and the rule (A02). So does engine code that includes recipe code (RA00). What recipe code may reach is then one short table on the include map, decided once on the one page, not a row per file. A new recipe file, or a new include in one, builds at its next save with no edit to the map.
+Anything else fails the build, naming the file, the include and the rule (A02). So does engine code that includes node code (RA00). What node code may reach is then one short table on the include map, decided once on the one page, not a row per file. A new node's file, or a new include in one, builds at its next save with no edit to the map.
 
-### A recipe file shows what it can reach
+### A node's file shows what it can reach
 
-`recipe new draw <name>` and `recipe new dispatch <name>` (D15) write a recipe's first files from a template: its C++, and either a draw's pass block and shaders or a dispatch's shader. The template shows, in the file itself, all of the engine a recipe can reach, so no other page is needed first:
+`node new draw <name>` and `node new dispatch <name>` (D15) write a node's first files from a template into its folder, and add the node: its C++, and either a draw's pass block and shaders or a dispatch's shader. The template shows, in the file itself, all of the engine a node can reach, so no other page is needed first:
 
 - **Three hooks.** `bind` runs at load and again after every swap (an on_init), `cook` every frame before the node's pass (on_cook), and `command` when a command the node registered runs (on_trigger). A key, a click or a typed line reaches a node as a command, or as input it reads in `cook` (V06), so no other hook is needed. A module swap destroys the operator and binds a new one ([live code](live-code.md#rules), rule 5).
 - **A menu, commented out.** The top of the class has one line per kind of handle a node can hold, with a few words on each. Each hook has one line per call it can make. Uncommenting a line uses it. The hooks start commented too, so the file compiles without warnings at every step. The lines a finished file does not use stay as its menu, as the triangle's do [below](#the-files).
 - **How fine.** Each kind of handle and each call appears once, not once per overload. The types and names in a line are examples to edit.
-- **Nothing else.** The compiler refuses a call that `runtime/Operator.h` does not declare, and the gate refuses an engine file that is not listed for recipe code. Past standard C++ and glm, anything the menu does not show does not exist for a recipe. A recipe that needs more gets a general port (V05), and the template gains its lines in the same change.
+- **Nothing else.** The compiler refuses a call that `runtime/Operator.h` does not declare, and the gate refuses an engine file that is not listed for recipe code. Past standard C++ and glm, anything the menu does not show does not exist for a node. A node that needs more gets a general port (V05), and the template gains its lines in the same change.
 
-**A header and a source file.** A recipe's C++ is one translation unit, so its classes live in the unnamed namespace, and copies of a recipe in two views never clash in one release binary ([live code](live-code.md#rules), rule 1). A single `.cpp` carries it all: the class with its handles, the hooks with their calls, and the entry. When `recipe new` also writes a header, each file carries its half. The header holds the class, with the menu of handles and the hooks declared. The `.cpp` includes it and holds the hooks' bodies, with the menu of calls, and the entry. Only that `.cpp` includes the header, so the class can stay in the unnamed namespace there too.
+**A header and a source file.** A node's classes live in the unnamed namespace, so copies of a node in two views never clash in one release binary ([live code](live-code.md#rules), rule 1). A single `.cpp` carries it all: the class with its handles, the hooks with their calls, and the entry. The template's `header/` variant splits it, each file carrying its half. The header holds the class, with the menu of handles and the hooks declared. The `.cpp` includes it and holds the hooks' bodies, with the menu of calls, and the entry. Only that `.cpp` includes the header, so the class can stay in the unnamed namespace there too.
 
 **GLSL.** A draw's pass block lists each kind of field, commented out, with the C++ call that fills it on the same line: a value, a buffer C++ writes, and an image (A5). A dispatch's also has a buffer C++ reads back. A field C++ does not fill is filled by a param or a connection, as its comment says. Each shader's `main` starts by writing defined values (GLSL02), with commented lines that read the pass block, the vertex or instance index, and the frame block (A1).
 
-The templates live in the `library` part, which registers `recipe new` (E18) and opens them through the file port, so an edit to one reaches the next `recipe new`. They list what `runtime/Operator.h` and `baseclasses/GpuLayout.glsl` declare, so they change with those files in the same commit.
+The templates live in the `library` part's `template/` node, as files ending in `.in` so the library never builds them. The part registers `node new` (E18) and opens them through the file port, so an edit to one reaches the next `node new`. They list what `runtime/Operator.h` and `baseclasses/GpuLayout.glsl` declare, so they change with those files in the same commit.
 
 ### The engine stubs these examples fill
 
@@ -66,35 +66,35 @@ Hosted views (C3) and the `inspect` and `library` parts have no stub yet. Everyt
 
 A window with one triangle, whose corners and tint C++ writes every frame. Suppose `src/examples/triangle/` did not exist yet.
 
-It needs phase 1 of the [order](ide-port.md#order), steps 1 to 11, and `recipe new` (D15). The triangle's own code needs nothing new.
+It needs phase 1 of the [order](ide-port.md#order), steps 1 to 11, and `node new` (D15). The triangle's own code needs nothing new.
 
 ### The session
 
 ```text
 $ ./run.sh src/recipes/apps/cli/view.vlp
 > view new src/examples/triangle
-src/examples/triangle> recipe new draw triangle
+src/examples/triangle> node new draw triangle
+wrote Triangle.cpp, Triangle.glsl, Triangle.vert, Triangle.frag in …/src/examples/triangle/triangle, and added node triangle
 src/examples/triangle>
 ```
 
-The `cli` app runs headless, with a prompt on the terminal. `view new` hosts an empty view and saves its `view.vlp`. From then on typed lines go to it, and the prompt shows its folder, as a shell shows the one it is in; the prompt shows only where a person types, so a piped script's output stays clean. `recipe new draw triangle` writes the template's four files into `src/examples/triangle/recipes/triangle/`, named for the recipe: `Triangle.cpp`, `Triangle.glsl`, `Triangle.vert` and `Triangle.frag`. They build at once, and do nothing yet.
+The `cli` app runs headless, with a prompt on the terminal. `view new` hosts an empty view and saves its `view.vlp`. From then on typed lines go to it, and the prompt shows its folder, as a shell shows the one it is in; the prompt shows only where a person types, so a piped script's output stays clean. `node new draw triangle` writes the template's four files into the node's folder, `src/examples/triangle/triangle/`, named for the node: `Triangle.cpp`, `Triangle.glsl`, `Triangle.vert` and `Triangle.frag`. It adds the node as a draw of 3 vertices whose operator is `Triangle`. The files build at once, and do nothing yet.
 
-Next, the person opens them in any editor, uncomments the lines the triangle uses and writes the rest, as [below](#the-files). Each save builds, with no row to add to the include map. Then the node can be added:
+Next, the person opens them in any editor, uncomments the lines the triangle uses and writes the rest, as [below](#the-files). Each save builds and swaps in, with no row to add to the include map. The loader names what the node still lacks:
 
 ```text
-src/examples/triangle> node add triangle recipe=triangle operator=Triangle shader=Triangle.vert shader=Triangle.frag invocations=3
 triangle/view.vlp node triangle: the operator reads param speed, which the node does not set
 src/examples/triangle> param set triangle speed 0.01
 src/examples/triangle> info triangle
 src/examples/triangle> view save
 ```
 
-- `node add` takes the manifest's own words (B2), and the schedule reruns without a restart. The loader finds a mistake at once and names it (A02). The node stays out until `param set` fixes it.
+- `node new` added the node with the manifest's own words (B2), and the schedule reruns without a restart. The loader finds a mistake at once and names it (A02). The node stays out until `param set` fixes it.
 - Then the window opens (B14) and the triangle turns.
 - `info` shows what the loader bound: the fields, who sets each, and the params (E17).
 - `view save` writes `view.vlp` to a temp file and renames it over the old one (RA04).
 
-From here, every save of a recipe file swaps in while the triangle keeps running.
+From here, every save of one of the node's files swaps in while the triangle keeps running.
 
 ### The files
 
@@ -184,7 +184,7 @@ class Triangle final : public VP::Operator {
 
 } // namespace
 
-VP_RECIPE(registry) {
+VP_OPERATORS(registry) {
   registry.add<Triangle>("Triangle");
 }
 ```
@@ -244,39 +244,40 @@ void main() {
 version = 1
 
 [node "triangle"]
-recipe      = triangle
-operator    = Triangle
-shader      = Triangle.vert
-shader      = Triangle.frag
-invocations = 3
-param       = speed=0.01
+operator     = Triangle
+file         = Triangle.cpp
+file         = Triangle.frag
+file         = Triangle.glsl
+file         = Triangle.vert
+vertex_count = 3
+param        = speed=0.01
 ```
 
-The copy in the tree also carries comments a person wrote. The writer keeps them (B4).
+The copy in the tree also carries comments a person wrote. The writer keeps them (B4). The `file` lines list what `triangle/` holds; vulpen keeps them so, and a command never names a file.
 
-**Does `invocations` stay, once every draw is instanced?** Yes, but it counts one instance: a dispatch's invocations, or the vertices a draw's shader builds for one thing, like the triangle's 3. What instancing adds is the number of instances. Vulkan names it `instance_count` (VK04), and V04 allows the new word, since no word counts instances once `invocations` counts one. Its value is a number, or a port whose buffer's used length sets it each frame (A4). A draw that leaves it out runs one instance, as the triangle does. [Example 2](#example-2-instanced-cubes-on-the-triangle) draws its 64 cubes with `invocations = 36` and `instance_count = offsets`.
+**Why `vertex_count`, and `instance_count`?** A draw counts the vertices its shader builds for one thing, like the triangle's 3, as `vkCmdDraw(vertexCount, instanceCount, …)` does (VK04); a dispatch keeps `invocations`, GLSL's word, since Vulkan only counts a dispatch's workgroups. What instancing adds is the number of instances, `instance_count`. Its value is a number, or a port whose buffer's used length sets it each frame (A4). A draw that leaves it out runs one instance, as the triangle does. [Example 2](#example-2-instanced-cubes-on-the-triangle) draws its 64 cubes with `vertex_count = 36` and `instance_count = offsets`.
 
 ### The log
 
 ```text
 child add triangle src/examples/triangle/view.vlp
 triangle: view save
-triangle: node add triangle recipe=triangle operator=Triangle shader=Triangle.vert shader=Triangle.frag invocations=3
+triangle: node add triangle operator=Triangle vertex_count=3
 triangle: param set triangle speed 0.01
 triangle: view save
 ```
 
-The first two lines are one group: what `view new` expanded to. `child add` of a `view.vlp` not written yet hosts an empty view, which `view save` then writes, so the log replays from an empty folder. Every line is a primitive and names the view it edits, so `source` replays the log headless, with no recipe loaded (V08). A `<file>` argument is written from the log's own folder, where `source` resolves it, so a log moves with the files it names; this log was saved at the repo's root. The file keeps no groups: `source` makes each line a group of its own, so undo after a replay steps back one command at a time. `recipe new` wrote files and edited no graph, so it left no line; a replay finds its files in the tree.
+The first two lines are one group: what `view new` expanded to. `child add` of a `view.vlp` not written yet hosts an empty view, which `view save` then writes, so the log replays from an empty folder. Every line is a primitive and names the view it edits, so `source` replays the log headless, with none of the commands that sent its lines (V08). A `<file>` argument is written from the log's own folder, where `source` resolves it, so a log moves with the files it names; this log was saved at the repo's root. The file keeps no groups: `source` makes each line a group of its own, so undo after a replay steps back one command at a time. `node new` wrote files, which are no command, so its line is the `node add` it sent; a replay finds the files in the tree.
 
 ### What the engine does with it
 
-1. **Build.** `recipe.cmake` compiles `Triangle.vert` and `Triangle.frag` to SPIR-V. It compiles `Triangle.cpp` to `recipe.so` (debug) or into `vulpen` (release). All of it goes under `out/build/<preset>/views/triangle/recipes/triangle/`.
+1. **Build.** `nodes.cmake` compiles `Triangle.vert` and `Triangle.frag` to SPIR-V. It compiles `Triangle.cpp` to `module.so` (debug) or into `vulpen` (release). All of it goes under `out/build/<preset>/views/triangle/triangle/`.
 2. **Load.** Reflection finds the pass block both shaders declare: `vec4 tint` at byte 0, and `readonly vec2[] corners` at byte 16. `bind` asks for each by name, and the loader checks each request against the shader:
    - `value<glm::vec4>("tint")` gets offset 0, once the shader's type is known to be a `vec4`;
    - `upload<glm::vec2>("corners")` gets a handle, once the shader is known only to read it and to hold 8-byte elements;
    - `param<float>("speed")` parses `0.01`.
 
-   The loader then checks that every field has a writer and every param a reader. It makes a 24-byte buffer the CPU writes (3 invocations of 8 bytes), the pass block and the pipeline.
+   The loader then checks that every field has a writer and every param a reader. It makes a 24-byte buffer the CPU writes (3 vertices of 8 bytes), the pass block and the pipeline.
 3. **Every frame.** `cook` gets a span of three `glm::vec2` over the mapped buffer and writes the corners, then sets `tint`. The engine flushes both and draws 3 vertices in the window's render pass. Nothing is looked up by name during a frame.
 4. **A save.** A shader save makes a new pipeline and keeps the buffer. A C++ save unloads the module, makes a new `Triangle` and runs `bind` again.
 
@@ -297,7 +298,7 @@ It needs nothing else from phases 2 to 4, so it could run straight after phase 1
 src/examples/triangle> recipe publish triangle
 ```
 
-This copies `src/examples/triangle/recipes/triangle/` to `src/recipes/parts/triangle/`, and writes the part's `view.vlp` from the node that runs it. A person adds the comment at the top:
+This copies the node's folder, `src/examples/triangle/triangle/`, to `src/recipes/parts/triangle/`, and writes the part's `view.vlp` from the node: a recipe is one node named like its folder. A person adds the comment at the top:
 
 ```ini
 # The triangle part: one draw whose corners and tint come from C++.
@@ -305,33 +306,34 @@ This copies `src/examples/triangle/recipes/triangle/` to `src/recipes/parts/tria
 version = 1
 
 [node "triangle"]
-recipe      = triangle
-operator    = Triangle
-shader      = Triangle.vert
-shader      = Triangle.frag
-invocations = 3
-param       = speed=0.01
+operator     = Triangle
+file         = Triangle.cpp
+file         = Triangle.frag
+file         = Triangle.glsl
+file         = Triangle.vert
+vertex_count = 3
+param        = speed=0.01
 ```
 
-The part runs its own node, so it can be dropped by itself: `recipe drop triangle triangle` into an empty view gives example 1 back, as a deploy named `triangle`. The [recipe map](../architecture/recipe-map.md) gains a row for it under Parts.
+The part runs its own node, so it can be dropped by itself: `recipe drop triangle triangle` into an empty view gives example 1 back, as the view's own copy. The [recipe map](../architecture/recipe-map.md) gains a row for it under Parts.
 
 ### The session
 
 ```text
 src/examples/triangle> view new src/examples/cube-screen
 src/examples/cube-screen> recipe drop triangle screen
-src/examples/cube-screen> recipe new draw cubes
-src/examples/cube-screen> node add layout recipe=cubes shader=Layout.comp invocations=64
-src/examples/cube-screen> param set layout spacing 0.6
-src/examples/cube-screen> node add cubes recipe=cubes operator=Cubes shader=Cubes.vert shader=Cubes.frag invocations=36 instance_count=offsets
+src/examples/cube-screen> node new draw cubes
+src/examples/cube-screen> node set cubes vertex_count=36 instance_count=offsets
 src/examples/cube-screen> param set cubes speed 0.02
+src/examples/cube-screen> node add layout invocations=64
+src/examples/cube-screen> param set layout spacing 0.6
 src/examples/cube-screen> connect offsets layout.offsets cubes.offsets
-src/examples/cube-screen> connect picture cubes.color screen.triangle.picture
+src/examples/cube-screen> connect picture cubes.color screen.picture
 src/examples/cube-screen> view save
 ```
 
-- **The drop.** `recipe drop triangle screen` copies the part into the view as `recipes/triangle/` (V03) and deploys it as `screen` (C1). The triangle runs at once, as in example 1.
-- **The new files.** `recipe new draw cubes` writes the draw's four files into `recipes/cubes/`, and `Layout.comp` is written beside them. The view's copy of the triangle is edited to show a picture, before the two `connect` lines. Until then, the loader names what is missing, and the rest of the view keeps running.
+- **The drop.** `recipe drop triangle screen` copies the part into the view as the node `screen`, in `screen/` (V03, C2). The triangle runs at once, as in example 1.
+- **The new files.** `node new draw cubes` writes the draw's four files into `cubes/`, and `layout/Layout.comp` is written by hand: a shader with no C++. The view's copy of the triangle is edited to show a picture, before the two `connect` lines. Until then, the loader names what is missing, and the rest of the view keeps running.
 - **The counts.** `layout` runs one invocation per cube and writes one offset each. `cubes` draws 36 vertices per instance and one instance per offset, so 64 is written once.
 
 ### What `view save` writes
@@ -340,23 +342,30 @@ src/examples/cube-screen> view save
 [manifest]
 version = 1
 
-[deploy "screen"]
-recipe = triangle
-
-[node "layout"]
-recipe      = cubes
-shader      = Layout.comp
-invocations = 64
-param       = spacing=0.6
+[node "screen"]
+recipe       = triangle@3f2a9c1e
+operator     = Triangle
+file         = Triangle.cpp
+file         = Triangle.frag
+file         = Triangle.glsl
+file         = Triangle.vert
+vertex_count = 3
+param        = speed=0.01
 
 [node "cubes"]
-recipe         = cubes
 operator       = Cubes
-shader         = Cubes.vert
-shader         = Cubes.frag
-invocations    = 36
+file           = Cubes.cpp
+file           = Cubes.frag
+file           = Cubes.glsl
+file           = Cubes.vert
+vertex_count   = 36
 instance_count = offsets
 param          = speed=0.02
+
+[node "layout"]
+file        = Layout.comp
+invocations = 64
+param       = spacing=0.6
 
 [connection "offsets"]
 from = layout.offsets
@@ -364,20 +373,23 @@ to   = cubes.offsets
 
 [connection "picture"]
 from = cubes.color
-to   = screen.triangle.picture
+to   = screen.picture
 ```
 
-The view's folder:
+The view's folder, a folder per node:
 
 ```text
 src/examples/cube-screen/
   view.vlp
-  recipes/
-    triangle/  the drop's copy, owned by this view and edited here to show a picture
-      view.vlp  Triangle.cpp  Triangle.glsl  Triangle.vert  Triangle.frag
-    cubes/     written for this view
-      Cubes.cpp  Cubes.glsl  Cubes.vert  Cubes.frag  Layout.comp
+  screen/  the drop's copy of the triangle, owned by this view and edited here to show a picture
+    Triangle.cpp  Triangle.glsl  Triangle.vert  Triangle.frag
+  cubes/   written for this view from the template
+    Cubes.cpp  Cubes.glsl  Cubes.vert  Cubes.frag
+  layout/  written by hand
+    Layout.comp
 ```
+
+`recipe = triangle@3f2a9c1e` says where `screen` came from. Edited, the copy is the view's own, and `recipe sync screen` refuses to overwrite it.
 
 ### The cubes' files
 
@@ -523,14 +535,14 @@ class Cubes final : public VP::Operator {
 
 } // namespace
 
-VP_RECIPE(registry) {
+VP_OPERATORS(registry) {
   registry.add<Cubes>("Cubes");
 }
 ```
 
 ### The triangle's copy, edited
 
-`Triangle.cpp` stays as it is. The copy uncomments three lines of its menu: the pass block's `Texture`, renamed `picture`, and `uv` in both shaders.
+`screen/Triangle.cpp` stays as it is. The copy uncomments three lines of its menu: the pass block's `Texture`, renamed `picture`, and `uv` in both shaders.
 
 ```glsl
 layout(set = 1, binding = 0) uniform Pass {
@@ -576,7 +588,7 @@ void main() {
 
 ### What the engine adds
 
-Example 2 uses three things the engine does not have yet. All of them go into the two headers a recipe already includes.
+Example 2 uses three things the engine does not have yet. All of them go into the two headers a node already includes.
 
 **`baseclasses/GpuLayout.glsl`** gains the images (A5) and the frame block (A1):
 
@@ -638,19 +650,19 @@ Every frame:
 1. `layout` dispatches one workgroup of 64 and writes 64 centres into `offsets`: a 1,024-byte buffer that stays on the GPU, since nothing on the CPU reads or writes it.
 2. `Cubes::cook` sets `spin` in the cubes' pass block.
 3. `cubes` draws 64 instances of 36 vertices, one instance per element of `offsets`. Its output `color` is connected, so it renders in its own render pass, into an image the window's size with a depth attachment. A barrier first makes `offsets` visible to the vertex shader.
-4. A barrier turns the image from a color attachment into a sampled image. `screen.triangle` then draws 3 vertices into the window. It samples the image through `picture`, which the loader filled with the image's index in `textures[]`.
+4. A barrier turns the image from a color attachment into a sampled image. `screen` then draws 3 vertices into the window. It samples the image through `picture`, which the loader filled with the image's index in `textures[]`.
 
-The order follows the graph: `layout` writes what `cubes` reads, and `cubes` writes what `screen.triangle` reads.
+The order follows the graph: `layout` writes what `cubes` reads, and `cubes` writes what `screen` reads.
 
 ### Choices example 2 makes
 
 Each is a decision for the row named, and the lead settles it (A00).
 
-- **Instancing is Vulkan's (VK04).** `invocations = 36` counts one cube's vertices, `instance_count = offsets` counts the cubes, and the shader reads `gl_InstanceIndex`. `instance_count` is a new word, which V04 allows: once `invocations` counts one instance, no word counts the instances.
-- **The cube's 36 is written twice**: in the shader's tables and in `invocations`. A larger count would index past the tables, which GLSL02 forbids and which the loader cannot see. The 64 is written once, since the instances follow `offsets` (A4).
+- **Instancing is Vulkan's (VK04).** `vertex_count = 36` counts one cube's vertices, `instance_count = offsets` counts the cubes, and the shader reads `gl_InstanceIndex`, as `vkCmdDraw(vertexCount, instanceCount, …)` names them.
+- **The cube's 36 is written twice**: in the shader's tables and in `vertex_count`. A larger count would index past the tables, which GLSL02 forbids and which the loader cannot see. The 64 is written once, since the instances follow `offsets` (A4).
 - **An image input is a `Texture` field (A5).** Reflection knows it by the struct's name, and the loader fills its index from a connection.
 - **A draw's output is a port (A7).** Connected, the draw renders into an image. Unconnected, it renders into the window.
 - **An offscreen target takes the window's size (A7).** A headless view has no window, so its targets need a size from elsewhere. That is still open.
 - **Every target has depth (A14).** It is tested less-or-equal, so a flat draw at one depth is unaffected and no word is needed.
 - **The view edits its copy of the triangle (V02, V03).** The library part stays example 1's triangle. The other way is to give the part an optional picture. That needs a rule for an unconnected `Texture` (for example, index 0 samples white), and A02 would have to allow it.
-- **No contract is needed (RV05).** `offsets` joins two nodes of one recipe, and `picture` carries an image, not a struct.
+- **No contract is needed (RV05).** `offsets` carries plain `vec4`s between two nodes the view wrote, and `picture` carries an image, not a struct.

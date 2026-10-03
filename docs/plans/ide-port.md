@@ -34,16 +34,16 @@ Proposed 2026-09-30. It is a proposal: the project lead ticks what gets ported (
 
 The POC column adds up each section's rows. Where one POC module serves two rows, only one of them counts it. The Commands row counts only the verb handlers that no port or part row already counts.
 
-The engine today (`baseclasses/`, `runtime/` and `main.cpp`) is about 3,300 lines of C++. The core rows add about 2,200 lines to it: sections 1 and 2, and the deploys (C1) and hosted views (C3) of section 3. The other 2,650 are recipes.
+The engine today (`baseclasses/`, `runtime/` and `main.cpp`) is about 3,300 lines of C++. The core rows add about 2,200 lines to it: sections 1 and 2, and the recipes nodes use (C1) and hosted views (C3) of section 3. The other 2,650 are recipes.
 
 ## Where the lines go
 
 - **No IDE in the engine.** The POC's engine holds 10,354 lines of IDE and input code, reached through capability structs (26 in all, many of them only for the IDE). It includes the dock (2,228), the node canvas (2,087), the text widget (1,551), relations (822), input (763), hover (521) and the popup (398). Here the engine only gains ports (section 2, about 1,000 lines), and every panel is a part built on them (V05).
-- **One copy of each job.** The POC's panel chrome is the same file in four recipes, plus a vendored copy in `ide-full`. Its text panel is the same file in three places (`ide-text-panel`, `ide-terminal` and `ide-full`). Here each is one part that components deploy (V11).
+- **One copy of each job.** The POC's panel chrome is the same file in four recipes, plus a vendored copy in `ide-full`. Its text panel is the same file in three places (`ide-text-panel`, `ide-terminal` and `ide-full`). Here each is one part that components use (V11).
 - **143 verbs become 36 core commands and 19 later ones.** 61 verbs are cut because this design removes the reason they existed:
   - the layout verbs, because reflection gives the layout;
   - the reload verbs, because the live build swaps changes in;
-  - the nest and dock verbs, because deploys and params replace them.
+  - the nest and dock verbs, because folders (RV08), drops and params replace them.
 
   Six verbs that fake input for tests become one `input` command.
 - **The POC's 13 channel kinds become four things a shader declares**: a value, a buffer, an image and the frame block. The POC's path from the manifest to GPU passes is `Chain/` (4,614), bindless passes (2,003), images (1,061) and resources (716). This tree's path is about 1,500 lines, and rows A1–A7 add about 720 more.
@@ -70,7 +70,7 @@ Of the POC's 13 channel kinds, `UBO`, `SSBO`, `STAGING_UPLOAD` and `READBACK` ar
 | [x] | A1 | Frame block (time, frame index, resolution, cursor): a buffer whose address goes in the push constant, as the GPU layout says (RV02). Every UI draw needs it to map pixels. `Pipelines` owns the one block and takes its layout from reflection (RA03); the engine writes it after acquiring the window's image, so a resize shows at once. Time counts frames at the run's rate, so a replay matches (C01); the cursor stays zero until B6. | – | 40 | — | core |
 | [x] | A2 | Struct elements: a C++ struct names its members once, and the loader checks their names, types and offsets against reflection. Today only the size is checked. Contracts need this (RV05). | 198 (emitter) | 100 | — | core |
 | [x] | A3 | CPU ends of a connection: one operator writes a buffer and a later operator reads it in the same frame, and the buffer lives where both can reach it. This is the first step of D5. The POC used a typed publish port per feature instead. | – | 80 | A2, D5 | core |
-| [x] | A4 | Counts per frame: a draw runs `instance_count` instances, a number or a port whose buffer's used length sets it, and the buffer's writer sets that length each frame. `invocations` then counts the vertices of one instance. Text and rects change length every frame. The word, approved on 2026-10-03, takes a number today; the port form waits for A3. | – | 40 | A3 | core |
+| [x] | A4 | Counts per frame: a draw runs `instance_count` instances, a number or a port whose buffer's used length sets it, and the buffer's writer sets that length each frame. `vertex_count` counts the vertices of one instance. Text and rects change length every frame. The word, approved on 2026-10-03, takes a number today; the port form waits for A3. | – | 40 | A3 | core |
 | [x] | A5 | Images: the set 0 arrays (`texture2D[]`, `sampler[]`, `image2D[]`), images the schedule owns (A01), a `Texture` handle in the pass block that the loader fills from a connection, and a one-time upload from the CPU. | 1,061 | 250 | — | core |
 | [x] | A6 | One blend mode: every draw blends premultiplied `over`. Draws already run in graph order, then manifest order, so no order word is needed. | – | 10 | — | core |
 | [x] | A7 | Offscreen targets: a draw's fragment output is a port. Connected to another node's `Texture`, the draw renders into an image the size of the window. Unconnected, it renders into the window, so which node reaches the screen stays a manifest fact. The Perform panel and child views show their output this way. | 365 | 200 | A5 | core |
@@ -108,14 +108,14 @@ The engine's general ports ([recipe map](../architecture/recipe-map.md#core-port
 
 ## 3. Composition
 
-Components and apps are only a `view.vlp` that deploys other recipes (RV06), and the CLI and the IDE both edit a project that is not themselves (V03). Both need the rows below.
+Components and apps are only a `view.vlp` that uses other recipes (RV06), and the CLI and the IDE both edit a project that is not themselves (V03). Both need the rows below.
 
 | Port | ID | Function | POC | New | Needs | Advice |
 | --- | --- | --- | --: | --: | --- | --- |
-| [x] | C1 | Deploy: a `view.vlp` deploys a recipe in a `[deploy]` section, sets params there (`param = <node>.<key>=<value>`), and connects its ports as `<deploy>.<node>.<port>`. The loader flattens the result: a deploy brings the nodes and connections of its recipe's `view.vlp`, from the view's `recipes/`, named `<deploy>.<name>`, and a recipe deploys others but never itself (RV06). `deploy add` and `deploy remove` join the primitive edits, and `param set` on `<deploy>.<node>` sets the deploy's param. The build compiles the library's recipes as one view, `library`, so an app runs from the library: a recipe of the library run as a view finds the recipes it deploys in the library's kind folders. No component or app loads without this. | 290 + 628 | 270 | a manifest word (V04) | core |
-| [x] | C2 | `recipe list` and `recipe drop <recipe> <name>`, registered by the part `library` (E18). A drop copies a library recipe into the view with the recipes it deploys and the contracts they include (V02, V03), and deploys it, in one log group. A copy the view already has stays, since the view owns it. | 750 | 80 | B2, B7, C1 | core |
-| [x] | C3 | Hosted views: a view hosts another view (V03), so the CLI and the IDE host the project they edit. Adds `child add`, `child remove` and `child list`. Hosting is session state, kept in the log and not in the host's manifest. A line `<name>: <command>` reaches a child, `:` the host, and a line a command sends reaches the view of the line that ran it. A child whose `view.vlp` is not written yet starts empty, and `view save` writes it, so a log replays from an empty folder. Each frame cooks the host, then the children in the order added, and the live scan watches every hosted view's folder. A child's draws reach the window unless A7 routes them into an image. | 395 | 200 | C1 | core |
-| [ ] | C4 | The nest tree: `promote`, `demote`, `group`, `wrap`, `merge`, `split`, `ungroup`, `expose`, `cd`, `pwd`. | 875 | 0 | — | cut: deploys and folders give the structure |
+| [x] | C1 | Uses: in the library, a node uses a recipe as it is with `recipe = <name>`, sets params on it (`param = <key>=<value>`, or `<inner>.<key>=<value>` for a node inside it), and connects its ports as `<node>.<inner>.<port>`. The loader unfolds it: the recipe's own node, named like its folder, becomes the node, with the nodes inside it, and a recipe uses others but never itself (RV06). `param set` on a node inside a used recipe sets the using node's param. The build compiles the library's recipes as one view, `library`, so an app runs from the library. No component or app loads without this. Built at step 7 as a `[deploy]` section, and on 2026-10-03 made a node word, which views no longer take: a view holds copies (C2, [nodes and folders](nodes-and-folders.md)). | 290 + 628 | 270 | a manifest word (V04) | core |
+| [x] | C2 | `recipe list`, `recipe drop <recipe> <name>` and `recipe sync <node>`, registered by the part `library` (E18). A drop copies a library recipe into the view as a node and the nodes inside it, each a folder (RV08), with the recipes it uses and the contracts they include (V02, V03), in one log group; the node keeps `recipe = <name>@<fingerprint>`. A sync takes the library's version while the copy is unchanged, keeping its params and its connections to the rest of the view. | 750 | 80 | B2, B7, C1 | core |
+| [x] | C3 | Hosted views: a view hosts another view (V03), so the CLI and the IDE host the project they edit. Adds `child add`, `child remove` and `child list`. Since 2026-10-03 a view's manifest names the views it hosts, as `[view "<name>"]`, so `child add` and `child remove` are edits that `view save` writes; `child remove` reaches the view that hosts the child. A line `<name>: <command>` reaches a child, `:` the host, and a line a command sends reaches the view of the line that ran it. A child whose `view.vlp` is not written yet starts empty, and `view save` writes it, so a log replays from an empty folder. Each frame cooks the host, then the children in the order added, and the live scan watches every hosted view's folder. A child's draws reach the window unless A7 routes them into an image. | 395 | 200 | C1 | core |
+| [ ] | C4 | The nest tree: `promote`, `demote`, `group`, `wrap`, `merge`, `split`, `ungroup`, `expose`, `cd`, `pwd`. | 875 | 0 | — | cut: every node is a folder (RV08), so folders give the structure; moving a node into a group or out of one is a rename, which waits until something needs it |
 
 ## 4. Commands
 
@@ -139,14 +139,14 @@ The engine registers only the primitive edits, the log, save and migrate, hostin
 | [x] | D12 | `clear` | `clear` | part `command-line` | 5 | E12 | core |
 | [ ] | D13 | `undo`, `redo` | `undo`, `redo` | engine | in B10 | B10 | later |
 | [ ] | D14 | `schedule`: the passes, what each reads and writes, and sizes | `engine flatten`, `engine audit chain`, `probe passes` | part `inspect` | 40 | D7 | later |
-| [x] | D15 | `recipe new draw <name>`, `recipe new dispatch <name>`: a recipe folder with its C++ and shaders, from the [template](cli-examples.md#a-recipe-file-shows-what-it-can-reach), every line of its menu commented. The kind is a word of the command, so completion and `help` show both | `file new`, `operator new`, `operator remove` | part `library` | 80 | E18 | core (the lead, 2026-10-03): the template is how a recipe starts |
+| [x] | D15 | `node new draw <name>`, `node new dispatch <name>`: a node's folder with its C++ and shaders, from the [template](cli-examples.md#a-nodes-file-shows-what-it-can-reach), every line of its menu commented, and the node. The kind is a word of the command, so completion and `help` show both | `file new`, `operator new`, `operator remove` | part `library` | 80 | E18 | core (the lead, 2026-10-03): the template is how a recipe starts |
 | [ ] | D16 | `node rename` (a primitive: it renames a section and every endpoint that names it), `node duplicate`, `file rename` (renames the file and its `shader` word in one group) | `node rename`, `node duplicate`, `file rename`, `file move` | engine (`node rename`); part `library` (the others) | 50 | B2, E18 | later |
 | [ ] | D17 | `recipe publish`: copy a view's recipe into the library, with a `view.vlp` for its nodes | `recipe save`, `recipe publish`, `recipe import` | part `library` | 50 | C2 | later |
 | [ ] | D18 | `tab split`, `tab merge`, `panel move`: tearing out tabs and dragging them between panels | `panel tab split`, `panel tab merge`, `panel move`, `panel place` | part `split` | 250 | D10 | later |
 | [ ] | D19 | `select` | `select add`, `select clear` | part `graph` | 30 | E13 | later |
 | [ ] | D20 | `relations <kinds>` | `relations`, `tiles`, `route`, `deps` | part `relations` | 30 | E16 | later |
 | [ ] | D21 | `keys` | `keys` | part `keys` | 20 | E10 | later |
-| [ ] | D22 | `probe watch <connection>`: deploys a probe node on the connection, as the wave example's probe, and prints the min, max, NaN count and hash of what it reads back | `probe watch` | part `inspect` | 50 | C2 | later |
+| [ ] | D22 | `probe watch <connection>`: adds a probe node on the connection, as the wave example's probe, and prints the min, max, NaN count and hash of what it reads back | `probe watch` | part `inspect` | 50 | C2 | later |
 | [ ] | D23 | `heat`, `probe stats` | `heat`, `probe stats` | parts `graph`, `inspect` | 60 | A13 | later |
 | [ ] | D24 | `screenshot`, `capture` | `engine screenshot`, `probe capture` | a part (in A8) | in A8 | A8 | later |
 
@@ -160,12 +160,12 @@ Core: the 36 commands in D1–D12 replace 51 POC verbs. Later: 19 commands repla
 | [ ] | X4 | `engine compile`, `engine rebuild`, `engine view`, `view reload` (×4), `recipe prebuild`, `view export`, `view altitude` | The build compiles and the live scan swaps changes in. A player is the release build ([live code](live-code.md)). |
 | [ ] | X5 | `engine audit lint` | The loader is the linter (A02). |
 | [ ] | X6 | `record`, `record stop`, `census`, `probe off`, `panel debug`, `busy` | The log is always kept (B3). `census` belongs to the A03 soak test, and the rest are aids for capturing screenshots. |
-| [ ] | X7 | `nest` (×9), `wire expose`, `cd`, `pwd`, `dock` (×4), `mode new`, `mode default`, `mode remove` | Deploys (C1) and folders give the structure; seams and modes are params. |
+| [ ] | X7 | `nest` (×9), `wire expose`, `cd`, `pwd`, `dock` (×4), `mode new`, `mode default`, `mode remove` | Folders (RV08) and drops (C2) give the structure; seams and modes are params. |
 | [ ] | X8 | `stream` (×9) | Not part of the IDE; these come back with streams (D4). |
 
 ## 5. Parts
 
-Parts are the panels' building blocks, with the jobs the [recipe map](../architecture/recipe-map.md#parts) gives them. `inspect` and `library` are new. D7, D14 and D22 need a part that reads the graph, and C2, D4, D15, D16 and D17 need a part that works on recipe and view folders. Both apps deploy both parts, and adding them changes the recipe map (A00).
+Parts are the panels' building blocks, with the jobs the [recipe map](../architecture/recipe-map.md#parts) gives them. `inspect` and `library` are new. D7, D14 and D22 need a part that reads the graph, and C2, D4, D15, D16 and D17 need a part that works on recipe and view folders. Both apps use both parts, and adding them changes the recipe map (A00).
 
 | Port | ID | Part | Job | POC | New | Needs | Advice |
 | --- | --- | --- | --- | --: | --: | --- | --- |
@@ -184,7 +184,7 @@ Parts are the panels' building blocks, with the jobs the [recipe map](../archite
 | [x] | E13 | `graph` | nodes as Rects and Labels, connections as Curves, with pan and zoom; a drag sends a command | 882 + 669 + 2,087 | 510 | A2, A3, B1, B6, B8, E3 | core |
 | [x] | E14 | `modes` | chooses which node reaches the screen: `present`, `mode` | 332 | 50 | B1, B2, B5 | core |
 | [x] | E17 | `inspect` | reads the graph and registers `ls`, `info`, `schedule` and `probe watch` | 582 | in D7 | B5, B8 | core |
-| [x] | E18 | `library` | works on recipe and view folders through the file port, and registers `recipe list`, `recipe drop`, `recipe publish`, `recipe new`, `view new`, `view load`, `node duplicate` and `file rename` | (in C2's) | in C2, D4 | B5, B7, C1 | core |
+| [x] | E18 | `library` | works on recipe and view folders through the file port, and registers `recipe list`, `recipe drop`, `recipe sync`, `recipe publish`, `node new`, `view new`, `view load`, `node duplicate` and `file rename` | (in C2's) | in C2, D4 | B5, B7, C1 | core |
 | [ ] | E15 | `command-items` | offers the commands for a target as Items, for menus and the popup | 398 | 60 | B1, B8 | later |
 | [ ] | E16 | `relations` | finds CMake, doc and include relations and publishes them as Relations | 325 + 822 | 160 | B7 | later |
 
@@ -192,7 +192,7 @@ Parts are the panels' building blocks, with the jobs the [recipe map](../archite
 
 A component is only a `view.vlp` (RV06), so it costs manifest lines, and it can load only once C1 exists.
 
-| Port | ID | Recipe | Deploys | POC | New | Needs | Advice |
+| Port | ID | Recipe | Uses | POC | New | Needs | Advice |
 | --- | --- | --- | --- | --: | --: | --- | --- |
 | [x] | F1 | `panel` | list, hit, rects, glyphs | chrome, in five copies (in E1's and E8's) | 30 | C1, E1, E2, E8, E9 | core |
 | [x] | F2 | `dock` | split, hit, rects | 2,228 (the POC's runtime dock, which E7 and D18 replace) | 20 | C1, E7, E9 | core |
@@ -211,7 +211,7 @@ A component is only a `view.vlp` (RV06), so it costs manifest lines, and it can 
 | Port | ID | Function | POC | New | Needs | Advice |
 | --- | --- | --- | --: | --: | --- | --- |
 | [ ] | H1 | GUI tests as command logs: `input` lines followed by `screenshot`, compared with a golden. They replace `panel_smoke.py`, `panel_cycle.py` and `cli_smoke.py`. | 972 | 120 | A8, B3, B6 | later |
-| [ ] | H2 | Recipe-map gate: checks the deploys in each `view.vlp` against the recipe map, the way `include-map.py` checks includes. | – | 80 | C1 | later |
+| [ ] | H2 | Recipe-map gate: checks the recipes each `view.vlp` uses against the recipe map, the way `include-map.py` checks includes. | – | 80 | C1 | later |
 | [ ] | H3 | Random command sequences that check determinism (C01). | 519 | 100 | B3 | later |
 | [ ] | H4 | Command-table gate: checks that every verb has a spec row. | in `check_structural.py` | 0 | — | cut: B1 refuses a command without its spec (RV04, A02) |
 
@@ -227,7 +227,7 @@ The ticked rows, in the order they would land. Each step needs only rows from ea
 | | 4 | B4 | save |
 | | 5 | B14 | the first draw opens the window |
 | | 6 | B5 | operators register commands |
-| | 7 | C1 | deploys |
+| | 7 | C1 | the recipes a node uses |
 | | 8 | B9, E12, D1, D12 | the terminal port and the command-line part, which the build compiles from the library |
 | | 9 | B8, E17, D7 | graph reads; `ls` and `info` |
 | | 10 | B7, C3, E18, C2, D4, D5, D6, D15 | the file port, hosted views and the library part |
@@ -247,15 +247,15 @@ The ticked rows, in the order they would land. Each step needs only rows from ea
 | | 24 | E3, E13, F5 | curves and graph: the graph editor |
 | | 25 | G2 | the `ide` app |
 
-[Example 1](cli-examples.md#example-1-a-triangle) also needs D15 (`recipe new`), which moved to core at step 10. [Example 2](cli-examples.md#example-2-instanced-cubes-on-the-triangle) needs phase 1, A1 to A5 (steps 12 to 14) and A7 (step 22), plus three later rows: A9 (`mat4` values), A14 (depth) and D17 (`recipe publish`). It needs nothing else from phases 2 to 4, so it could run straight after phase 1 if those nine rows came next.
+[Example 1](cli-examples.md#example-1-a-triangle) also needs D15 (`node new`), which moved to core at step 10. [Example 2](cli-examples.md#example-2-instanced-cubes-on-the-triangle) needs phase 1, A1 to A5 (steps 12 to 14) and A7 (step 22), plus three later rows: A9 (`mat4` values), A14 (depth) and D17 (`recipe publish`). It needs nothing else from phases 2 to 4, so it could run straight after phase 1 if those nine rows came next.
 
 ## Decisions this needs (A00)
 
 - **D1, graph reads**: needed for B8 (step 9), and so for `inspect`, `graph` and `command-items`.
 - **D5, operator ends of a connection**: needed for A2 and A3 (step 13), and so for every part that hands Rects, Items or Labels to another operator. On 2026-10-03 the lead chose native C++ between C++ nodes: recipes include each other's headers, and objects pass by reference. [Native C++](native-cpp.md) proposes how, and the principle changes it needs, for the lead to approve.
-- **The `instance_count` word (V04)**: needed for A4 (step 13). `invocations` then counts one instance ([CLI examples](cli-examples.md#what-view-save-writes)). Approved on 2026-10-03; the number form is built.
-- **The recipe template and `recipe new` (D15)**: moved to core by the lead on 2026-10-03, and built at step 10 with the `library` part ([CLI examples](cli-examples.md#a-recipe-file-shows-what-it-can-reach)).
-- **The deploy word (V04)**: needed for C1 (step 7). The proposal is a `[deploy "<name>"]` section holding `recipe` and `param = <node>.<key>=<value>`, with ports reached as `<name>.<node>.<port>`. [Example 2](cli-examples.md#example-2-instanced-cubes-on-the-triangle) shows one. Built as proposed at step 7, for the lead to confirm before a library recipe uses it.
+- **The `instance_count` word (V04)**: needed for A4 (step 13). `vertex_count` counts one instance ([CLI examples](cli-examples.md#what-view-save-writes)). Approved on 2026-10-03; the number form is built.
+- **The template and `node new` (D15)**: moved to core by the lead on 2026-10-03, and built at step 10 with the `library` part ([CLI examples](cli-examples.md#a-nodes-file-shows-what-it-can-reach)).
+- **The deploy word (V04)**: needed for C1 (step 7), and built so. On 2026-10-03 the lead chose otherwise: every node is a folder, a drop copies a recipe as a node a view owns, and only a library recipe's node uses another recipe, with `recipe` ([nodes and folders](nodes-and-folders.md)).
 - **How the CLI and the IDE address the project they host (C3)**: a command names the child it edits (`triangle: node add …`), and the command-line part adds that name, so a typed line needs none and every log line stands alone (V08). Built so at step 10, with `:` alone for the host.
 - **The recipe map**: it gains the `inspect` and `library` parts, and `graph-editor` ships without `relations` until E16 lands.
 - **The choices example 2 makes** for images, draw outputs, depth and instancing: see [choices example 2 makes](cli-examples.md#choices-example-2-makes).

@@ -2,11 +2,13 @@
 
 How a view's C++ and GLSL are built, loaded and swapped while Vulpen runs, and how a node's manifest entry, C++ and GLSL meet. It proposes an answer to [D2](../architecture/migration-and-implementation.md#open-decisions) and replaces the POC's in-process shader compile, module ABI and bundle machinery. A proof of concept runs in this tree ([below](#proof-of-concept)). Proposed 2026-09-29; the project lead decides (A00).
 
+Since 2026-10-03 every node is a folder (RV08, [nodes and folders](nodes-and-folders.md)): what builds as one module is a node's folder, `Recipes` is `Modules`, `recipe.cmake` is `nodes.cmake`, and a node's shaders are the `.comp`, `.vert` and `.frag` among its files. The sections up to [Proof of concept](#proof-of-concept) say how it works now; that section and the ones after it are as they were proposed.
+
 ## Decision
 
 - **The graph is live.** Nodes, connections and params change at runtime (V00, V06, V08). A graph edit re-runs the schedule, never a compiler.
-- **The build compiles all code.** CMake compiles every recipe's GLSL to SPIR-V and its C++ to machine code. Nothing compiles inside the running process.
-- **A dev build swaps what the build changed.** Recipe C++ builds as one small module per recipe. The runtime notices a saved file, runs the build off the frame thread, and swaps only the shaders and modules the build rewrote; the rest of the view keeps running, GPU buffers included.
+- **The build compiles all code.** CMake compiles every node's GLSL to SPIR-V and its C++ to machine code. Nothing compiles inside the running process.
+- **A dev build swaps what the build changed.** A node's C++ builds as one small module per node folder. The runtime notices a saved file, runs the build off the frame thread, and swaps only the shaders and modules the build rewrote; the rest of the view keeps running, GPU buffers included.
 - **A release build links the same sources.** Only the CMake target type differs (`MODULE` or `OBJECT`), so dev and release run the same code, and a player is the release build.
 
 ## Why
@@ -27,13 +29,13 @@ For GLSL the swap needs no loader at all: SPIR-V is data, and Vulkan builds a pi
 
 ## Nodes
 
-A node is one `[node]` entry in the manifest (V00). It names the recipe it comes from (the view's own copy, V03), and in that recipe's folder at most one C++ operator class and its shaders: one compute shader, or a vertex and a fragment shader, which make the node a draw of `invocations` vertices. A view has a window while a node draws, and runs headless otherwise (V07). It holds its params and its log level (V09). Connections are entries of their own, each one buffer from one node's port to other nodes' ports.
+A node is one `[node]` entry in the manifest (V00), and the folder its name names (RV08). It names at most one C++ operator class its folder's C++ registers, and its folder holds its shaders: one compute shader, which makes it a dispatch of `invocations` threads, or a vertex and a fragment shader, which make it a draw of `vertex_count` vertices. A view has a window while a node draws, and runs headless otherwise (V07). It holds its params and its log level (V09). Connections are entries of their own, each one buffer from one node's port to other nodes' ports.
 
 ```ini
 [node "wave"]
-recipe      = wave
 operator    = Wave
-shader      = Wave.comp
+file        = Wave.comp
+file        = Wave.cpp
 invocations = 1024
 param       = amplitude=1.0
 param       = speed=0.02
@@ -43,7 +45,7 @@ from = wave.values
 to   = probe.values
 ```
 
-**Names join the three, when the view loads.** Nothing joins them earlier: the build compiles each recipe folder's C++ and GLSL apart and never reads the manifest, so a shader edit never recompiles C++, and the manifest may pair any class with any shader. At load, and again after every swap, the loader reflects the SPIR-V and runs the operator's `bind`, which asks for values, params and read-backs by name. It then checks the three against each other:
+**Names join the three, when the view loads.** Nothing joins them earlier: the build compiles each node folder's C++ and GLSL apart and never reads the manifest, so a shader edit never recompiles C++, and the manifest may pair any class its folder registers with its shaders. At load, and again after every swap, the loader reflects the SPIR-V and runs the operator's `bind`, which asks for values, params and read-backs by name. It then checks the three against each other:
 
 - every param is read by the shader or by the operator;
 - every value in the pass block is set by a param or by the operator, never both;
@@ -54,31 +56,31 @@ to   = probe.values
 
 A mismatch is logged with a message that names the node, the name and the fix (A02). At the first load it stops the run before the first frame; after a swap it leaves only that node out, and the rest of the view runs. During a frame nothing is looked up.
 
-**Binding.** `operator = Wave` is looked up in what the node's recipe registered. A recipe's C++ exports one entry, `VP_RECIPE(registry) { registry.add<Wave>("Wave"); }`. A dev build loads the recipe's module from `<build>/views/<view>/recipes/<recipe>/recipe.so` the first time a node needs it and runs that entry; a release build finds the same entry linked in, in a table CMake generates. Names are scoped by recipe, so two recipes may each define a `Text`. `shader = Wave.comp` is `<build>/views/<view>/recipes/<recipe>/Wave.comp.spv`, since the build tree mirrors the view: the path is the binding, with no index to keep (C02).
+**Binding.** `operator = Wave` is looked up in what the node's folder registered. A folder's C++ exports one entry, `VP_OPERATORS(registry) { registry.add<Wave>("Wave"); }`. A dev build loads the folder's module from `<build>/views/<view>/<folder>/module.so` the first time a node needs it and runs that entry; a release build finds the same entry linked in, in a table CMake generates. Names are scoped by folder, so two nodes may each define a `Text`. The shader `Wave.comp` is `<build>/views/<view>/<folder>/Wave.comp.spv`, since the build tree mirrors the view: the path is the binding, with no index to keep (C02).
 
 **Seam: by name, checked at load, with the C++ type checked there too.** `node.value<float>("phase")` fails at load if the shader declares `phase` as a `uint`, or not at all. A compile-time check would need a C++ copy of each GLSL layout, kept by hand (RA03 forbids that) or generated from reflection by the build. Generation would make every recipe's C++ compile depend on its shaders, so a GLSL edit that touches the pass block would recompile and swap C++ too, and it would fix in C++ which shader a class runs with, which the manifest decides at load (V00). RV05 already has C++ read contracts by reflection. A02 accepts a mistake found at load, which comes before the first frame, and the frame pays nothing for it: `bind` turns each name into an offset once. The cost is that the loader, not the compiler, finds a misspelled name, about a second after the save; a build step that loads every view headless, as the `wave` test does, would find it at build.
 
-**Reach: handles it borrows, never an object that owns the GPU.** A recipe's C++ includes only `runtime/Operator.h`. While it binds it gets names in and handles out: a `Value<T>` is an offset, a `Readback<T>` or an `Upload<T>` an index, and a param comes parsed as `T`. `T` is a scalar or, from glm, a vector, and the loader checks it against the GLSL type. Each frame it writes values, fills upload spans, reads a read-back span that is valid for that call, and logs. It never sees `Engine`, `Resources`, `Buffer`, `Pipelines` or a Vulkan handle. The schedule owns every buffer, block and pipeline (A01). A recipe that needs more gets a general port, not the engine (V05). Its module then needs no engine symbol, and a swap cannot leave it holding a pointer to a GPU object the schedule replaced: `bind` resolves its handles again. The engine also places each buffer from the declarations: one an operator writes or reads back lives where the CPU can map it, a first step towards [D5](../architecture/migration-and-implementation.md#open-decisions).
+**Reach: handles it borrows, never an object that owns the GPU.** A node's C++ includes only `runtime/Operator.h`. While it binds it gets names in and handles out: a `Value<T>` is an offset, a `Readback<T>` or an `Upload<T>` an index, and a param comes parsed as `T`. `T` is a scalar or, from glm, a vector, and the loader checks it against the GLSL type. Each frame it writes values, fills upload spans, reads a read-back span that is valid for that call, and logs. It never sees `Engine`, `Resources`, `Buffer`, `Pipelines` or a Vulkan handle. The schedule owns every buffer, block and pipeline (A01). A node that needs more gets a general port, not the engine (V05). Its module then needs no engine symbol, and a swap cannot leave it holding a pointer to a GPU object the schedule replaced: `bind` resolves its handles again. The engine also places each buffer from the declarations: one an operator writes or reads back lives where the CPU can map it, a first step towards [D5](../architecture/migration-and-implementation.md#open-decisions).
 
 ## How it works
 
-- **Build.** [`src/runtime/cmake/recipe.cmake`](../../src/runtime/cmake/recipe.cmake) gives each recipe folder of a view one call. It compiles each shader to `<build>/views/<view>/recipes/<recipe>/`, with a depfile so an edited include recompiles what uses it. It compiles the folder's `.cpp` files to a module (dev) or to objects linked into `vulpen` (release).
+- **Build.** [`src/runtime/cmake/nodes.cmake`](../../src/runtime/cmake/nodes.cmake) gives each node folder of a view one call. It compiles each shader to `<build>/views/<view>/<folder>/`, with a depfile so an edited include recompiles what uses it. It compiles the folder's `.cpp` files to a module (dev) or to objects linked into `vulpen` (release).
 - **Load.** The runtime reflects each node's SPIR-V when the view loads, never at build time, so reflection, the GPU layout and pipeline creation never learn where the bytes came from (RA03).
-- **Swap.** The runtime scans the view folder every 100 ms. A change seen twice runs `cmake --build --target vulpen_recipes` on a thread, so a half-written file never compiles and the frame loop never waits (VK02). When the build finishes, between frames with the GPU idle:
+- **Swap.** The runtime scans the view folder every 100 ms. A change seen twice runs `cmake --build --target vulpen_modules` on a thread, so a half-written file never compiles and the frame loop never waits (VK02). When the build finishes, between frames with the GPU idle:
   - the runtime unloads the modules the build rewrote, after destroying their operators;
   - it reads the manifest again if it changed since it was read, so the edits typed since then stay;
-  - it builds a new schedule, which takes over from the old one what the build left alone: operators of recipes whose module stayed, pipelines of unchanged SPIR-V, and buffers of unchanged shape, contents included.
+  - it takes each node's files from its folder, and builds a new schedule, which takes over from the old one what the build left alone: operators whose folder's module stayed, pipelines of unchanged SPIR-V, and buffers of unchanged shape, contents included.
 
   One path serves a shader swap, a module swap and a graph edit.
-- **Failure.** A failed build swaps nothing, and its compiler output is logged, so the running code stays. The include-map gate fails a build as a compile error does. Recipe code has no rows in the map, so a new recipe file swaps in at its next save, and an include the rule for recipe code refuses keeps the running code until a save fixes it. A manifest that does not parse keeps the running graph. A node that fails to bind is left out, with its errors, until a later build fixes it.
+- **Failure.** A failed build swaps nothing, and its compiler output is logged, so the running code stays. The include-map gate fails a build as a compile error does. Node code has no rows in the map, so a new node's file swaps in at its next save, and an include the rule for node code refuses keeps the running code until a save fixes it. A manifest that does not parse keeps the running graph. A node that fails to bind is left out, with its errors, until a later build fixes it.
 
-An IDE recipe needs no path of its own: it saves through the file port, and the same scan picks the change up, as it does for an external editor.
+An IDE node needs no path of its own: it saves through the file port, and the same scan picks the change up, as it does for an external editor.
 
 ## Rules
 
-1. **Recipe classes live in an unnamed namespace.** The only exported symbol is the recipe's entry. Any number of recipes, and copies of one recipe in several views, then link into one binary without the ODR clash that D2's note warns of.
-2. **A recipe reaches the engine only through the interfaces `runtime/Operator.h` hands it.** Its module then needs no engine symbol, and the engine exists once, in the executable.
-3. **GCC compiles recipe modules with `-fno-gnu-unique`.** Without it, a recipe using `<regex>` gets 30 `STB_GNU_UNIQUE` symbols, `dlclose` cannot unload it, and a swap silently keeps running the old code (measured). Every load first asks the OS whether the file is still mapped, with `RTLD_NOLOAD`, so any other cause fails loudly (A02).
+1. **A node's classes live in an unnamed namespace.** The only exported symbol is its folder's entry. Any number of nodes, and copies of one recipe in several views, then link into one binary without the ODR clash that D2's note warns of.
+2. **A node's C++ reaches the engine only through the interfaces `runtime/Operator.h` hands it.** Its module then needs no engine symbol, and the engine exists once, in the executable.
+3. **GCC compiles node modules with `-fno-gnu-unique`.** Without it, a node using `<regex>` gets 30 `STB_GNU_UNIQUE` symbols, `dlclose` cannot unload it, and a swap silently keeps running the old code (measured). Every load first asks the OS whether the file is still mapped, with `RTLD_NOLOAD`, so any other cause fails loudly (A02).
 4. **Unload before load.** A `dlopen` of a path that is still loaded returns the old code.
 5. **A module swap resets its operators' CPU state; a shader swap keeps it.** State that must survive a module swap belongs in params or GPU buffers.
 6. **An engine-header edit needs a restart.** The entry's name carries a hash of every engine header, so a module built against other headers fails to load, saying to restart, instead of crashing the host.

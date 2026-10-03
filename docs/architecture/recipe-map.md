@@ -1,6 +1,6 @@
 # Recipe map
 
-Every recipe in `src/recipes/`: what it deploys, which core ports it uses, and which contracts it reads and writes. Recipe code has no rows in the [include map](include-map.md), and recipes never include each other (RV00), so that page cannot show how they stack; this page does, for the same reason (A00). The rules are RV05–RV07 in the [requirements](requirements.md) and V11 in the [principles](principles.md). It is kept by hand until the `view.vlp` files declare their children; then a gate checks it as `include-map.py` checks the include map.
+Every recipe in `src/recipes/`: which recipes it uses, which core ports it uses, and which contracts it reads and writes. Node code has no rows in the [include map](include-map.md), and recipes never include each other (RV00), so that page cannot show how they stack; this page does, for the same reason (A00). The rules are RV05–RV08 in the [requirements](requirements.md) and V11 in the [principles](principles.md). A recipe uses another with a node of its `view.vlp` that names it, as `[node "cli.inspect"] recipe = inspect`. It is kept by hand until every component's and app's `view.vlp` names the recipes it uses; then a gate checks it as `include-map.py` checks the include map.
 
 Paths are from `src/recipes/`.
 
@@ -23,7 +23,7 @@ The core (`baseclasses/`, `runtime/`) knows no recipe. These are the ports the r
 
 ## Parts
 
-Parts hold all recipe code and deploy nothing (RV06). A drawing part draws into its host's target.
+Parts hold all of the library's code and use no other recipe (RV06). A drawing part draws into its host's target.
 
 | Part | Code | Ports | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -48,7 +48,7 @@ Parts hold all recipe code and deploy nothing (RV06). A drawing part draws into 
 
 ## Components
 
-| Component | Deploys |
+| Component | Uses |
 | --- | --- |
 | `panel` | list, hit, rects, glyphs |
 | `dock` | split, hit, rects |
@@ -61,7 +61,7 @@ Parts hold all recipe code and deploy nothing (RV06). A drawing part draws into 
 
 ## Apps
 
-| App | Deploys |
+| App | Uses |
 | --- | --- |
 | `cli` | command-line, inspect, library |
 | `ide` | palette, font, keys, modes, image, inspect, library; dock, panel ×4, text-area, find-bar, terminal, graph-editor, menu ×2, tooltip |
