@@ -192,7 +192,20 @@ Data moves by different routes, told apart by who writes it and how much there i
   {!!!} triangle/view.vlp:10 node triangle: the operator reads param speed, which the node does not set
   ```
 
-- **The handles.** `T` is `float`, `int`, `uint` or a glm vector of them, compared with the GLSL type.
+- **The handles.** `T` is `float`, `int`, `uint` or a glm vector of them, compared with the GLSL type. A buffer's element may also be a struct that names its members once, which the loader checks against the shader's struct by name, type and offset (A2); a member put elsewhere is refused (`shapes: member size is a float at byte 12 in C++, but a float at byte 8 in the shader`). The fail-loud fixture's `shape`:
+
+  ```cpp
+  struct Shape { // the shader's: struct Shape { vec2 at; float size; uint sides; };
+    glm::vec2 at;
+    float size = 0;
+    std::uint32_t sides = 0;
+
+    static constexpr auto members() {
+      return std::array{VP_MEMBER(Shape, at), VP_MEMBER(Shape, size), VP_MEMBER(Shape, sides)};
+    }
+  };
+  // in bind: _shapes = node.upload<Shape>("shapes");
+  ```
 - **The build** compiles each node's folder: its shaders to SPIR-V, and its `.cpp` files to one module in debug builds, or into `vulpen` in release. They land under `out/build/<preset>/views/<view>/<the node's folder>/`. One file of the folder registers its operators with `VP_OPERATORS`.
 - **Where:** `src/runtime/Operator.h` is all a node's C++ includes (section 15); `src/runtime/Schedule.cpp` loads and checks; `src/runtime/cmake/nodes.cmake` builds.
 
