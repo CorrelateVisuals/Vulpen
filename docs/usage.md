@@ -99,14 +99,14 @@ from = wave.values          # the node.port that writes it
 to   = probe.values         # the node.port that reads it; repeat `to` for more readers
 ```
 
-- **The words.** `[node]` takes `recipe`, `operator`, `file`, `invocations`, `vertex_count`, `instance_count`, `param` and `log`; `[connection]` takes `from` and `to`; `[view]` takes `file` (section 13). A dispatch counts its `invocations`; a draw counts its `vertex_count`, and `instance_count = 64` draws 64 instances, one when left out (VK04: `vkCmdDraw(vertexCount, instanceCount, …)`). `recipe` names where a dropped node came from (section 11).
+- **The words.** `[node]` takes `recipe`, `operator`, `file`, `invocations`, `vertex_count`, `instance_count`, `param`, `image` and `log`; `[connection]` takes `from` and `to`; `[view]` takes `file` (section 13). A dispatch counts its `invocations`; a draw counts its `vertex_count`, and `instance_count = 64` draws 64 instances, one when left out (VK04: `vkCmdDraw(vertexCount, instanceCount, …)`). `recipe` names where a dropped node came from (section 11).
 - **The folder decides a node's files.** The `file` lines list what the node's folder holds, and vulpen keeps them so: a file put in `wave/` is one of the node's at the next load, edit or live scan, one taken out is no longer, and `view save` writes the list. A command never names a file. A folder that no node names is a warning at load, since every folder is a node.
 - **Loading runs edits.** Each section goes through the same edits a command makes (section 8), so a loaded view and a typed one pass the same checks.
 - **Order.** Nodes run writers before readers, as the connections order them, then in the manifest's order.
 - **A mistake names its line** and stops the load (A02):
 
   ```text
-  {!!!} …/wave/view.vlp:11: unknown word invocatons in a node; its words are recipe, operator, file, invocations, vertex_count, instance_count, param and log
+  {!!!} …/wave/view.vlp:11: unknown word invocatons in a node; its words are recipe, operator, file, invocations, vertex_count, instance_count, param, image and log
   ```
 
 - **Comments stay.** `view save` writes the manifest back with the comments a person wrote (section 10).
@@ -180,7 +180,7 @@ Data moves by different routes, told apart by who writes it and how much there i
 | you, C++ | `node.param<T>`, parsed in `bind`, which runs again after an edit | the triangle's `speed` |
 | C++, a shader, one value | `node.value<T>`, set with `frame.set` in `cook`, each frame | the triangle's `tint` |
 | C++, a shader, one per invocation | `node.upload<T>`, filled through `frame.write` in `cook`; it holds until written again | the triangle's `corners` |
-| C++, a shader, an image | `node.texture`, filled once through `frame.upload` in `cook`; it keeps its pixels through rebuilds | the fail-loud fixture's `picture` |
+| C++, a shader, an image | `node.texture<T>`, filled once through `frame.upload` in `cook`, in the format its `image` word gives; it keeps its pixels through rebuilds | the fail-loud fixture's `picture` |
 | a shader, C++ | `node.readback<T>`, read a frame after the GPU wrote it | the probe's `samples` |
 | a shader, a shader | a connection, which never leaves the GPU (VK03) | `wave.values` to `probe.values` |
 | C++, C++ | a connection: `node.output<T>` in the writer, `node.input<T>` in each reader, one object both hold by reference (section 15) | the fail-loud fixture's `give.count` to `take.count` |
@@ -265,17 +265,31 @@ Images live in set 0 (RV02). A pass block names one by a `Texture`, its slot in 
 
 ```glsl
 layout(set = 1, binding = 0) uniform Pass {
-  Texture atlas; // C++: node.texture("atlas"), or a connection from a port C++ fills
+  Texture atlas; // C++: node.texture<T>("atlas"), or a connection from a port C++ fills
 } pass;
 // in main: color = sample_linear(pass.atlas, uv);
 ```
 
-```cpp
-_atlas = node.texture("atlas");                // in bind
-frame.upload(_atlas, pixels, {width, height}); // in cook, once: a byte a pixel, read as 0 to 1
+```ini
+[node "font"]
+operator = Font
+image    = atlas=R8_UNORM   # one 8-bit channel, which shaders read as 0 to 1
 ```
 
-The upload makes the image the size it gives, and the frame copies the pixels in before its passes. The image keeps them through rebuilds while the node and the port keep their names, so a node uploads once. Until then its `Texture` holds 0, which means unbound and samples as nothing. A `Texture` nothing fills, an image nothing samples, and pixels that do not make the size given are refused.
+```cpp
+_atlas = node.texture<std::uint8_t>("atlas");  // in bind: the pixel R8_UNORM takes
+frame.upload(_atlas, pixels, {width, height}); // in cook, once
+```
+
+The `image` word gives an image its format, by Vulkan's name (VK04), and C++ fills it with that format's pixel, byte for byte; the loader refuses any other (`the operator fills picture with uint8 pixels, but its format R32_SFLOAT takes float`). An image no word names is `R8G8B8A8_UNORM`.
+
+| Format | C++ pixel |
+| --- | --- |
+| `R8_UNORM`, `R8G8_UNORM`, `R8G8B8A8_UNORM`, `R8G8B8A8_SRGB` | `std::uint8_t`, `glm::u8vec2`, `glm::u8vec4`, `glm::u8vec4` |
+| `R16_SFLOAT`, `R16G16_SFLOAT`, `R16G16B16A16_SFLOAT` | `std::uint16_t`, `glm::u16vec2`, `glm::u16vec4`, each a 16-bit float's bits, as `glm::packHalf1x16` gives them |
+| `R32_SFLOAT`, `R32G32_SFLOAT`, `R32G32B32A32_SFLOAT` | `float`, `glm::vec2`, `glm::vec4` |
+
+The upload makes the image the size and format given, and the frame copies the pixels in before its passes. The image keeps them through rebuilds while the node, the port and the format stay, so a node uploads once. Until then its `Texture` holds 0, which means unbound and samples as nothing. A `Texture` nothing fills, an image nothing samples, a format there is not or one this GPU cannot sample filtered, and pixels that do not make the size given are refused.
 
 - **Barriers** follow from the qualifiers: a pass waits for what an earlier pass wrote, with no barrier placed by hand.
 - **Memory** follows from who uses a buffer: one C++ writes or reads back lives where the CPU maps it; any other stays on the GPU (VK03). A buffer holds one element per invocation of its writer, a dispatch's thread or a draw's vertex, and starts zeroed.
@@ -763,6 +777,7 @@ Every mistake surfaces at load or at its line, naming its cause (A02):
 | C++ writes more elements than its buffer holds | `node shape: the operator writes 8 elements of shapes, which holds 4; …; its operator stops` | the rest of the view; that node stops |
 | a `Texture` nothing fills, or an image C++ fills that nothing samples | `node picture: picture samples nothing: connect it to an image another node's C++ fills, or fill it from the operator` | the rest of the view; that node is left out |
 | C++ uploads pixels that do not make the size it gives | `node picture: the operator uploads 7 pixels to picture, which is 4 by 2; its operator stops` | the rest of the view; that node stops |
+| C++ fills an image with another pixel than its format takes, or the format is none there is | `node picture: the operator fills picture with uint8 pixels, but its format R32_SFLOAT takes float` | the rest of the view; that node is left out |
 | shaders that make neither a draw nor a dispatch, or the wrong count | `node fill: it runs a .comp, so it counts its invocations, and no vertex_count` | the rest of the view |
 | a param nothing reads, a field nothing sets | `node wave: param spare: nothing reads it` | the rest of the view |
 | an edit that cannot apply | `refuse.txt:2: node wave is connected through values; disconnect it first` | nothing changes; a script stops there |
