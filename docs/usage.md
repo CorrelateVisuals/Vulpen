@@ -281,7 +281,7 @@ The upload makes the image the size it gives, and the frame copies the pixels in
 - **Memory** follows from who uses a buffer: one C++ writes or reads back lives where the CPU maps it; any other stays on the GPU (VK03). A buffer holds one element per invocation of its writer, a dispatch's thread or a draw's vertex, and starts zeroed.
 - **Draws** run after the dispatches, in graph order, into the window, each blended premultiplied over what came before: an opaque color covers, and alpha lets what is behind show.
 - **The frame block** is written once a frame, after the window's image is acquired, so a resized window's size shows at once. Its layout comes from reflection, and a shader whose push constant is anything else is refused.
-- **Where:** `src/baseclasses/GpuLayout.glsl`; `src/baseclasses/Pipelines.cpp` reflects, and owns the frame block and set 0; `src/baseclasses/Engine.cpp` records the frame, the copies into images first.
+- **Where:** `src/baseclasses/GpuLayout.glsl`; `src/baseclasses/Shader.cpp` reflects; `src/baseclasses/Pipelines.cpp` owns the frame block and set 0; `src/baseclasses/Engine.cpp` records the frame, the copies into images first.
 
 ## 6. Live code
 
