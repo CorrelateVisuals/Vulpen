@@ -182,6 +182,7 @@ Data moves by different routes, told apart by who writes it and how much there i
 | C++, a shader, one per invocation | `node.upload<T>`, filled through `frame.write` in `cook`; it holds until written again | the triangle's `corners` |
 | a shader, C++ | `node.readback<T>`, read a frame after the GPU wrote it | the probe's `samples` |
 | a shader, a shader | a connection, which never leaves the GPU (VK03) | `wave.values` to `probe.values` |
+| C++, C++ | a connection: `node.output<T>` in the writer, `node.input<T>` in each reader, one object both hold by reference (section 15) | the fail-loud fixture's `give.count` to `take.count` |
 | the engine, both | the frame block for shaders (section 5), `frame.index()` for C++ | `frame.resolution` |
 
 - **The names meet at load, not at compile time.** The loader reads each shader's SPIR-V (reflection, RA03) and checks every request of `bind` against it, and every param and pass-block field against the node. Nothing is looked up during a frame.
@@ -648,6 +649,40 @@ void cook(VP::Cook &frame) override {
   // frame.files().manifest(path);                          // a manifest's graph, as a view runs it
 }
 ```
+
+**Objects between C++ nodes.** A connection between two C++ nodes carries one C++ object, which the engine owns; the writer gets it to change and each reader gets it `const`, once, in `bind`. The type they share is a contract, a header in the view's `contracts/` whose types live in `namespace VP_VIEW`, one namespace per view (RV05). The fail-loud fixture's pair, shortened:
+
+```cpp
+// contracts/Count.h
+namespace VP_VIEW {
+struct Count {
+  std::uint64_t frame = 0;
+};
+} // namespace VP_VIEW
+
+// give/Give.cpp: the writer, which binds first since the connection orders it first
+void bind(VP::Bind &node) override {
+  _count = &node.output<VP_VIEW::Count>("count"); // the engine's object, by reference
+}
+void cook(VP::Cook &frame) override {
+  _count->frame = frame.index();                   // plain C++
+}
+
+// take/Take.cpp: a reader, which cooks after the writer each frame
+void bind(VP::Bind &node) override {
+  _count = &node.input<VP_VIEW::Count>("count");  // const VP_VIEW::Count *
+}
+```
+
+```ini
+[connection "count"]
+from = give.count
+to   = take.count
+```
+
+- **Checked at load:** a reader of another type is left out, naming both types (`input count is a std::vector<int, …> of 24 bytes, but give writes a vp_mistakes::Count of 8 bytes`), and so is a writer whose type sits in an unnamed namespace, which no reader could name.
+- **Kept** across rebuilds, contents included, while the writer's module stays; a swap of that module empties it (`{mod} mistakes/give swapped; connection count starts empty`), since its destructor is that module's code, and the writer makes it again as it binds.
+- **A reference lasts until the next `bind`**: every rebuild binds every node again, so none is kept anywhere else.
 
 **The frame index and the log.** `frame.index()` is the frame, as the frame block's `index` is; `frame.log(VP::Level::info, "text")` logs at the node's level (V09).
 
