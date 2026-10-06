@@ -15,7 +15,7 @@ Every ticked row runs. Everything that checks the code lives in `src/tools/`:
 
 | Command | Runs | Time |
 | --- | --- | --: |
-| every build | the gates before the compile (include map, T3, T4, T6, T40, T45), `spirv-val` on each shader (T8), and T1 after the link | – |
+| every build | the gates before the compile (include map, T3, T4, T6, T40, T45, T46), `spirv-val` on each shader (T8), and T1 after the link | – |
 | `ctest --preset debug` | `vulpen`, `wave` (T13, T30, T38), `wave-gpu`, `triangle` (T19), `barriers` (T17), `fail-loud` (T14) | 3 s |
 | `ctest --preset release` | the same but `fail-loud`, whose recipes build only as modules | 1.5 s |
 | `ctest --preset asan` | ASan, UBSan and LSan over the debug tests on lavapipe, windows included, `fuzz` (T20, T25) and `fuzz-commands` (T39) | 45 s |
@@ -91,6 +91,7 @@ Static checks. They run with the include map in `src/tools/gates/` and fail the 
 | [x] | T8 | Valid SPIR-V | RV02 | `nodes.cmake` runs `spirv-val` on each shader it compiles | 5 | build |
 | [ ] | T9 | Every ID has a test | A00, A02 | each principle and requirement is named by a test on this page, or marked review-only | 30 | build |
 | [x] | T45 | A namespace per view | RV05 | every header in a `contracts/` folder opens `namespace VP_VIEW`, which the build names per view, so two views' copies of a C++ contract never become one type in a release binary (an ODR violation, silent until it corrupts memory); a text search in `code-rules.py`, added with [native C++](native-cpp.md) | 5 | build |
+| [x] | T46 | Citations | RC05 | each ID a comment cites in parentheses, in the C++, the shaders and the node template, is one that `principles.md` or `requirements.md` defines: no plan's row or step, which points at nothing once the plan is done, and no mistyped ID; a text search in `code-rules.py`, added on 2026-10-06 after two commits cited plan rows | 15 | build |
 
 ## 2. ctest
 
