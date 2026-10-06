@@ -223,7 +223,7 @@ layout(buffer_reference, std430) writeonly buffer FloatsOut { float at[]; }; // 
 // What every pass may read about the frame; the push constant holds its address.
 layout(buffer_reference, std430) readonly buffer FrameBlock {
   uvec2 resolution; // of the window in pixels; zero without one
-  vec2 cursor;      // in pixels; zero until the input port feeds it
+  vec2 cursor;      // the pointer, in pixels; zero until it moves
   float time;       // seconds, from the frame index at the run's rate
   uint index;       // the frame, as the node's C++ counts it
 };
@@ -330,6 +330,15 @@ Every action is a command: a line of text through one port (V06). A command regi
 quit                               ends the run before its next frame
 source <file>                      runs a file's commands, one a line, and stops at the first that fails
 log save <file>                    writes the session's edits to a file, which source replays
+input key down <value>             presses a key, named by the character it prints, or as space, enter or f1, …
+input key up <value>               lets a key go
+input text <value>...              types the words, joined by single blanks
+input pointer <value> <value>      moves the pointer to x and y, in pixels from the window's top left
+input button down <value>          presses a pointer button: left, right or middle
+input button up <value>            lets a pointer button go
+input wheel <value> <value>        turns the wheel by x and y
+input focus on                     gives the window focus
+input focus off                    takes focus from the window
 help                               lists every command, with its usage and what it does
 complete <value>...                lists the words that may come next, the last word given being the start of one
 clear                              clears the terminal
@@ -356,7 +365,7 @@ child add <name> <file>            hosts the view a view.vlp holds, or an empty 
 child remove <name>                stops hosting a view; its files stay
 ```
 
-- **Who registers them.** The engine registers the edits, the log, save, `child list`, `image clear` and `quit`; every other command is a node's: `help`, `complete` and `clear` are the command-line part's, `ls` and `info` the inspect part's, and `recipe …`, `node new …` and `view new`/`view load` the library part's (V05).
+- **Who registers them.** The engine registers the edits, the log, save, `child list`, `image clear`, `input` and `quit`; every other command is a node's: `help`, `complete` and `clear` are the command-line part's, `ls` and `info` the inspect part's, and `recipe …`, `node new …` and `view new`/`view load` the library part's (V05).
 - **A usage is its completion.** Its placeholders say what can come there, so `complete` knows. The last may end in `...`, one argument or more, and stand in brackets, which a line may leave out: `node add ui` adds a group.
 
   ```text
@@ -692,6 +701,32 @@ void cook(VP::Cook &frame) override {
   // terminal.prompt("> ");                             // only where a person types
 }
 ```
+
+**Input**: keys, text, the pointer, its buttons, the wheel and focus, as the window got them since the frame before. Every node reads the same events, in order:
+
+```cpp
+void cook(VP::Cook &frame) override {
+  for (const VP::Event &event : frame.input().events())
+    if (event.kind == VP::Event::Kind::key && event.down && event.name == "enter")
+      submit();                                         // a key by the character it prints, or its name
+  const glm::vec2 at = frame.input().pointer();        // where the pointer is, as the cursor says
+}
+```
+
+Without a window, the `input` command makes the same events, for the next frame, so a headless test types and points as a person does (V07):
+
+```text
+input key down a
+input text hello world
+input pointer 12.5 40
+input button down left
+input wheel 0 -1
+input focus off
+```
+
+- **Neither goes through the log.** The log keeps what input caused, an edit or a save, so a replay rebuilds the graph but not the hands that drove it.
+- **Key names**: the character a key prints in the keyboard's layout, or `space`, `enter`, `escape`, `tab`, `backspace`, `insert`, `delete`, `left`, `right`, `up`, `down`, `page_up`, `page_down`, `home`, `end`, `shift`, `control`, `alt`, `super`, `f1` to `f12`. Buttons are `left`, `right` and `middle`. A held key repeats as more `down` events.
+- **The pointer** counts pixels from the window's top left, so it matches the frame block's `cursor`; moves within a frame keep the last.
 
 **Files.** A file a node holds is opened in `bind` and watched; any other goes by absolute path. A sketch, as the palette part would read its theme:
 
