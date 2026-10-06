@@ -277,8 +277,9 @@ image    = atlas=R8_UNORM   # one 8-bit channel, which shaders read as 0 to 1
 ```
 
 ```cpp
-_atlas = node.texture<std::uint8_t>("atlas");  // in bind: the pixel R8_UNORM takes
-frame.upload(_atlas, pixels, {width, height}); // in cook, once
+_atlas = node.texture<std::uint8_t>("atlas");    // in bind: the pixel R8_UNORM takes
+if (frame.empty(_atlas))                         // in cook: at first, and after image clear
+  frame.upload(_atlas, pixels, {width, height});
 ```
 
 The `image` word gives an image its format, by Vulkan's name (VK04), and C++ fills it with that format's pixel, byte for byte; the loader refuses any other (`the operator fills picture with uint8 pixels, but its format R32_SFLOAT takes float`). An image no word names is `R8G8B8A8_UNORM`.
@@ -289,7 +290,7 @@ The `image` word gives an image its format, by Vulkan's name (VK04), and C++ fil
 | `R16_SFLOAT`, `R16G16_SFLOAT`, `R16G16B16A16_SFLOAT` | `std::uint16_t`, `glm::u16vec2`, `glm::u16vec4`, each a 16-bit float's bits, as `glm::packHalf1x16` gives them |
 | `R32_SFLOAT`, `R32G32_SFLOAT`, `R32G32B32A32_SFLOAT` | `float`, `glm::vec2`, `glm::vec4` |
 
-The upload makes the image the size and format given, and the frame copies the pixels in before its passes. The image keeps them through rebuilds while the node, the port and the format stay, so a node uploads once. Until then its `Texture` holds 0, which means unbound and samples as nothing. A `Texture` nothing fills, an image nothing samples, a format there is not or one this GPU cannot sample filtered, and pixels that do not make the size given are refused.
+The upload makes the image the size and format given, and the frame copies the pixels in before its passes. The image keeps them through rebuilds while the node, the port and the format stay, so a node uploads once. They stay with the node that fills them, so a connection removed and made again finds them, until `image clear <port>` drops them, named by the port that fills them or one that samples them. Until a node fills its image, and after a clear, its `Texture` holds 0, which means unbound and samples as nothing, and `frame.empty` says so to the node's C++. A `Texture` nothing fills, an image nothing samples, a format there is not or one this GPU cannot sample filtered, and pixels that do not make the size given are refused.
 
 - **Barriers** follow from the qualifiers: a pass waits for what an earlier pass wrote, with no barrier placed by hand.
 - **Memory** follows from who uses a buffer: one C++ writes or reads back lives where the CPU maps it; any other stays on the GPU (VK03). A buffer holds one element per invocation of its writer, a dispatch's thread or a draw's vertex, and starts zeroed.
@@ -343,9 +344,10 @@ view new <file>                    hosts a new, empty view in a folder, and save
 view load <file>                   hosts the view in a folder's view.vlp
 view save                          writes the view over its manifest, keeping the comments in it
 child list                         lists the hosted views, with their files, in the order hosted
+image clear <port>                 drops the pixels of an image a node's C++ fills, named by that port or one that …
 node add <name> [<word=value>...]  adds a node, given the manifest's node words; its files are what its folder holds
 node remove <node>                 removes a node that no connection names and no node is inside; its folder stays
-node set <node> <word=value>...    gives a node the words named, clearing those given empty; param words replace them all
+node set <node> <word=value>...    gives a node the words named, clearing those given empty; param and image words …
 connect <name> <port> <port>...    joins the port that writes a buffer to the ports that read it
 disconnect <connection>            removes a connection
 param set <node> <key> <value>     sets a param of a node
@@ -354,7 +356,7 @@ child add <name> <file>            hosts the view a view.vlp holds, or an empty 
 child remove <name>                stops hosting a view; its files stay
 ```
 
-- **Who registers them.** The engine registers the edits, the log, save, `child list` and `quit`; every other command is a node's: `help`, `complete` and `clear` are the command-line part's, `ls` and `info` the inspect part's, and `recipe …`, `node new …` and `view new`/`view load` the library part's (V05).
+- **Who registers them.** The engine registers the edits, the log, save, `child list`, `image clear` and `quit`; every other command is a node's: `help`, `complete` and `clear` are the command-line part's, `ls` and `info` the inspect part's, and `recipe …`, `node new …` and `view new`/`view load` the library part's (V05).
 - **A usage is its completion.** Its placeholders say what can come there, so `complete` knows. The last may end in `...`, one argument or more, and stand in brackets, which a line may leave out: `node add ui` adds a group.
 
   ```text
