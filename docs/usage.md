@@ -181,6 +181,7 @@ Data moves by different routes, told apart by who writes it and how much there i
 | C++, a shader, one value | `node.value<T>`, set with `frame.set` in `cook`, each frame | the triangle's `tint` |
 | C++, a shader, one per invocation | `node.upload<T>`, filled through `frame.write` in `cook`; it holds until written again | the triangle's `corners` |
 | C++, a shader, an image | `node.texture<T>`, filled once through `frame.upload` in `cook`, in the format its `image` word gives; it keeps its pixels through rebuilds | the fail-loud fixture's `picture` |
+| C++, another node's shader | `node.upload<T>(port, count)` at a port no shader of the node holds, through a connection; the reader's struct is checked against C++'s | the fail-loud fixture's `maker` to `shape` |
 | a shader, C++ | `node.readback<T>`, read a frame after the GPU wrote it | the probe's `samples` |
 | a shader, a shader | a connection, which never leaves the GPU (VK03) | `wave.values` to `probe.values` |
 | C++, C++ | a connection: `node.output<T>` in the writer, `node.input<T>` in each reader, one object both hold by reference (section 15) | the fail-loud fixture's `give.count` to `take.count` |
