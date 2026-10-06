@@ -180,6 +180,7 @@ Data moves by different routes, told apart by who writes it and how much there i
 | you, C++ | `node.param<T>`, parsed in `bind`, which runs again after an edit | the triangle's `speed` |
 | C++, a shader, one value | `node.value<T>`, set with `frame.set` in `cook`, each frame | the triangle's `tint` |
 | C++, a shader, one per invocation | `node.upload<T>`, filled through `frame.write` in `cook`; it holds until written again | the triangle's `corners` |
+| C++, a shader, an image | `node.texture`, filled once through `frame.upload` in `cook`; it keeps its pixels through rebuilds | the fail-loud fixture's `picture` |
 | a shader, C++ | `node.readback<T>`, read a frame after the GPU wrote it | the probe's `samples` |
 | a shader, a shader | a connection, which never leaves the GPU (VK03) | `wave.values` to `probe.values` |
 | C++, C++ | a connection: `node.output<T>` in the writer, `node.input<T>` in each reader, one object both hold by reference (section 15) | the fail-loud fixture's `give.count` to `take.count` |
@@ -260,11 +261,27 @@ instance_count = items  # one triangle per element C++ wrote this frame
 
 Writing more than the room is refused, and the node's operator stops (`the operator writes 8 elements of shapes, which holds 4`). A buffer a shader writes counts all its elements, one per invocation of its writer.
 
+Images live in set 0 (RV02). A pass block names one by a `Texture`, its slot in `textures[]`, and `sample_linear` samples it at level 0, so every stage samples alike (GLSL02). A node's C++ fills an image once. The loader gives its slot to the node's own `Texture` of that name, or, through a connection, to another node's:
+
+```glsl
+layout(set = 1, binding = 0) uniform Pass {
+  Texture atlas; // C++: node.texture("atlas"), or a connection from a port C++ fills
+} pass;
+// in main: color = sample_linear(pass.atlas, uv);
+```
+
+```cpp
+_atlas = node.texture("atlas");                // in bind
+frame.upload(_atlas, pixels, {width, height}); // in cook, once: a byte a pixel, read as 0 to 1
+```
+
+The upload makes the image the size it gives, and the frame copies the pixels in before its passes. The image keeps them through rebuilds while the node and the port keep their names, so a node uploads once. Until then its `Texture` holds 0, which means unbound and samples as nothing. A `Texture` nothing fills, an image nothing samples, and pixels that do not make the size given are refused.
+
 - **Barriers** follow from the qualifiers: a pass waits for what an earlier pass wrote, with no barrier placed by hand.
 - **Memory** follows from who uses a buffer: one C++ writes or reads back lives where the CPU maps it; any other stays on the GPU (VK03). A buffer holds one element per invocation of its writer, a dispatch's thread or a draw's vertex, and starts zeroed.
 - **Draws** run after the dispatches, in graph order, into the window, each blended premultiplied over what came before: an opaque color covers, and alpha lets what is behind show.
 - **The frame block** is written once a frame, after the window's image is acquired, so a resized window's size shows at once. Its layout comes from reflection, and a shader whose push constant is anything else is refused.
-- **Where:** `src/baseclasses/GpuLayout.glsl`; `src/baseclasses/Pipelines.cpp` reflects and owns the frame block; `src/baseclasses/Engine.cpp` records the frame.
+- **Where:** `src/baseclasses/GpuLayout.glsl`; `src/baseclasses/Pipelines.cpp` reflects, and owns the frame block and set 0; `src/baseclasses/Engine.cpp` records the frame, the copies into images first.
 
 ## 6. Live code
 
@@ -744,6 +761,8 @@ Every mistake surfaces at load or at its line, naming its cause (A02):
 | a C++ struct and a shader's put a member at different offsets | `node shape: shapes: member size is a float at byte 12 in C++, but a float at byte 8 in the shader` | the rest of the view; that node is left out |
 | two C++ nodes disagree on what a connection carries | `node take: input count is a std::vector<int, …> of 24 bytes, but give writes a vp_mistakes::Count of 8 bytes` | the rest of the view; that node is left out |
 | C++ writes more elements than its buffer holds | `node shape: the operator writes 8 elements of shapes, which holds 4; …; its operator stops` | the rest of the view; that node stops |
+| a `Texture` nothing fills, or an image C++ fills that nothing samples | `node picture: picture samples nothing: connect it to an image another node's C++ fills, or fill it from the operator` | the rest of the view; that node is left out |
+| C++ uploads pixels that do not make the size it gives | `node picture: the operator uploads 7 pixels to picture, which is 4 by 2; its operator stops` | the rest of the view; that node stops |
 | shaders that make neither a draw nor a dispatch, or the wrong count | `node fill: it runs a .comp, so it counts its invocations, and no vertex_count` | the rest of the view |
 | a param nothing reads, a field nothing sets | `node wave: param spare: nothing reads it` | the rest of the view |
 | an edit that cannot apply | `refuse.txt:2: node wave is connected through values; disconnect it first` | nothing changes; a script stops there |
