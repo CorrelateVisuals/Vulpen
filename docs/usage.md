@@ -192,7 +192,7 @@ Data moves by different routes, told apart by who writes it and how much there i
   {!!!} triangle/view.vlp:10 node triangle: the operator reads param speed, which the node does not set
   ```
 
-- **The handles.** `T` is `float`, `int`, `uint` or a glm vector of them, compared with the GLSL type. A buffer's element may also be a struct that names its members once, which the loader checks against the shader's struct by name, type and offset (A2); a member put elsewhere is refused (`shapes: member size is a float at byte 12 in C++, but a float at byte 8 in the shader`). The fail-loud fixture's `shape`:
+- **The handles.** `T` is `float`, `int`, `uint` or a glm vector of them, compared with the GLSL type. A buffer's element may also be a struct that names its members once, which the loader checks against the shader's struct by name, type and offset; a member put elsewhere is refused (`shapes: member size is a float at byte 12 in C++, but a float at byte 8 in the shader`). The fail-loud fixture's `shape`:
 
   ```cpp
   struct Shape { // the shader's: struct Shape { vec2 at; float size; uint sides; };
