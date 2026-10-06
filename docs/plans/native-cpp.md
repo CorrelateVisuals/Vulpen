@@ -4,7 +4,7 @@ What changes when a node's C++ is plain C++: nodes include the C++ headers they 
 
 > For C++ to C++ we want to be able to include other C++ files, so we can pass it natively, needing no extra abstractions or deviations. If you understand C++ you should be able to use it inside of Vulpen without restrictions. I guess even baseclasses should be able to be included by hand. Perhaps a boundary at runtime we can consider, as it needs to be clear where things could break.
 
-That is Goal-01: "If you know C++ and GLSL, Vulpen should feel familiar". It changes V11, RV05 and two rules of [live code](live-code.md#rules), so those change first, as their own step (A05), once the lead decides (A00). Nothing below is built. Every node is a folder (RV08), and on 2026-10-03 the lead decided that a header two nodes share lives in `contracts/`, beside the GLSL contracts, so no include names another node's folder ([nodes and folders](nodes-and-folders.md)).
+That is Goal-01: "If you know C++ and GLSL, Vulpen should feel familiar". It changes V11, RV05 and two rules of [live code](live-code.md#rules), so those change first, as their own step (A05), once the lead decides (A00). Built on 2026-10-06 (`5358c5f` to `48118f8`), after the lead's "first native-cpp.md then continue on the plan 13". Every node is a folder (RV08), and on 2026-10-03 the lead decided that a header two nodes share lives in `contracts/`, beside the GLSL contracts, so no include names another node's folder ([nodes and folders](nodes-and-folders.md)).
 
 ## What a person writes
 
