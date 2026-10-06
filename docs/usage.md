@@ -246,6 +246,20 @@ vertex_count   = 3      # vertices of one triangle
 instance_count = 4      # four triangles in one draw
 ```
 
+`instance_count` may also name a port: the draw then runs as many instances as that buffer's used length, each frame. C++ that writes the buffer sets it, and asks for room when it writes more than one element per vertex:
+
+```cpp
+_items = node.upload<glm::vec2>("items", 256);  // room for 256, never fewer than one per vertex
+// each frame:
+const std::span<glm::vec2> items = frame.write(_items, count); // count instances this frame
+```
+
+```ini
+instance_count = items  # one triangle per element C++ wrote this frame
+```
+
+Writing more than the room is refused, and the node's operator stops (`the operator writes 8 elements of shapes, which holds 4`). A buffer a shader writes counts all its elements, one per invocation of its writer.
+
 - **Barriers** follow from the qualifiers: a pass waits for what an earlier pass wrote, with no barrier placed by hand.
 - **Memory** follows from who uses a buffer: one C++ writes or reads back lives where the CPU maps it; any other stays on the GPU (VK03). A buffer holds one element per invocation of its writer, a dispatch's thread or a draw's vertex, and starts zeroed.
 - **Draws** run after the dispatches, in graph order, into the window, each blended premultiplied over what came before: an opaque color covers, and alpha lets what is behind show.
@@ -727,6 +741,9 @@ Every mistake surfaces at load or at its line, naming its cause (A02):
 | a node inside no node | `node a.b is inside a, which is no node` | nothing: the load stops |
 | a view's node that uses a recipe as the library does | `node x uses recipe fill as it is, as only the library's own recipes do (V11); …` | nothing: the load stops |
 | C++ and a shader disagree on a name or a type | `node fill: the operator sets amount as a uint, but the shader declares a float` | the rest of the view; that node is left out |
+| a C++ struct and a shader's put a member at different offsets | `node shape: shapes: member size is a float at byte 12 in C++, but a float at byte 8 in the shader` | the rest of the view; that node is left out |
+| two C++ nodes disagree on what a connection carries | `node take: input count is a std::vector<int, …> of 24 bytes, but give writes a vp_mistakes::Count of 8 bytes` | the rest of the view; that node is left out |
+| C++ writes more elements than its buffer holds | `node shape: the operator writes 8 elements of shapes, which holds 4; …; its operator stops` | the rest of the view; that node stops |
 | shaders that make neither a draw nor a dispatch, or the wrong count | `node fill: it runs a .comp, so it counts its invocations, and no vertex_count` | the rest of the view |
 | a param nothing reads, a field nothing sets | `node wave: param spare: nothing reads it` | the rest of the view |
 | an edit that cannot apply | `refuse.txt:2: node wave is connected through values; disconnect it first` | nothing changes; a script stops there |
