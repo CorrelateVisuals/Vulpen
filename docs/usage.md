@@ -207,7 +207,7 @@ Data moves by different routes, told apart by who writes it and how much there i
   // in bind: _shapes = node.upload<Shape>("shapes");
   ```
 - **The build** compiles each node's folder: its shaders to SPIR-V, and its `.cpp` files to one module in debug builds, or into `vulpen` in release. They land under `out/build/<preset>/views/<view>/<the node's folder>/`. One file of the folder registers its operators with `VP_OPERATORS`.
-- **Where:** `src/runtime/Operator.h` is all a node's C++ includes (section 15); `src/runtime/Schedule.cpp` loads and checks; `src/runtime/cmake/nodes.cmake` builds.
+- **Where:** `src/runtime/Operator.h` is all a node's C++ includes (section 15); `src/runtime/Schedule.cpp` loads, `Binder.cpp` binds and `Checks.cpp` checks; `src/runtime/cmake/nodes.cmake` builds.
 
 ## 5. The GPU layout
 
