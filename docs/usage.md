@@ -686,7 +686,22 @@ to   = take.count
 
 **The frame index and the log.** `frame.index()` is the frame, as the frame block's `index` is; `frame.log(VP::Level::info, "text")` logs at the node's level (V09).
 
-- **What a node's C++ cannot reach today:** the engine's objects, the OS, or another node's code (RV00, live code rule 2). The [native C++ plan](plans/native-cpp.md) proposes opening that.
+**The engine by hand.** A node may include any engine header and reach the engine through `node.engine()`, within the [runtime boundary](plans/native-cpp.md#the-runtime-boundary): what it makes, it destroys, and nothing it borrows outlives the next `bind`. The fail-loud fixture's `scratch`, shortened:
+
+```cpp
+#include "baseclasses/Engine.h"
+#include "baseclasses/Resources.h"
+
+std::optional<VP::Buffer> _buffer; // the operator's own, so it goes before its module
+
+void bind(VP::Bind &node) override {
+  _buffer.emplace(node.engine().resources().buffer(
+      4096, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VP::Memory::upload));
+}
+```
+
+- **The executable exports its symbols**, so a dev build's module calls the one engine there; a release build links the modules in. On Windows nothing links a dev module against the executable yet, so there a module that calls the engine builds only in a release build.
+- **What a node's C++ cannot reach:** another node's code (RV00), since nodes share headers in `contracts/` and never a `.cpp`, and the OS, whose calls live in the platform files (RA01).
 - **Where:** `src/runtime/Operator.h`; the template in `src/recipes/parts/library/template/`.
 
 ## 16. When something is wrong
