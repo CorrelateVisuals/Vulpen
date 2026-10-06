@@ -18,15 +18,15 @@ A node reaches the engine through three headers and a folder layout, and nothing
 | Graph | the command port: the primitive edits, the log and save | commands, or a `view.vlp` written by hand |
 | Structure | the include-map gate: a row for each engine file, and [one rule](#node-code-has-no-rows-in-the-include-map) for all node code | nothing |
 
-A node's C++ never sees Vulkan, `Engine`, a buffer object or the OS. It gets names in and handles out, so its module has no engine symbol, and a swap never leaves it holding a GPU object that is gone ([live code](live-code.md)).
+Through `runtime/Operator.h`, a node's C++ never sees Vulkan, `Engine`, a buffer object or the OS. It gets names in and handles out, so a swap never leaves it holding a GPU object that is gone ([live code](live-code.md)). Since 2026-10-06 it may also include the engine by hand, within the [runtime boundary](native-cpp.md#the-runtime-boundary).
 
 ### Node code has no rows in the include map
 
 The [include map](../architecture/include-map.md) is the one page of the engine's structure (A00): a new engine file or include edge lands once a person writes its row there. A node is not engine (V05), so a row per node file would turn every new node into an edit of the engine's page. Node code, meaning any file of the library or of a view, has no row. The gate checks each of its includes against one rule instead. A node's file may include:
 
 - a file in its own folder;
-- a contract, as `contracts/<Name>.glsl`, which resolves against the top of its view or of the library: the view's copy of the contract (V03, RV05), or the library's for a library part;
-- the engine files the map lists for node code: `runtime/Operator.h`, `runtime/View.h` and `baseclasses/GpuLayout.glsl`;
+- a contract, as `contracts/<Name>.glsl` or `contracts/<Name>.h`, which resolves against the top of its view or of the library: the view's copy of the contract (V03, RV05), or the library's for a library part;
+- the engine files the map lists for node code: `runtime/Operator.h`, `runtime/View.h`, any other engine header by hand ([native C++](native-cpp.md)), and `baseclasses/GpuLayout.glsl`;
 - the standard library, glm, and a vendored library the map lists for node code, such as `<stb_truetype.h>` for the `font` part.
 
 Anything else fails the build, naming the file, the include and the rule (A02). So does engine code that includes node code (RA00). What node code may reach is then one short table on the include map, decided once on the one page, not a row per file. A new node's file, or a new include in one, builds at its next save with no edit to the map.
