@@ -27,7 +27,7 @@ Proposed 2026-09-30. It is a proposal: the project lead ticks what gets ported (
 | [Ports](#2-ports) | 1,020 | 260 | 7,212 |
 | [Composition](#3-composition) | 550 | 0 | 2,938 |
 | [Commands](#4-commands) | 185 | 660 | 3,477 |
-| [Parts](#5-parts) | 2,000 | 220 | 11,680 |
+| [Parts](#5-parts) | 2,020 | 220 | 11,680 |
 | [Components and apps](#6-components-and-apps) | 400 | 70 | 4,163 |
 | [Tooling](#7-tooling) | 0 | 300 | 1,491 |
 | **Total** | **about 4,900** | **about 2,100** | **about 34,700** |
@@ -175,9 +175,10 @@ Parts are the panels' building blocks, with the jobs the [recipe map](../archite
 | [x] | E4 | `image` | draws one image into a Rect, letterboxed | 78 | 40 | A1, A5, A7 | core |
 | [x] | E5 | `font` | bakes the glyph atlas once, with the vendored stb_truetype. Built on 2026-10-07: printable ASCII from the font file in its folder that its `face` param names, Roboto Mono in the library, at the height its param gives, into an `R8_UNORM` atlas and one Font; a face named with a folder, or a font that is not monospace, is refused. | 313 | 100 | A5, B7 | core |
 | [x] | E6 | `palette` | reads `theme.ini` and publishes a Palette. Built on 2026-10-07: a linear color a role, read again once the file changes; a key that is no role, a role left out or a color that is not three or four numbers from 0 to 1 stops it, naming the line. | 143 | 50 | B7 | core |
-| [x] | E7 | `split` | divides a Rect by a tree of ratios; dragging a seam sends `param set` | (in dock's 2,228) | 80 | A2, A3, B2 | core |
-| [x] | E8 | `list` | lays out Items in a row or a column, in a Rect or at an anchor: tab strips, the menubar, popups, completions. Built on 2026-10-07 as a column in the Rect a writer gives, over a framed fill, for completions; a row comes with the tab strips. | 149 | 80 | A2, A3 | core |
-| [x] | E9 | `hit` | finds the Rect under the pointer: a press sends its Item's command, and hovering names the Item | 133 + 521 | 70 | A3, B1, B6 | core |
+| [x] | E7 | `split` | divides a Rect by a tree of ratios; dragging a seam sends `param set`. Built on 2026-10-07 as one seam a node, so a tree of ratios is a tree of docks: `axis` x or y and `ratio` are params, a drag follows the pointer and letting go sends one `param set` (V08), and it hands a rects node the ground and the seam. It reads the pointer itself, since a seam fed back from hit would make a cycle. | (in dock's 2,228) | 80 | A2, A3, B2, B6 | core |
+| [x] | E8 | `list` | lays out Items in a row or a column, in a Rect or at an anchor: tab strips, the menubar, popups, completions. Built on 2026-10-07 as a column in the Rect a writer gives, over a framed fill, for completions; a row comes with the tab strips. It hands hit its rows' Rects. | 149 | 80 | A2, A3 | core |
+| [x] | E9 | `hit` | finds the Rect under the pointer: a press sends its Item's command, and hovering names the Item. Built on 2026-10-07 for presses, first on the terminal's completions, where a press types the rest of the word with `input text`, as the lead chose; naming the hovered Item waits for the tooltip (F7). | 133 + 521 | 70 | A3, B1, B6 | core |
+| [x] | E19 | `viewport` | hands on the window's whole Rect, so the outermost split divides it as any other: the lead's choice on 2026-10-07, over a param that would give split two modes | – | 20 | A3 | core |
 | [x] | E10 | `keys` | turns keymap chords into command text, and sends other keys to the focused part | 517 | 120 | B1, B6, B7 | core |
 | [x] | E11 | `text` | holds the buffer, caret, selection and scroll; opens, writes, closes and finds through the file port; writes Labels and Rects | 1,475 + 467 | 500 | A2, A3, B1, B5, B6, B7 | core |
 | [x] | E12 | `command-line` | one line with history and completion, sent to the command port and addressed to the view hosted most recently, as `view new` and `view load` leave it, unless the line names one; registers `help`, `complete` and `clear`; on the terminal port it is the CLI, and in a window it reads the input port. The window side built on 2026-10-07, chosen by `param = on=window`: line editing, history, Tab as a shell's, and the log above the line. | 1,227 | 150 | B1, B5, B9 | core |
@@ -195,15 +196,15 @@ A component is only a `view.vlp` (RV06), so it costs manifest lines, and it can 
 | Port | ID | Recipe | Uses | POC | New | Needs | Advice |
 | --- | --- | --- | --- | --: | --: | --- | --- |
 | [x] | F1 | `panel` | list, hit, rects, glyphs | chrome, in five copies (in E1's and E8's) | 30 | C1, E1, E2, E8, E9 | core |
-| [x] | F2 | `dock` | split, hit, rects | 2,228 (the POC's runtime dock, which E7 and D18 replace) | 20 | C1, E7, E9 | core |
+| [x] | F2 | `dock` | split, rects; built on 2026-10-07, with no hit, since split takes its own seam's drag | 2,228 (the POC's runtime dock, which E7 and D18 replace) | 20 | C1, E7 | core |
 | [x] | F3 | `text-area` | text, rects, glyphs | text panel, in three copies (in E11's) | 20 | E11 | core |
-| [x] | F4 | `terminal` | command-line, list, rects, glyphs; built on 2026-10-07 | the same text panel | 25 | B6, E12 | core |
+| [x] | F4 | `terminal` | command-line, list, hit, rects, glyphs; built on 2026-10-07 | the same text panel | 25 | B6, E12 | core |
 | [x] | F5 | `graph-editor` | graph, rects, glyphs, curves; relations once E16 lands | node grid (in E13's) | 30 | E13 | core |
 | [ ] | F6 | `menu` | command-items, list, hit, rects, glyphs | 298 | 30 | E15 | later |
 | [ ] | F7 | `tooltip` | list, rects, glyphs | 112 | 20 | E8 | later |
 | [ ] | F8 | `find-bar` | command-line, rects, glyphs | 20 | 20 | E11, E12 | later |
 | [x] | G1 | app `cli` | command-line, inspect and library, on the terminal port, with no window of its own | – | 15 | B1–B5, B7, B9, C1, C3, E12, E17, E18 | core |
-| [x] | G2 | app `ide` | palette, font, keys, modes, image, inspect, library; dock, panel ×4, text-area, terminal, graph-editor; the edited project as a hosted view. Started on 2026-10-07, on the lead's word, as palette, font, the terminal filling the window, inspect and library; the other rows join it by addition. | 1,438 | 200 | C1, C3, every core part | core |
+| [x] | G2 | app `ide` | palette, font, keys, modes, image, inspect, library; dock, panel ×4, text-area, terminal, graph-editor; the edited project as a hosted view. Started on 2026-10-07, on the lead's word, as palette, font, the terminal filling the window, inspect and library; the other rows join it by addition. The same day the dock seated the terminal in the window's bottom row, 35% high, as the lead chose. | 1,438 | 200 | C1, C3, every core part | core |
 | [x] | G3 | `theme.ini`, `keymap.ini` | the POC's files, cut down to the keys a part actually reads (A02) | 67 | 60 | E6, E10 | core |
 
 ## 7. Tooling
@@ -238,7 +239,7 @@ The ticked rows, in the order they would land. Each step needs only rows from ea
 | | 15 | B6, D11 | input, and `input` for headless tests |
 | | 16 | E1, E5, E6, E2 | rects, font, palette and glyphs: text on screen |
 | | 17 | E8, F4 | list; the terminal component in a window |
-| 3. Panels (about 960) | 18 | E7, E9, F2 | split and hit: the dock |
+| 3. Panels (about 960) | 18 | E7, E9, E19, F2 | split and hit: the dock |
 | | 19 | F1, D10 | the panel, with tabs |
 | | 20 | E10, G3 | keys, the theme and the keymap |
 | | 21 | E11, D8, F3 | text: the editor |

@@ -33,12 +33,13 @@ Parts hold all of the library's code and use no other recipe (RV06). A drawing p
 | `image` | shaders | — | Rect, an image handle | draws |
 | `font` | `Font` | files | — | Font, an image |
 | `palette` | `Palette` | files | — | Palette |
-| `split` | `Split` | — | Rect | Rect |
-| `list` | `List` | — | Item, Rect, Font | Rect, Label; Item once `hit` reads it |
-| `hit` | `Hit` | input, commands | Rect, Item | Item, Rect |
+| `viewport` | `Viewport` | — | — | Rect: the window's |
+| `split` | `Split` | input, commands | Rect | Rect: two, and the ground and seam for `rects` |
+| `list` | `List` | — | Item, Rect, Font | Rect, Label; Rects, its rows, for `hit` |
+| `hit` | `Hit` | input, commands | Rect, Item | — (the hovered Item once a tooltip reads it) |
 | `keys` | `Keys` | input, files, commands | — | — |
 | `text` | `Text` | input, files, commands | Rect | Label, Rect |
-| `command-line` | `CommandLine` | input, commands (the log too), terminal | Font; Rect once the dock gives one | Label, Item, Rect |
+| `command-line` | `CommandLine` | input, commands (the log too), terminal | Font, Rect | Label, Item, Rect |
 | `command-items` | `CommandItems` | commands | Item | Item |
 | `graph` | `Graph`, shaders | input, commands, graph | Rect, Relation | Rect, Label, Curve; draws its backdrop |
 | `relations` | `Relations` | files | — | Relation |
@@ -51,12 +52,12 @@ Parts hold all of the library's code and use no other recipe (RV06). A drawing p
 | Component | Uses |
 | --- | --- |
 | `panel` | list, hit, rects, glyphs |
-| `dock` | split, hit, rects |
+| `dock` | split, rects |
 | `menu` | command-items, list, hit, rects, glyphs |
 | `tooltip` | list, rects, glyphs |
 | `text-area` | text, rects, glyphs |
 | `find-bar` | command-line, rects, glyphs |
-| `terminal` | command-line, list, rects, glyphs |
+| `terminal` | command-line, list, hit, rects, glyphs |
 | `graph-editor` | graph, relations, rects, glyphs, curves |
 
 ## Apps
@@ -64,4 +65,4 @@ Parts hold all of the library's code and use no other recipe (RV06). A drawing p
 | App | Uses |
 | --- | --- |
 | `cli` | command-line, inspect, library |
-| `ide` | palette, font, keys, modes, image, inspect, library; dock, panel ×4, text-area, find-bar, terminal, graph-editor, menu ×2, tooltip |
+| `ide` | palette, font, viewport, keys, modes, image, inspect, library; dock, panel ×4, text-area, find-bar, terminal, graph-editor, menu ×2, tooltip |
