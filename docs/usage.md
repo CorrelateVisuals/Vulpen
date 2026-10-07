@@ -297,6 +297,7 @@ The upload makes the image the size and format given, and the frame copies the p
 - **Memory** follows from who uses a buffer: one C++ writes or reads back lives where the CPU maps it; any other stays on the GPU (VK03). A buffer holds one element per invocation of its writer, a dispatch's thread or a draw's vertex, and starts zeroed.
 - **Draws** run after the dispatches, in graph order, into the window, each blended premultiplied over what came before: an opaque color covers, and alpha lets what is behind show.
 - **The frame block** is written once a frame, after the window's image is acquired, so a resized window's size shows at once. Its layout comes from reflection, and a shader whose push constant is anything else is refused.
+- **Shared GLSL** (GLSL01): `sample_nearest` samples the texel nearest `uv`, for an image drawn a texel a pixel, as a glyph is; `quad_corner(gl_VertexIndex)` gives the corners of a quad's two triangles, so a draw of `vertex_count = 6` places a rectangle an instance; `pixel_clip` puts a point in pixels from the window's top left into clip space.
 - **Where:** `src/baseclasses/GpuLayout.glsl`; `src/baseclasses/Shader.cpp` reflects; `src/baseclasses/Pipelines.cpp` owns the frame block and set 0; `src/baseclasses/Engine.cpp` records the frame, the copies into images first.
 
 ## 6. Live code
@@ -666,6 +667,32 @@ The engine's placeholder kinds are a closed list (`name`, `node`, `port`, `file`
 **`view new <folder>` and `view load <folder>`** host a project in a folder, named for the folder, and make it the current one. `view new` also saves its empty `view.vlp`, and refuses a folder that holds one; `view load` refuses a folder that holds none. In the log, both are a `child add` of the CLI's view, and `view new` a `view save` too.
 
 - **Where:** `src/recipes/parts/library/Library.cpp`.
+
+**Text on screen.** Four parts draw what other parts write as Rects and Labels:
+
+| Part | Reads | Gives |
+| --- | --- | --- |
+| `palette` | `theme.ini` in its folder, again once it changes | `palette`: a color a role |
+| `font` | the font in its folder, at its `height` param in pixels | `font`, its cell and atlas layout; `atlas`, its glyphs |
+| `rects` | `rects`, `palette` | a quad a Rect, in its role's color |
+| `glyphs` | `labels`, `characters`, `font`, `atlas`, `palette` | a quad a character |
+
+A part that shows text writes them as a node's C++ fills any buffer for another node's shader, with the types in `contracts/`:
+
+```cpp
+#include "contracts/Label.h"
+#include "contracts/Palette.h"
+#include "contracts/Rect.h"
+
+_rects = node.upload<VP_VIEW::Rect>("rects", 16); // in bind: room for 16
+frame.write(_rects, 1)[0] = {.offset = {24, 24}, .extent = {592, 88},
+                             .role = VP_VIEW::role("panel")}; // a name no role has does not compile
+```
+
+- **A Label** shows `count` characters of the one list of characters, from `first`, one cell a character from its `offset`; a character past its `extent` is not drawn. Each character names its Label, and `glyphs` draws as many as the list's used length.
+- **A theme** gives each role red, green and blue from 0 to 1, linear, with alpha after when it is not opaque. A key that is no role, a role left out or a color that is no such numbers stops the palette, naming the line (`theme.ini:5: pannel is no role; the roles are background, panel, border, text, accent`).
+- **The font** is Roboto Mono, printable ASCII, baked a cell a glyph; another height is another font node. A font that is not monospace is refused.
+- **Draws stack in graph order**, so `rects` listed before `glyphs` puts text over its panel. The fail-loud test's `text` case wires all four to the fixture's `sign`.
 
 ## 15. What a node's C++ can reach
 

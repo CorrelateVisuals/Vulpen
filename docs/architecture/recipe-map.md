@@ -28,10 +28,10 @@ Parts hold all of the library's code and use no other recipe (RV06). A drawing p
 | Part | Code | Ports | Reads | Writes |
 | --- | --- | --- | --- | --- |
 | `rects` | shaders | — | Rect, Palette | draws |
-| `glyphs` | shaders | — | Label, Font, Palette | draws |
+| `glyphs` | shaders | — | Label, Font, Palette, an image | draws |
 | `curves` | shaders | — | Curve, Palette | draws |
 | `image` | shaders | — | Rect, an image handle | draws |
-| `font` | `Font` | files | — | Font |
+| `font` | `Font` | files | — | Font, an image |
 | `palette` | `Palette` | files | — | Palette |
 | `split` | `Split` | — | Rect | Rect |
 | `list` | `List` | — | Item, Rect | Rect, Label, Item |
