@@ -177,7 +177,7 @@ Data moves by different routes, told apart by who writes it and how much there i
 | From, to | How | In the examples |
 | --- | --- | --- |
 | you, a shader | a param named like a pass-block field: the engine writes it at load and after each edit, with no C++ | wave's `amplitude` |
-| you, C++ | `node.param<T>`, parsed in `bind`, which runs again after an edit | the triangle's `speed` |
+| you, C++ | `node.param<T>`, parsed in `bind`, which runs again after an edit: a number, or a word as `std::string`, such as a file's name | the triangle's `speed`; the font's `face` |
 | C++, a shader, one value | `node.value<T>`, set with `frame.set` in `cook`, each frame | the triangle's `tint` |
 | C++, a shader, one per invocation | `node.upload<T>`, filled through `frame.write` in `cook`; it holds until written again | the triangle's `corners` |
 | C++, a shader, an image | `node.texture<T>`, filled once through `frame.upload` in `cook`, in the format its `image` word gives; it keeps its pixels through rebuilds | the fail-loud fixture's `picture` |
@@ -673,7 +673,7 @@ The engine's placeholder kinds are a closed list (`name`, `node`, `port`, `file`
 | Part | Reads | Gives |
 | --- | --- | --- |
 | `palette` | `theme.ini` in its folder, again once it changes | `palette`: a color a role |
-| `font` | the font in its folder, at its `height` param in pixels | `font`, its cell and atlas layout; `atlas`, its glyphs |
+| `font` | the font file its `face` param names in its folder, at its `height` param in pixels | `font`, its cell and atlas layout; `atlas`, its glyphs |
 | `rects` | `rects`, `palette` | a quad a Rect, in its role's color |
 | `glyphs` | `labels`, `characters`, `font`, `atlas`, `palette` | a quad a character |
 
@@ -691,7 +691,7 @@ frame.write(_rects, 1)[0] = {.offset = {24, 24}, .extent = {592, 88},
 
 - **A Label** shows `count` characters of the one list of characters, from `first`, one cell a character from its `offset`; a character past its `extent` is not drawn. Each character names its Label, and `glyphs` draws as many as the list's used length.
 - **A theme** gives each role red, green and blue from 0 to 1, linear, with alpha after when it is not opaque. A key that is no role, a role left out or a color that is no such numbers stops the palette, naming the line (`theme.ini:5: pannel is no role; the roles are background, panel, border, text, accent`).
-- **The font** is Roboto Mono, printable ASCII, baked a cell a glyph; another height is another font node. A font that is not monospace is refused.
+- **The font** is the file its `face` param names, printable ASCII baked a cell a glyph; the library's is Roboto Mono. Another face is a file put in the font node's folder and named, as `param set font face RobotoMono-Bold.ttf` does, and a font node bakes again after the edit. A face named with a folder is refused, so the font moves with its view (V03), and so is a font that is not monospace. Two faces or heights at once are two font nodes.
 - **Draws stack in graph order**, so `rects` listed before `glyphs` puts text over its panel. The fail-loud test's `text` case wires all four to the fixture's `sign`.
 
 ## 15. What a node's C++ can reach
