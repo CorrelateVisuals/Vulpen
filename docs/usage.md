@@ -342,7 +342,7 @@ input wheel <value> <value>        turns the wheel by x and y
 input focus on                     gives the window focus
 input focus off                    takes focus from the window
 help                               lists every command, with its usage and what it does
-complete <value>...                lists the words that may come next, the last word given being the start of one
+complete <value>...                lists the words that may come next, the last word given being the start of one, or "" for one not begun
 clear                              clears the terminal
 ls                                 lists the views the view hosts, its nodes and its connections
 info <node>                        shows a node's words, and the connections it writes and reads
@@ -584,7 +584,17 @@ src/examples/zz-demo> view new src/examples/other  # this would mean src/example
 
 The first keeps every typed path meaning one thing wherever you are, and matches the prompt; the second keeps a project's files next to it. Lines from a script always count from the script's folder either way.
 
-- **Where:** `src/recipes/apps/cli/view.vlp`; `src/recipes/parts/command-line/CommandLine.cpp`.
+**The terminal in a window.** The `ide` app is, so far, the theme, the font and the `terminal` component filling its window, with `inspect` and `library` as in the CLI. The terminal is the same `command-line` part with `param = on=window`: it reads the keyboard instead of standard input, and shows above the line typed what lines answer and the whole log, errors in red and warnings in amber, so a refused line names its cause there, a frame later.
+
+```text
+$ ./run.sh src/recipes/apps/ide/view.vlp
+```
+
+- **Keys:** typing inserts at the caret, which Left, Right, Home and End move; Backspace and Delete erase, Enter sends the line, and Up and Down step through the lines sent.
+- **Tab** completes as a shell does: the word at the caret takes what every candidate shares, a word only one candidate fits is finished with a blank, and several are listed above the line until the next key. A placeholder such as `<name>` is listed but never typed in. Tab sends `complete`, which takes `""` for a word not begun.
+- **`clear`** empties the scrollback, which keeps the last 1,000 rows. A row wider than the window is cut, and a long line scrolls to keep the caret in view.
+
+- **Where:** `src/recipes/apps/cli/view.vlp`, `src/recipes/apps/ide/view.vlp`, `src/recipes/components/terminal/view.vlp`; `src/recipes/parts/command-line/CommandLine.cpp`.
 
 ## 13. Child views
 
@@ -668,14 +678,15 @@ The engine's placeholder kinds are a closed list (`name`, `node`, `port`, `file`
 
 - **Where:** `src/recipes/parts/library/Library.cpp`.
 
-**Text on screen.** Four parts draw what other parts write as Rects and Labels:
+**Text on screen.** Four parts draw what other parts write as Rects and Labels, and `list` lays out Items as they do:
 
 | Part | Reads | Gives |
 | --- | --- | --- |
 | `palette` | `theme.ini` in its folder, again once it changes | `palette`: a color a role |
-| `font` | the font file its `face` param names in its folder, at its `height` param in pixels | `font`, its cell and atlas layout; `atlas`, its glyphs |
+| `font` | the font file its `face` param names in its folder, at its `height` param in pixels | `font`, its cell and atlas layout; `atlas`, its glyphs; `metrics`, the same Font for C++ that lays text out |
 | `rects` | `rects`, `palette` | a quad a Rect, in its role's color |
 | `glyphs` | `labels`, `characters`, `font`, `atlas`, `palette` | a quad a character |
+| `list` | `items`, `place` (a Rect) and `font` (the font's `metrics`), from C++ | a column of rows in the place, over a framed fill: `rects`, `labels`, `characters` |
 
 A part that shows text writes them as a node's C++ fills any buffer for another node's shader, with the types in `contracts/`:
 
@@ -690,7 +701,7 @@ frame.write(_rects, 1)[0] = {.offset = {24, 24}, .extent = {592, 88},
 ```
 
 - **A Label** shows `count` characters of the one list of characters, from `first`, one cell a character from its `offset`; a character past its `extent` is not drawn. Each character names its Label, and `glyphs` draws as many as the list's used length.
-- **A theme** gives each role red, green and blue from 0 to 1, linear, with alpha after when it is not opaque. A key that is no role, a role left out or a color that is no such numbers stops the palette, naming the line (`theme.ini:5: pannel is no role; the roles are background, panel, border, text, accent`).
+- **A theme** gives each role red, green and blue from 0 to 1, linear, with alpha after when it is not opaque. A key that is no role, a role left out or a color that is no such numbers stops the palette, naming the line (`theme.ini:5: pannel is no role; the roles are background, panel, border, text, accent, error, warning`).
 - **The font** is the file its `face` param names, printable ASCII baked a cell a glyph; the library's is Roboto Mono. Another face is a file put in the font node's folder and named, as `param set font face RobotoMono-Bold.ttf` does, and a font node bakes again after the edit. A face named with a folder is refused, so the font moves with its view (V03), and so is a font that is not monospace. Two faces or heights at once are two font nodes.
 - **Draws stack in graph order**, so `rects` listed before `glyphs` puts text over its panel. The fail-loud test's `text` case wires all four to the fixture's `sign`.
 

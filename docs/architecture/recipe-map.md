@@ -34,11 +34,11 @@ Parts hold all of the library's code and use no other recipe (RV06). A drawing p
 | `font` | `Font` | files | — | Font, an image |
 | `palette` | `Palette` | files | — | Palette |
 | `split` | `Split` | — | Rect | Rect |
-| `list` | `List` | — | Item, Rect | Rect, Label, Item |
+| `list` | `List` | — | Item, Rect, Font | Rect, Label; Item once `hit` reads it |
 | `hit` | `Hit` | input, commands | Rect, Item | Item, Rect |
 | `keys` | `Keys` | input, files, commands | — | — |
 | `text` | `Text` | input, files, commands | Rect | Label, Rect |
-| `command-line` | `CommandLine` | input, commands, terminal | Rect | Label, Item, Rect |
+| `command-line` | `CommandLine` | input, commands (the log too), terminal | Font; Rect once the dock gives one | Label, Item, Rect |
 | `command-items` | `CommandItems` | commands | Item | Item |
 | `graph` | `Graph`, shaders | input, commands, graph | Rect, Relation | Rect, Label, Curve; draws its backdrop |
 | `relations` | `Relations` | files | — | Relation |

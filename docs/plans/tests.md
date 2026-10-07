@@ -16,7 +16,7 @@ Every ticked row runs. Everything that checks the code lives in `src/tools/`:
 | Command | Runs | Time |
 | --- | --- | --: |
 | every build | the gates before the compile (include map, T3, T4, T6, T40, T45, T46), `spirv-val` on each shader (T8), and T1 after the link | – |
-| `ctest --preset debug` | `vulpen`, `wave` (T13, T30, T38), `wave-gpu`, `triangle` (T19), `barriers` (T17), `fail-loud` (T14) | 3 s |
+| `ctest --preset debug` | `vulpen`, `wave` (T13, T30, T38), `wave-gpu`, `triangle` (T19), `ide` (T47), `barriers` (T17), `fail-loud` (T14) | 4 s |
 | `ctest --preset release` | the same but `fail-loud`, whose recipes build only as modules | 1.5 s |
 | `ctest --preset asan` | ASan, UBSan and LSan over the debug tests on lavapipe, windows included, `fuzz` (T20, T25) and `fuzz-commands` (T39) | 45 s |
 | `ctest --preset tsan` | TSan over the headless tests and 6 live swaps (T21) | 6 s |
@@ -92,6 +92,7 @@ Static checks. They run with the include map in `src/tools/gates/` and fail the 
 | [ ] | T9 | Every ID has a test | A00, A02 | each principle and requirement is named by a test on this page, or marked review-only | 30 | build |
 | [x] | T45 | A namespace per view | RV05 | every header in a `contracts/` folder opens `namespace VP_VIEW`, which the build names per view, so two views' copies of a C++ contract never become one type in a release binary (an ODR violation, silent until it corrupts memory); a text search in `code-rules.py`, added with [native C++](native-cpp.md) | 5 | build |
 | [x] | T46 | Citations | RC05 | each ID a comment cites in parentheses, in the C++, the shaders and the node template, is one that `principles.md` or `requirements.md` defines: no plan's row or step, which points at nothing once the plan is done, and no mistyped ID; a text search in `code-rules.py`, added on 2026-10-06 after two commits cited plan rows | 15 | build |
+| [x] | T47 | The terminal's keys | A03, RVK00 | the `ide` app runs in a window while typed `input` lines drive its terminal down every path: Tab on a word not begun and on one begun, the completions listed, the edits, the arrows, history, a refused line and `help`. It must end with exit 0 and no validation message, so under the asan preset it is the terminal's memory check; shown to fail on a history read one past the end. Skipped without a display | 50 | ctest |
 
 ## 2. ctest
 

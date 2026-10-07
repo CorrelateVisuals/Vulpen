@@ -67,7 +67,7 @@ Of the POC's 13 channel kinds, `UBO`, `SSBO`, `STAGING_UPLOAD` and `READBACK` ar
 
 | Port | ID | Function | POC | New | Needs | Advice |
 | --- | --- | --- | --: | --: | --- | --- |
-| [x] | A1 | Frame block (time, frame index, resolution, cursor): a buffer whose address goes in the push constant, as the GPU layout says (RV02). Every UI draw needs it to map pixels. `Pipelines` owns the one block and takes its layout from reflection (RA03); the engine writes it after acquiring the window's image, so a resize shows at once. Time counts frames at the run's rate, so a replay matches (C01); the cursor stays zero until B6. | – | 40 | — | core |
+| [x] | A1 | Frame block (time, frame index, resolution, cursor): a buffer whose address goes in the push constant, as the GPU layout says (RV02). Every UI draw needs it to map pixels. `Pipelines` owns the one block and takes its layout from reflection (RA03); the engine writes it after acquiring the window's image, so a resize shows at once. Time counts frames at the run's rate, so a replay matches (C01); the cursor stays zero until B6. On 2026-10-07 the lead chose that C++ reads the window's size too: `frame.resolution()`, read before the frame cooks. | – | 40 | — | core |
 | [x] | A2 | Struct elements: a C++ struct names its members once, and the loader checks their names, types and offsets against reflection. Contracts need this (RV05). Built on 2026-10-06: a struct's static `members()` lists its members with `VP_MEMBER`, and reflection reads the members of a buffer's struct. | 198 (emitter) | 100 | — | core |
 | [x] | A3 | CPU ends of a connection: one operator writes a buffer and a later operator reads it in the same frame, and the buffer lives where both can reach it. This is the first step of D5. The POC used a typed publish port per feature instead. Built on 2026-10-06 as [native C++](native-cpp.md): between C++ nodes a connection carries one C++ object, which the writer gets from `node.output<T>` and each reader from `node.input<T>`, by reference. | – | 80 | A2, D5 | core |
 | [x] | A4 | Counts per frame: a draw runs `instance_count` instances, a number or a port whose buffer's used length sets it, and the buffer's writer sets that length each frame. `vertex_count` counts the vertices of one instance. Text and rects change length every frame. The word was approved on 2026-10-03. Built on 2026-10-06: `instance_count` takes a number or a port; `node.upload<T>(port, count)` makes room, and `frame.write(upload, count)` sets the used length a draw follows each frame. | – | 40 | A3 | core |
@@ -91,7 +91,7 @@ The engine's general ports ([recipe map](../architecture/recipe-map.md#core-port
 
 | Port | ID | Function | POC | New | Needs | Advice |
 | --- | --- | --- | --: | --: | --- | --- |
-| [x] | B1 | Command port: a command registers with its usage, help and completion, or it does not register at all (RV04). The port dispatches text, lists what is registered, and provides `quit`. | 1,424 | 200 | — | core |
+| [x] | B1 | Command port: a command registers with its usage, help and completion, or it does not register at all (RV04). The port dispatches text, lists what is registered, and provides `quit`. On 2026-10-07 the lead chose the whole log in the terminal: `frame.commands().log()` hands a frame the lines the log printed since the frame before, so a refusal shows where the line was typed. | 1,424 | 200 | — | core |
 | [x] | B2 | Primitive edits, which are the manifest's own words: `node add`, `node remove`, `node set`, `connect`, `disconnect`, `param set` and `param unset`. Loading a `.vlp` runs its lines through these. The schedule reruns on the swap path before the next frame, once for all the edits since the last, so a script is checked as a whole, and each error names the line that last added or changed its node. | 2,597 | 200 | B1 | core |
 | [x] | B3 | Command log in groups: `source <log>` replays a log and `log save <file>` writes one (V08). | 142 | 80 | B1 | core |
 | [x] | B4 | Save: the manifest writer, which writes a temp file and renames it (RA04) and keeps the comments a person wrote. Adds `view save`. `view migrate` lands with the manifest's version 2, since no older manifest exists to migrate (RV03, C00). | 522 | 150 | B2 | core |
@@ -176,11 +176,11 @@ Parts are the panels' building blocks, with the jobs the [recipe map](../archite
 | [x] | E5 | `font` | bakes the glyph atlas once, with the vendored stb_truetype. Built on 2026-10-07: printable ASCII from the font file in its folder that its `face` param names, Roboto Mono in the library, at the height its param gives, into an `R8_UNORM` atlas and one Font; a face named with a folder, or a font that is not monospace, is refused. | 313 | 100 | A5, B7 | core |
 | [x] | E6 | `palette` | reads `theme.ini` and publishes a Palette. Built on 2026-10-07: a linear color a role, read again once the file changes; a key that is no role, a role left out or a color that is not three or four numbers from 0 to 1 stops it, naming the line. | 143 | 50 | B7 | core |
 | [x] | E7 | `split` | divides a Rect by a tree of ratios; dragging a seam sends `param set` | (in dock's 2,228) | 80 | A2, A3, B2 | core |
-| [x] | E8 | `list` | lays out Items in a row or a column, in a Rect or at an anchor: tab strips, the menubar, popups, completions | 149 | 80 | A2, A3 | core |
+| [x] | E8 | `list` | lays out Items in a row or a column, in a Rect or at an anchor: tab strips, the menubar, popups, completions. Built on 2026-10-07 as a column in the Rect a writer gives, over a framed fill, for completions; a row comes with the tab strips. | 149 | 80 | A2, A3 | core |
 | [x] | E9 | `hit` | finds the Rect under the pointer: a press sends its Item's command, and hovering names the Item | 133 + 521 | 70 | A3, B1, B6 | core |
 | [x] | E10 | `keys` | turns keymap chords into command text, and sends other keys to the focused part | 517 | 120 | B1, B6, B7 | core |
 | [x] | E11 | `text` | holds the buffer, caret, selection and scroll; opens, writes, closes and finds through the file port; writes Labels and Rects | 1,475 + 467 | 500 | A2, A3, B1, B5, B6, B7 | core |
-| [x] | E12 | `command-line` | one line with history and completion, sent to the command port and addressed to the view hosted most recently, as `view new` and `view load` leave it, unless the line names one; registers `help`, `complete` and `clear`; on the terminal port it is the CLI, and in a window it reads the input port | 1,227 | 150 | B1, B5, B9 | core |
+| [x] | E12 | `command-line` | one line with history and completion, sent to the command port and addressed to the view hosted most recently, as `view new` and `view load` leave it, unless the line names one; registers `help`, `complete` and `clear`; on the terminal port it is the CLI, and in a window it reads the input port. The window side built on 2026-10-07, chosen by `param = on=window`: line editing, history, Tab as a shell's, and the log above the line. | 1,227 | 150 | B1, B5, B9 | core |
 | [x] | E13 | `graph` | nodes as Rects and Labels, connections as Curves, with pan and zoom; a drag sends a command | 882 + 669 + 2,087 | 510 | A2, A3, B1, B6, B8, E3 | core |
 | [x] | E14 | `modes` | chooses which node reaches the screen: `present`, `mode` | 332 | 50 | B1, B2, B5 | core |
 | [x] | E17 | `inspect` | reads the graph and registers `ls`, `info`, `schedule` and `probe watch` | 582 | in D7 | B5, B8 | core |
@@ -197,13 +197,13 @@ A component is only a `view.vlp` (RV06), so it costs manifest lines, and it can 
 | [x] | F1 | `panel` | list, hit, rects, glyphs | chrome, in five copies (in E1's and E8's) | 30 | C1, E1, E2, E8, E9 | core |
 | [x] | F2 | `dock` | split, hit, rects | 2,228 (the POC's runtime dock, which E7 and D18 replace) | 20 | C1, E7, E9 | core |
 | [x] | F3 | `text-area` | text, rects, glyphs | text panel, in three copies (in E11's) | 20 | E11 | core |
-| [x] | F4 | `terminal` | command-line, list, rects, glyphs | the same text panel | 25 | B6, E12 | core |
+| [x] | F4 | `terminal` | command-line, list, rects, glyphs; built on 2026-10-07 | the same text panel | 25 | B6, E12 | core |
 | [x] | F5 | `graph-editor` | graph, rects, glyphs, curves; relations once E16 lands | node grid (in E13's) | 30 | E13 | core |
 | [ ] | F6 | `menu` | command-items, list, hit, rects, glyphs | 298 | 30 | E15 | later |
 | [ ] | F7 | `tooltip` | list, rects, glyphs | 112 | 20 | E8 | later |
 | [ ] | F8 | `find-bar` | command-line, rects, glyphs | 20 | 20 | E11, E12 | later |
 | [x] | G1 | app `cli` | command-line, inspect and library, on the terminal port, with no window of its own | – | 15 | B1–B5, B7, B9, C1, C3, E12, E17, E18 | core |
-| [x] | G2 | app `ide` | palette, font, keys, modes, image, inspect, library; dock, panel ×4, text-area, terminal, graph-editor; the edited project as a hosted view | 1,438 | 200 | C1, C3, every core part | core |
+| [x] | G2 | app `ide` | palette, font, keys, modes, image, inspect, library; dock, panel ×4, text-area, terminal, graph-editor; the edited project as a hosted view. Started on 2026-10-07, on the lead's word, as palette, font, the terminal filling the window, inspect and library; the other rows join it by addition. | 1,438 | 200 | C1, C3, every core part | core |
 | [x] | G3 | `theme.ini`, `keymap.ini` | the POC's files, cut down to the keys a part actually reads (A02) | 67 | 60 | E6, E10 | core |
 
 ## 7. Tooling
