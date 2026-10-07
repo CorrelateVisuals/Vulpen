@@ -185,7 +185,7 @@ Data moves by different routes, told apart by who writes it and how much there i
 | a shader, C++ | `node.readback<T>`, read a frame after the GPU wrote it | the probe's `samples` |
 | a shader, a shader | a connection, which never leaves the GPU (VK03) | `wave.values` to `probe.values` |
 | C++, C++ | a connection: `node.output<T>` in the writer, `node.input<T>` in each reader, one object both hold by reference (section 15) | the fail-loud fixture's `give.count` to `take.count` |
-| the engine, both | the frame block for shaders (section 5), `frame.index()` for C++ | `frame.resolution` |
+| the engine, both | the frame block for shaders (section 5); `frame.index()` and `frame.resolution()`, the window's size, zero without one, for C++ | `frame.resolution` |
 
 - **The names meet at load, not at compile time.** The loader reads each shader's SPIR-V (reflection, RA03) and checks every request of `bind` against it, and every param and pass-block field against the node. Nothing is looked up during a frame.
 - **A mismatch leaves the node out**, naming why; the rest of the view runs:
@@ -728,6 +728,13 @@ void cook(VP::Cook &frame) override {
     frame.commands().send("quit");
   // terminal.prompt("> ");                             // only where a person types
 }
+```
+
+**The log**: what it printed since the frame before, a line each as the console shows it after the time, with the level it was written at, so a node shows the log as the terminal component does. A line a node sent and a command refused comes back this way, a frame later:
+
+```cpp
+for (const VP::Logged &line : frame.commands().log())  // {!!!} node x: …, {nod} …
+  show(line.text, line.level == VP::Level::error);     // the node's own way of showing it
 ```
 
 **Input**: keys, text, the pointer, its buttons, the wheel and focus, as the window got them since the frame before. Every node reads the same events, in order:
