@@ -727,6 +727,13 @@ void command(VP::Call &call) override {
 
 A command name is one command: a second node registering it is refused, as the drop in section 11 shows.
 
+**Its own name.** `node.name()` in `bind` is the node's name as a line names it, so a node can send a command about itself. The split part sends where its seam was dragged to this way, so the log keeps it and a replay puts the seam back:
+
+```cpp
+_name = node.name();                                                    // in bind
+frame.commands().send(std::format("param set {} ratio {:.3f}", _name, ratio)); // in cook
+```
+
 **The terminal** (the command-line part's whole job):
 
 ```cpp
