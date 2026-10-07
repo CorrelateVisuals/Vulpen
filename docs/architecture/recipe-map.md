@@ -35,11 +35,12 @@ Parts hold all of the library's code and use no other recipe (RV06). A drawing p
 | `palette` | `Palette` | files | — | Palette |
 | `viewport` | `Viewport` | — | — | Rect: the window's |
 | `split` | `Split` | input, commands | Rect | Rect: two, and the ground and seam for `rects` |
-| `list` | `List` | — | Item, Rect, Font | Rect, Label; Rects, its rows, for `hit` |
+| `bar` | `Bar` | — | Rect, Font | Rect: two, the bar and the rest |
+| `list` | `List` | — | Item, Rect, Font | Rect, Label; Rects, where each Item shows, for `hit` |
 | `hit` | `Hit` | input, commands | Rect, Item | — (the hovered Item once a tooltip reads it) |
 | `keys` | `Keys` | input, files, commands | — | — |
 | `text` | `Text` | input, files, commands | Rect | Label, Rect |
-| `command-line` | `CommandLine` | input, commands (the log too), terminal | Font, Rect | Label, Item, Rect |
+| `command-line` | `CommandLine` | input, commands (the log too), terminal | Font, Rect | Label, Item (its completions, and its tab), Rect |
 | `command-items` | `CommandItems` | commands | Item | Item |
 | `graph` | `Graph`, shaders | input, commands, graph | Rect, Relation | Rect, Label, Curve; draws its backdrop |
 | `relations` | `Relations` | files | — | Relation |
@@ -51,7 +52,7 @@ Parts hold all of the library's code and use no other recipe (RV06). A drawing p
 
 | Component | Uses |
 | --- | --- |
-| `panel` | list, hit, rects, glyphs |
+| `panel` | bar, list, hit, rects, glyphs |
 | `dock` | split, rects |
 | `menu` | command-items, list, hit, rects, glyphs |
 | `tooltip` | list, rects, glyphs |

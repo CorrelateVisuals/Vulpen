@@ -26,8 +26,8 @@ Proposed 2026-09-30. It is a proposal: the project lead ticks what gets ported (
 | [GPU data](#1-gpu-data-c-and-glsl-share-every-buffer) | 720 | 590 | 3,757 |
 | [Ports](#2-ports) | 1,020 | 260 | 7,212 |
 | [Composition](#3-composition) | 550 | 0 | 2,938 |
-| [Commands](#4-commands) | 185 | 660 | 3,477 |
-| [Parts](#5-parts) | 2,020 | 220 | 11,680 |
+| [Commands](#4-commands) | 125 | 660 | 3,477 |
+| [Parts](#5-parts) | 2,045 | 220 | 11,680 |
 | [Components and apps](#6-components-and-apps) | 400 | 70 | 4,163 |
 | [Tooling](#7-tooling) | 0 | 300 | 1,491 |
 | **Total** | **about 4,900** | **about 2,100** | **about 34,700** |
@@ -40,15 +40,16 @@ The engine today (`baseclasses/`, `runtime/` and `main.cpp`) is about 3,300 line
 
 - **No IDE in the engine.** The POC's engine holds 10,354 lines of IDE and input code, reached through capability structs (26 in all, many of them only for the IDE). It includes the dock (2,228), the node canvas (2,087), the text widget (1,551), relations (822), input (763), hover (521) and the popup (398). Here the engine only gains ports (section 2, about 1,000 lines), and every panel is a part built on them (V05).
 - **One copy of each job.** The POC's panel chrome is the same file in four recipes, plus a vendored copy in `ide-full`. Its text panel is the same file in three places (`ide-text-panel`, `ide-terminal` and `ide-full`). Here each is one part that components use (V11).
-- **143 verbs become 36 core commands and 19 later ones.** 61 verbs are cut because this design removes the reason they existed:
+- **143 verbs become 31 core commands and 19 later ones.** 66 verbs are cut because this design removes the reason they existed:
   - the layout verbs, because reflection gives the layout;
   - the reload verbs, because the live build swaps changes in;
-  - the nest and dock verbs, because folders (RV08), drops and params replace them.
+  - the nest and dock verbs, because folders (RV08), drops and params replace them;
+  - the panel and tab verbs, because a tab sends its content's own command and a panel closes by its dock's seam.
 
   Six verbs that fake input for tests become one `input` command.
 - **The POC's 13 channel kinds become four things a shader declares**: a value, a buffer, an image and the frame block. The POC's path from the manifest to GPU passes is `Chain/` (4,614), bindless passes (2,003), images (1,061) and resources (716). This tree's path is about 1,500 lines, and rows A1–A7 add about 720 more.
 - **No central command table.** The POC keeps each verb's spec in `command_spec.cpp` and its wiring in `commands.cpp`, 997 lines between them. Here a command registers with its spec where it is handled (RV04), and parts register their own commands.
-- **Layout by params.** A dock seam is a param of `split`, so `param set` moves it and replaying the log puts it back. Tearing tabs out and dragging them between panels is a later row (D18).
+- **Layout by params.** A dock seam is a param of `split`, so `param set` moves it and replaying the log puts it back; a panel closes the same way, its seam at the edge. Tearing tabs out and dragging them between panels is a later row (D18).
 - **Monospace text.** A glyph's place is its index times the font's advance, computed on the GPU, so no part shapes text on the CPU (C00).
 - **`runtime/Operator.h` stays the only engine header most recipes include.** It sets how fast a C++ swap is ([handoff 2026-09-30](../logs/development-20260930T075251Z.md)), so each port goes in as a small interface there and brings no heavy standard header with it. A part that reads the graph also includes `runtime/View.h` (B8), which includes nothing of ours. Recipe code has no rows in the include map; one rule checks it ([CLI examples](cli-examples.md#recipe-code-has-no-rows-in-the-include-map)).
 
@@ -134,7 +135,7 @@ The engine registers only the primitive edits, the log, save and migrate, hostin
 | [x] | D7 | `ls`, `info <node>`: nodes, params, connections, pass-block fields and errors | `ls`, `node info`, `param list`, `wire show`, `select find`, `present info` | part `inspect` | 80 | B8 | core |
 | [x] | D8 | `open`, `write`, `close`, `close!`, `find` | `open`, `write`, `close`, `close!`, `edit`, `panel select`, `panel type` | part `text` | in E11 | E11 | core |
 | [x] | D9 | `present <node>`, `mode <name>` | `present`, `present frame`, `present status`, `mode` | part `modes` | in E14 | E14 | core |
-| [x] | D10 | `panel open/close`, `tab add/close/select` | `panel list`, `panel open`, `panel close`, `panel tab add`, `panel tab close` | parts `split`, `list` | 60 | E7, E8 | core |
+| [ ] | D10 | `panel open/close`, `tab add/close/select` | `panel list`, `panel open`, `panel close`, `panel tab add`, `panel tab close` | — | 0 | — | cut (the lead, 2026-10-07): a command name has one owner (B5), so the tab strips of four panels could not each register them. A tab sends its content's own command, as the editor's `open <file>` and perform's `present`, and a panel closes by its dock's seam, `param set <split> ratio 1` |
 | [x] | D11 | `input key/text/pointer/wheel …`; built on 2026-10-06 with `button` and `focus`, as nine forms such as `input key down <value>` | `click`, `hover`, `popup open`, `popup list`, `popup pick`, `popup close` | engine | in B6 | B6 | core |
 | [x] | D12 | `clear` | `clear` | part `command-line` | 5 | E12 | core |
 | [ ] | D13 | `undo`, `redo` | `undo`, `redo` | engine | in B10 | B10 | later |
@@ -142,7 +143,7 @@ The engine registers only the primitive edits, the log, save and migrate, hostin
 | [x] | D15 | `node new draw <name>`, `node new dispatch <name>`: a node's folder with its C++ and shaders, from the [template](cli-examples.md#a-nodes-file-shows-what-it-can-reach), every line of its menu commented, and the node. The kind is a word of the command, so completion and `help` show both | `file new`, `operator new`, `operator remove` | part `library` | 80 | E18 | core (the lead, 2026-10-03): the template is how a recipe starts |
 | [ ] | D16 | `node rename` (a primitive: it renames a section and every endpoint that names it), `node duplicate`, `file rename` (renames the file and its `shader` word in one group) | `node rename`, `node duplicate`, `file rename`, `file move` | engine (`node rename`); part `library` (the others) | 50 | B2, E18 | later |
 | [ ] | D17 | `recipe publish`: copy a view's recipe into the library, with a `view.vlp` for its nodes | `recipe save`, `recipe publish`, `recipe import` | part `library` | 50 | C2 | later |
-| [ ] | D18 | `tab split`, `tab merge`, `panel move`: tearing out tabs and dragging them between panels | `panel tab split`, `panel tab merge`, `panel move`, `panel place` | part `split` | 250 | D10 | later |
+| [ ] | D18 | `tab split`, `tab merge`, `panel move`: tearing out tabs and dragging them between panels | `panel tab split`, `panel tab merge`, `panel move`, `panel place` | one part, not `split`, since a command name has one owner (B5) | 250 | F1 | later |
 | [ ] | D19 | `select` | `select add`, `select clear` | part `graph` | 30 | E13 | later |
 | [ ] | D20 | `relations <kinds>` | `relations`, `tiles`, `route`, `deps` | part `relations` | 30 | E16 | later |
 | [ ] | D21 | `keys` | `keys` | part `keys` | 20 | E10 | later |
@@ -150,7 +151,7 @@ The engine registers only the primitive edits, the log, save and migrate, hostin
 | [ ] | D23 | `heat`, `probe stats` | `heat`, `probe stats` | parts `graph`, `inspect` | 60 | A13 | later |
 | [ ] | D24 | `screenshot`, `capture` | `engine screenshot`, `probe capture` | a part (in A8) | in A8 | A8 | later |
 
-Core: the 36 commands in D1–D12 replace 51 POC verbs. Later: 19 commands replace 31 more. The remaining 61 are cut:
+Core: the 31 commands in D1–D12 replace 46 POC verbs; D10's five were cut on 2026-10-07, with the five verbs on its row. Later: 19 commands replace 31 more. The remaining 61 are cut:
 
 | Port | ID | POC verbs | Why they are cut |
 | --- | --- | --- | --- |
@@ -176,9 +177,10 @@ Parts are the panels' building blocks, with the jobs the [recipe map](../archite
 | [x] | E5 | `font` | bakes the glyph atlas once, with the vendored stb_truetype. Built on 2026-10-07: printable ASCII from the font file in its folder that its `face` param names, Roboto Mono in the library, at the height its param gives, into an `R8_UNORM` atlas and one Font; a face named with a folder, or a font that is not monospace, is refused. | 313 | 100 | A5, B7 | core |
 | [x] | E6 | `palette` | reads `theme.ini` and publishes a Palette. Built on 2026-10-07: a linear color a role, read again once the file changes; a key that is no role, a role left out or a color that is not three or four numbers from 0 to 1 stops it, naming the line. | 143 | 50 | B7 | core |
 | [x] | E7 | `split` | divides a Rect by a tree of ratios; dragging a seam sends `param set`. Built on 2026-10-07 as one seam a node, so a tree of ratios is a tree of docks: `axis` x or y and `ratio` are params, a drag follows the pointer and letting go sends one `param set` (V08), and it hands a rects node the ground and the seam. It reads the pointer itself, since a seam fed back from hit would make a cycle. | (in dock's 2,228) | 80 | A2, A3, B2, B6 | core |
-| [x] | E8 | `list` | lays out Items in a row or a column, in a Rect or at an anchor: tab strips, the menubar, popups, completions. Built on 2026-10-07 as a column in the Rect a writer gives, over a framed fill, for completions; a row comes with the tab strips. It hands hit its rows' Rects. | 149 | 80 | A2, A3 | core |
+| [x] | E8 | `list` | lays out Items in a row or a column, in a Rect or at an anchor: tab strips, the menubar, popups, completions. Built on 2026-10-07 as a column in the Rect a writer gives, over a framed fill, for completions, and the same day as a row for tab strips: `axis=x` lays the Items side by side over a ground, each a tab as wide as its label. It hands hit where each Item shows, as `shown`. An anchor waits for the popup. | 149 | 80 | A2, A3 | core |
 | [x] | E9 | `hit` | finds the Rect under the pointer: a press sends its Item's command, and hovering names the Item. Built on 2026-10-07 for presses, first on the terminal's completions, where a press types the rest of the word with `input text`, as the lead chose; naming the hovered Item waits for the tooltip (F7). | 133 + 521 | 70 | A3, B1, B6 | core |
 | [x] | E19 | `viewport` | hands on the window's whole Rect, so the outermost split divides it as any other: the lead's choice on 2026-10-07, over a param that would give split two modes | – | 20 | A3 | core |
+| [x] | E20 | `bar` | cuts a bar `size` text cells across off an `edge` of a Rect, top, bottom, left or right, and hands on the bar as `strip` and the rest as `rest`: the lead's choice on 2026-10-07. The tab list cannot hand its content the room below it, since the content hands the list its tabs and the schedule refuses the loop, and split cutting by rows of text would have two modes. A bar at a side seats a panel of a set width, with no seam to drag, and `size=0` leaves it no room | – | 25 | A3 | core |
 | [x] | E10 | `keys` | turns keymap chords into command text, and sends other keys to the focused part | 517 | 120 | B1, B6, B7 | core |
 | [x] | E11 | `text` | holds the buffer, caret, selection and scroll; opens, writes, closes and finds through the file port; writes Labels and Rects | 1,475 + 467 | 500 | A2, A3, B1, B5, B6, B7 | core |
 | [x] | E12 | `command-line` | one line with history and completion, sent to the command port and addressed to the view hosted most recently, as `view new` and `view load` leave it, unless the line names one; registers `help`, `complete` and `clear`; on the terminal port it is the CLI, and in a window it reads the input port. The window side built on 2026-10-07, chosen by `param = on=window`: line editing, history, Tab as a shell's, and the log above the line. | 1,227 | 150 | B1, B5, B9 | core |
@@ -195,7 +197,7 @@ A component is only a `view.vlp` (RV06), so it costs manifest lines, and it can 
 
 | Port | ID | Recipe | Uses | POC | New | Needs | Advice |
 | --- | --- | --- | --- | --: | --: | --- | --- |
-| [x] | F1 | `panel` | list, hit, rects, glyphs | chrome, in five copies (in E1's and E8's) | 30 | C1, E1, E2, E8, E9 | core |
+| [x] | F1 | `panel` | bar, list, hit, rects, glyphs; built on 2026-10-07: the bar's strip shows the Items its content hands it as tabs, a press sends a tab's command, and the content fills the rest | chrome, in five copies (in E1's and E8's) | 30 | C1, E1, E2, E8, E9, E20 | core |
 | [x] | F2 | `dock` | split, rects; built on 2026-10-07, with no hit, since split takes its own seam's drag | 2,228 (the POC's runtime dock, which E7 and D18 replace) | 20 | C1, E7 | core |
 | [x] | F3 | `text-area` | text, rects, glyphs | text panel, in three copies (in E11's) | 20 | E11 | core |
 | [x] | F4 | `terminal` | command-line, list, hit, rects, glyphs; built on 2026-10-07 | the same text panel | 25 | B6, E12 | core |
@@ -239,8 +241,8 @@ The ticked rows, in the order they would land. Each step needs only rows from ea
 | | 15 | B6, D11 | input, and `input` for headless tests |
 | | 16 | E1, E5, E6, E2 | rects, font, palette and glyphs: text on screen |
 | | 17 | E8, F4 | list; the terminal component in a window |
-| 3. Panels (about 960) | 18 | E7, E9, E19, F2 | split and hit: the dock |
-| | 19 | F1, D10 | the panel, with tabs |
+| 3. Panels (about 945) | 18 | E7, E9, E19, F2 | split and hit: the dock |
+| | 19 | E20, F1 | bar and the panel: tabs over the content |
 | | 20 | E10, G3 | keys, the theme and the keymap |
 | | 21 | E11, D8, F3 | text: the editor |
 | 4. Graph and Perform (about 1,090) | 22 | A7, E4 | offscreen targets and the image part |
@@ -252,6 +254,7 @@ The ticked rows, in the order they would land. Each step needs only rows from ea
 
 ## Decisions this needs (A00)
 
+- **Tab and panel commands (D10)**: a command name has one owner (B5), so four panels' tab strips could not each register `tab select`. On 2026-10-07 the lead chose that a tab sends its content's own command and a panel closes by its dock's seam, so D10 is cut, and that a new part, `bar` (E20), cuts the strip off a panel, as long as other panels stay compositions outside the engine: none with no tabs, one of a set width, several strips, buttons beside a tab.
 - **D1, graph reads**: needed for B8 (step 9), and so for `inspect`, `graph` and `command-items`.
 - **D5, operator ends of a connection**: needed for A2 and A3 (step 13), and so for every part that hands Rects, Items or Labels to another operator. On 2026-10-03 the lead chose native C++ between C++ nodes: recipes include each other's headers, and objects pass by reference. [Native C++](native-cpp.md) proposes how, and the principle changes it needs, for the lead to approve. On 2026-10-06 the lead chose, for a C++ node and a shader: a C++ node with no shader fills a buffer that a connection takes to another node's shader, as it fills an image, so drawing parts stay shaders only; built that day.
 - **The `instance_count` word (V04)**: needed for A4 (step 13). `vertex_count` counts one instance ([CLI examples](cli-examples.md#what-view-save-writes)). Approved on 2026-10-03; both forms are built.

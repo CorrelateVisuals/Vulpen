@@ -584,7 +584,7 @@ src/examples/zz-demo> view new src/examples/other  # this would mean src/example
 
 The first keeps every typed path meaning one thing wherever you are, and matches the prompt; the second keeps a project's files next to it. Lines from a script always count from the script's folder either way.
 
-**The terminal in a window.** The `ide` app is, so far, the theme, the font, a dock that seats the `terminal` component in the window's bottom row, and `inspect` and `library` as in the CLI; the room above waits for the editor and graph panels. The terminal is the same `command-line` part with `param = on=window`: it reads the keyboard instead of standard input, and shows above the line typed what lines answer and the whole log, errors in red and warnings in amber, so a refused line names its cause there, a frame later.
+**The terminal in a window.** The `ide` app is, so far, the theme, the font, a dock that seats the `terminal` component, in a panel, in the window's bottom row, and `inspect` and `library` as in the CLI; the room above waits for the editor and graph panels. The terminal is the same `command-line` part with `param = on=window`: it reads the keyboard instead of standard input, and shows above the line typed what lines answer and the whole log, errors in red and warnings in amber, so a refused line names its cause there, a frame later.
 
 ```text
 $ ./run.sh src/recipes/apps/ide/view.vlp
@@ -594,9 +594,10 @@ $ ./run.sh src/recipes/apps/ide/view.vlp
 - **Tab** completes as a shell does: the word at the caret takes what every candidate shares, a word only one candidate fits is finished with a blank, and several are listed above the line until the next key. A placeholder such as `<name>` is listed but never typed in. Tab sends `complete`, which takes `""` for a word not begun.
 - **A press on a completion** types the rest of its word, by sending `input text <rest>`, as if you typed it; no blank follows, unlike Tab.
 - **The seam** above the terminal lights up under the pointer, and a drag moves it, the terminal following. Letting go sends one `param set ide.dock.split ratio 0.416`, so the log keeps one line a drag, and a replay or a save puts the seam back.
+- **The tab** over the terminal names it and the view its lines go to: `terminal`, and `terminal - demo` after `view new demo`. It is the command-line's, from its `title` param, and has no command, so a press on it sends nothing.
 - **`clear`** empties the scrollback, which keeps the last 1,000 rows. A row wider than the terminal is cut, and a long line scrolls to keep the caret in view.
 
-- **Where:** `src/recipes/apps/cli/view.vlp`, `src/recipes/apps/ide/view.vlp`, `src/recipes/components/terminal/view.vlp`, `src/recipes/components/dock/view.vlp`; `src/recipes/parts/command-line/CommandLine.cpp`.
+- **Where:** `src/recipes/apps/cli/view.vlp`, `src/recipes/apps/ide/view.vlp`, `src/recipes/components/terminal/view.vlp`, `src/recipes/components/dock/view.vlp`, `src/recipes/components/panel/view.vlp`; `src/recipes/parts/command-line/CommandLine.cpp`.
 
 ## 13. Child views
 
@@ -688,7 +689,7 @@ The engine's placeholder kinds are a closed list (`name`, `node`, `port`, `file`
 | `font` | the font file its `face` param names in its folder, at its `height` param in pixels | `font`, its cell and atlas layout; `atlas`, its glyphs; `metrics`, the same Font for C++ that lays text out |
 | `rects` | `rects`, `palette` | a quad a Rect, in its role's color |
 | `glyphs` | `labels`, `characters`, `font`, `atlas`, `palette` | a quad a character |
-| `list` | `items`, `place` (a Rect) and `font` (the font's `metrics`), from C++ | a column of rows in the place, over a framed fill: `rects`, `labels`, `characters`; and `rows`, each row's Rect, for `hit` |
+| `list` | `items`, `place` (a Rect) and `font` (the font's `metrics`), from C++; its param `axis`, `y` stacked or `x` side by side | a column of rows in the place over a framed fill, or a row of tabs over a ground: `rects`, `labels`, `characters`; and `shown`, where each Item shows, for `hit` |
 
 A part that shows text writes them as a node's C++ fills any buffer for another node's shader, with the types in `contracts/`:
 
@@ -707,15 +708,19 @@ frame.write(_rects, 1)[0] = {.offset = {24, 24}, .extent = {592, 88},
 - **The font** is the file its `face` param names, printable ASCII baked a cell a glyph; the library's is Roboto Mono. Another face is a file put in the font node's folder and named, as `param set font face RobotoMono-Bold.ttf` does, and a font node bakes again after the edit. A face named with a folder is refused, so the font moves with its view (V03), and so is a font that is not monospace. Two faces or heights at once are two font nodes.
 - **Draws stack in graph order**, so `rects` listed before `glyphs` puts text over its panel. The fail-loud test's `text` case wires all four to the fixture's `sign`.
 
-**Layout and the pointer.** Three parts place what the drawing parts draw, and find what a press is on:
+**Layout and the pointer.** Four parts place what the drawing parts draw, and find what a press is on:
 
 | Part | Reads | Gives |
 | --- | --- | --- |
 | `viewport` | the window's size | `area`: the whole window as a Rect; empty without one |
 | `split` | `area`, a Rect; its params `axis`, `x` side by side or `y` stacked, and `ratio`, the first's share; the pointer | `first` and `second`, the two Rects; `rects`, the ground under both and the seam between them; once a dragged seam is let go, `param set <its name> ratio <share>` |
-| `hit` | `items`, and `rects`, where each shows, as a list's `rows`; the pointer | on a press, the command of the Item under the pointer |
+| `bar` | `area`, a Rect, and `font`, the font's `metrics`; its params `edge`, `top`, `bottom`, `left` or `right`, and `size`, in text cells across | `strip`, the bar: `size` rows or columns of text, and 4 pixels either side; `rest`, the room left |
+| `hit` | `items`, and `rects`, where each shows, as a list's `shown`; the pointer | on a press, the command of the Item under the pointer |
 
 - **A dock** is a `split` and the `rects` node that draws its ground and seam. A dock in a Rect another dock gave lays out more panels, each seam with its own ratio. The `ide` seats its terminal in `second` of a dock whose split has `axis=y` and `ratio=0.65`.
+- **A panel** is a `bar`, a `list` with `axis=x`, `rects`, `glyphs` and `hit`. The bar's strip, one row of text at the top of the Rect its host connects to `bar.area`, shows as tabs the Items the content hands `tabs.items` and `hit.items`, and the content fills `bar.rest`. A press on a tab sends its Item's command, which the content set, so a panel registers no command. The `ide` seats its terminal in one.
+- **Another shape is another composition**, and no part changes: a panel with no tabs is its content alone; `bar.size=0` leaves the strip no room; a bar at a side, as `edge=left` with `size=30`, seats a panel 30 columns wide, with no seam to drag, beside its `rest`; and a dock in a panel's `rest`, with a panel on each side, gives it two groups of tabs.
+- **A panel closes** by its seam: dragged to the edge, or with `param set ide.dock.split ratio 1`, it gets no room and draws nothing, and the seam stays at the edge to drag back.
 - **The seam** is 4 pixels, drawn in the theme's border color, and in its accent color under the pointer and while dragged. A drag keeps the ratio to three decimals, as `param set` writes it, so letting go moves nothing. An axis but `x` or `y`, or a ratio outside 0 to 1, stops the split, naming the param.
 - **What is drawn is what is pressed**: `hit` tests the Rects the list drew its rows in, last first, so the one drawn on top answers. The command a press sends is the Item's, as the part that wrote the Items set it.
 
