@@ -39,7 +39,7 @@ Parts hold all of the library's code and use no other recipe (RV06). A drawing p
 | `list` | `List` | — | Item, Rect, Font | Rect, Label; Rects, where each Item shows, for `hit` |
 | `hit` | `Hit` | input, commands | Rect, Item | — (the hovered Item once a tooltip reads it) |
 | `keys` | `Keys` | input, files, commands, graph | — | Typed: the keys and text no chord takes, and the node in focus |
-| `text` | `Text` | input, files, commands | Rect, Typed | Label, Rect |
+| `text` | `Text` | input, files, commands | Font, Rect, Typed | Label, Rect, Item (a tab a file open) |
 | `command-line` | `CommandLine` | input, commands (the log too), terminal | Font, Rect, Typed | Label, Item (its completions, and its tab), Rect |
 | `command-items` | `CommandItems` | commands | Item | Item |
 | `graph` | `Graph`, shaders | input, commands, graph | Rect, Relation | Rect, Label, Curve; draws its backdrop |

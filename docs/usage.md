@@ -368,7 +368,7 @@ child add <name> <file>            hosts the view a view.vlp holds, or an empty 
 child remove <name>                stops hosting a view; its files stay
 ```
 
-- **Who registers them.** The engine registers the edits, the log, save, `child list`, `image clear`, `input` and `quit`; every other command is a node's: `help`, `complete` and `clear` are the command-line part's, `ls` and `info` the inspect part's, `recipe …`, `node new …` and `view new`/`view load` the library part's, and `focus` the keys part's, which the `ide` has and the CLI has not (V05).
+- **Who registers them.** The engine registers the edits, the log, save, `child list`, `image clear`, `input` and `quit`; every other command is a node's: `help`, `complete` and `clear` are the command-line part's, `ls` and `info` the inspect part's, `recipe …`, `node new …` and `view new`/`view load` the library part's, `focus` the keys part's, and `open`, `write`, `close`, `discard` and `find` the text part's; the `ide` has these last two parts and the CLI has not (V05).
 - **A usage is its completion.** Its placeholders say what can come there, so `complete` knows. The last may end in `...`, one argument or more, and stand in brackets, which a line may leave out: `node add ui` adds a group.
 
   ```text
@@ -734,6 +734,7 @@ frame.write(_rects, 1)[0] = {.offset = {24, 24}, .extent = {592, 88},
 ```ini
 # keymap.ini: a chord, = and the line it sends, as a line typed at the command port
 control+l = clear
+control+s = write
 ```
 
 - **A chord** holds `shift`, `control`, `alt` or `super`, joined by `+`, then presses a key named as section 15 names keys. A modifier or a key that is not there, a chord given twice, or a line no command takes stops the keys part, naming the line (`keymap.ini:1: no command takes clera`), and a fixed file brings it back. A key that types, as `a`, still types when a chord takes it, since the window sends text apart from keys; `control` on a letter, as `control+l`, types nothing on any system.
@@ -741,6 +742,23 @@ control+l = clear
 - **A part that takes keys** reads `typed`, not the input port, and acts only when the name in it is its own; it still reads the pointer and its buttons from the input port. Given no room it takes none, as it draws none, so a terminal whose panel is closed runs no line typed unseen; the keys go nowhere until a press gives a part that shows the focus.
 - **In the order they came**: a focus line takes effect as the keys part next hands keys on, so every part reading them in one frame finds the same node in focus. A key after a press waits for the next frame, since the press may give another part the focus, and so does a chord after keys, so its line runs once the part in focus took them. A script that types, presses and types again in one frame puts each key where a person's would go.
 - **Where:** `src/recipes/parts/keys/`.
+
+**The editor.** The `text` part holds the files open and shows one. The `text-area` component is it with `rects` and `glyphs`, and the `ide` seats one in a panel in the dock's top row, a tab a file open:
+
+| Command | What it does |
+| --- | --- |
+| `open <file>` | opens a file as a tab and shows it, or shows it if it is open |
+| `write` | saves the file shown; `control+s` sends it |
+| `close` | closes the file shown, unless it has changes |
+| `discard` | closes the file shown, dropping its changes |
+| `find <value>...` | selects the next place the file shown holds the words, joined by single blanks, after the caret, and from its start past its end |
+
+- **Keys**, while it has the focus: typed text goes in at the caret. `left` and `right` step a character, `up` and `down` a row, `page_up` and `page_down` a page, and `home` and `end` go to the row's start and end, selecting while `shift` is held. `enter` breaks the row, keeping its indent; `tab` types spaces to the next even column; `backspace` and `delete` take out a character, or the selection. A press puts the caret where it was and gives the editor the focus, a drag selects, and the wheel scrolls.
+- **A tab** reads the file's folder and name, as `keys/Keys.cpp`, with `*` while it has changes, and a press on it shows the file; the tab shown is in the content's color. `close` on a file with changes is refused, naming `write` and `discard` (`keys/Keys.cpp* has changes: write saves them, and discard drops them`).
+- **Files** are read once, as they open, so what was typed is never read over; a change on disk to a file open does not show. `write` saves through the file port (RA04), and a file not open is never written.
+- **The font draws ASCII**, so a character past it shows as a blank cell a byte, `—` as three. The caret steps over it whole and no edit splits it, so the rest of a file stays as it was.
+- **One editor a run**: its commands have one owner (B5), so a second text part is left out, as a second command-line is.
+- **Where:** `src/recipes/parts/text/`.
 
 ## 15. What a node's C++ can reach
 
