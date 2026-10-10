@@ -19,7 +19,7 @@ The core (`baseclasses/`, `runtime/`) knows no recipe. These are the ports the r
 
 ## Contracts
 
-`contracts/` holds `Rect`, `Label`, `Curve`, `Palette`, `Font`, `Item` and `Relation`: each is what one connection carries (RV05).
+`contracts/` holds `Rect`, `Label`, `Curve`, `Palette`, `Font`, `Item`, `Typed` and `Relation`: each is what one connection carries (RV05).
 
 ## Parts
 
@@ -38,9 +38,9 @@ Parts hold all of the library's code and use no other recipe (RV06). A drawing p
 | `bar` | `Bar` | — | Rect, Font | Rect: two, the bar and the rest |
 | `list` | `List` | — | Item, Rect, Font | Rect, Label; Rects, where each Item shows, for `hit` |
 | `hit` | `Hit` | input, commands | Rect, Item | — (the hovered Item once a tooltip reads it) |
-| `keys` | `Keys` | input, files, commands | — | — |
-| `text` | `Text` | input, files, commands | Rect | Label, Rect |
-| `command-line` | `CommandLine` | input, commands (the log too), terminal | Font, Rect | Label, Item (its completions, and its tab), Rect |
+| `keys` | `Keys` | input, files, commands, graph | — | Typed: the keys and text no chord takes, and the node in focus |
+| `text` | `Text` | input, files, commands | Rect, Typed | Label, Rect |
+| `command-line` | `CommandLine` | input, commands (the log too), terminal | Font, Rect, Typed | Label, Item (its completions, and its tab), Rect |
 | `command-items` | `CommandItems` | commands | Item | Item |
 | `graph` | `Graph`, shaders | input, commands, graph | Rect, Relation | Rect, Label, Curve; draws its backdrop |
 | `relations` | `Relations` | files | — | Relation |

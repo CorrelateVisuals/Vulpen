@@ -368,7 +368,7 @@ child add <name> <file>            hosts the view a view.vlp holds, or an empty 
 child remove <name>                stops hosting a view; its files stay
 ```
 
-- **Who registers them.** The engine registers the edits, the log, save, `child list`, `image clear`, `input` and `quit`; every other command is a node's: `help`, `complete` and `clear` are the command-line part's, `ls` and `info` the inspect part's, and `recipe …`, `node new …` and `view new`/`view load` the library part's (V05).
+- **Who registers them.** The engine registers the edits, the log, save, `child list`, `image clear`, `input` and `quit`; every other command is a node's: `help`, `complete` and `clear` are the command-line part's, `ls` and `info` the inspect part's, `recipe …`, `node new …` and `view new`/`view load` the library part's, and `focus` the keys part's, which the `ide` has and the CLI has not (V05).
 - **A usage is its completion.** Its placeholders say what can come there, so `complete` knows. The last may end in `...`, one argument or more, and stand in brackets, which a line may leave out: `node add ui` adds a group.
 
   ```text
@@ -725,6 +725,23 @@ frame.write(_rects, 1)[0] = {.offset = {24, 24}, .extent = {592, 88},
 - **The seam** is 4 pixels, drawn in the theme's border color, and in its accent color under the pointer and while dragged. A drag keeps the ratio to three decimals, as `param set` writes it, so letting go moves nothing. An axis but `x` or `y`, or a ratio outside 0 to 1, stops the split, naming the param.
 - **What is drawn is what is pressed**: `hit` tests the Rects the list drew its rows in, last first, so the one drawn on top answers. The command a press sends is the Item's, as the part that wrote the Items set it.
 
+**Keys and the focus.** The `keys` part decides where a key goes, so a key does nothing a typed command cannot (V06):
+
+| Part | Reads | Gives |
+| --- | --- | --- |
+| `keys` | `keymap.ini` in its folder, again once it changes; the keys and text the window got; its param `focus`, the node in focus at the start | the line each chord sends; `typed`, every other key and text, with the name of the node in focus |
+
+```ini
+# keymap.ini: a chord, = and the line it sends, as a line typed at the command port
+control+l = clear
+```
+
+- **A chord** holds `shift`, `control`, `alt` or `super`, joined by `+`, then presses a key named as section 15 names keys. A modifier or a key that is not there, a chord given twice, or a line no command takes stops the keys part, naming the line (`keymap.ini:1: no command takes clera`), and a fixed file brings it back. A key that types, as `a`, still types when a chord takes it, since the window sends text apart from keys; `control` on a letter, as `control+l`, types nothing on any system.
+- **The focus** is a node's name: `focus <node>` moves it, and the keys part's `focus` param says where it starts, as the `ide` starts it in its terminal. A node that does not read `typed` is refused, naming those that do (`ide.dock reads no keys from ide.keys; these do: ide.terminal.command-line`). A press in the terminal's area gives it the focus, and only the part in focus shows its caret. Like input, a focus change stays out of the log.
+- **A part that takes keys** reads `typed`, not the input port, and acts only when the name in it is its own; it still reads the pointer and its buttons from the input port.
+- **In the order they came**: a focus line takes effect as the keys part next hands keys on, so every part reading them in one frame finds the same node in focus. A key after a press waits for the next frame, since the press may give another part the focus, and so does a chord after keys, so its line runs once the part in focus took them. A script that types, presses and types again in one frame puts each key where a person's would go.
+- **Where:** `src/recipes/parts/keys/`.
+
 ## 15. What a node's C++ can reach
 
 A node's C++ includes `runtime/Operator.h`, and `runtime/View.h` when it reads the graph. The template shows every call, commented; these are the ports besides the pass block of section 4.
@@ -775,7 +792,7 @@ for (const VP::Logged &line : frame.commands().log())  // {!!!} node x: …, {no
   show(line.text, line.level == VP::Level::error);     // the node's own way of showing it
 ```
 
-**Input**: keys, text, the pointer, its buttons, the wheel and focus, as the window got them since the frame before. Every node reads the same events, in order:
+**Input**: keys, text, the pointer, its buttons, the wheel and focus, as the window got them since the frame before. Every node reads the same events, in order; a part that takes keys reads them from the keys part instead, so only the part in focus gets them (section 14):
 
 ```cpp
 void cook(VP::Cook &frame) override {
@@ -895,5 +912,6 @@ Every mistake surfaces at load or at its line, naming its cause (A02):
 | a sync of a copy the view changed | `node d changed since it was dropped from c, and a sync would lose that; …` | nothing changes |
 | a C++ module whose build failed | the compiler's output | the running code stays |
 | two nodes registering one command | `node look: command \`ls\` registers twice` | the second node is left out |
+| a keymap line the keys part cannot take | `node ide.keys: keymap.ini:1: no command takes clera; its operator stops` | the rest of the view; keys go nowhere until the file is fixed |
 | a node whose C++ is not built yet | `zz-demo/look has no C++ built: …/module.so is missing` | until the live build compiles it |
 | a folder no node names | `{ ! } …: folder extra/ is no node's, but every folder is a node: …` | everything: it is a warning |
