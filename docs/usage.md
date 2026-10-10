@@ -385,7 +385,7 @@ child add <name> <file>            hosts the view a view.vlp holds, or an empty 
 child remove <name>                stops hosting a view; its files stay
 ```
 
-- **Who registers them.** The engine registers the edits, the log, save, `child list`, `image clear`, `input` and `quit`; every other command is a node's: `help`, `complete` and `clear` are the command-line part's, `ls` and `info` the inspect part's, `recipe …`, `node new …` and `view new`/`view load` the library part's, `focus` the keys part's, and `open`, `write`, `close`, `discard` and `find` the text part's; the `ide` has these last two parts and the CLI has not (V05).
+- **Who registers them.** The engine registers the edits, the log, save, `child list`, `image clear`, `input` and `quit`; every other command is a node's: `help`, `complete` and `clear` are the command-line part's, `ls` and `info` the inspect part's, `recipe …`, `node new …` and `view new`/`view load` the library part's, `focus` the keys part's, `open`, `write`, `close`, `discard` and `find` the text part's, and `present`, `mode edit` and `mode perform` the modes part's; the `ide` has these last three parts and the CLI has not (V05).
 - **A usage is its completion.** Its placeholders say what can come there, so `complete` knows. The last may end in `...`, one argument or more, and stand in brackets, which a line may leave out: `node add ui` adds a group.
 
   ```text
@@ -602,7 +602,7 @@ src/examples/zz-demo> view new src/examples/other  # this would mean src/example
 
 The first keeps every typed path meaning one thing wherever you are, and matches the prompt; the second keeps a project's files next to it. Lines from a script always count from the script's folder either way.
 
-**The terminal in a window.** The `ide` app is, so far, the theme, the font, a dock that seats the `terminal` component, in a panel, in the window's bottom row, and `inspect` and `library` as in the CLI; the room above waits for the editor and graph panels. The terminal is the same `command-line` part with `param = on=window`: it reads the keyboard instead of standard input, and shows above the line typed what lines answer and the whole log, errors in red and warnings in amber, so a refused line names its cause there, a frame later.
+**The terminal in a window.** The `ide` app is, so far, the theme, the font, the keys, the modes part, a dock that seats the editor and the Perform panel side by side in its top row and the `terminal` component, in a panel, in its bottom row, and `inspect` and `library` as in the CLI; the graph panel waits. The terminal is the same `command-line` part with `param = on=window`: it reads the keyboard instead of standard input, and shows above the line typed what lines answer and the whole log, errors in red and warnings in amber, so a refused line names its cause there, a frame later.
 
 ```text
 $ ./run.sh src/recipes/apps/ide/view.vlp
@@ -727,7 +727,7 @@ The engine's placeholder kinds are a closed list (`name`, `node`, `port`, `file`
 | `font` | the font file its `face` param names in its folder, at its `height` param in pixels | `font`, its cell and atlas layout; `atlas`, its glyphs; `metrics`, the same Font for C++ that lays text out |
 | `rects` | `rects`, `palette` | a quad a Rect, in its role's color |
 | `glyphs` | `labels`, `characters`, `font`, `atlas`, `palette` | a quad a character |
-| `image` | `place`, Rects, and `picture`, an image: one a draw renders into, or one C++ fills | the image in each Rect, letterboxed: as large as fits at its own aspect, centered |
+| `image` | `area`, a Rect, and `picture`, an image: one a draw renders into, the window of a view its view hosts, or one C++ fills | the image in the Rect, letterboxed: as large as fits at its own aspect, centered; nothing while the Rect is empty or nothing reaches `picture` |
 | `list` | `items`, `place` (a Rect) and `font` (the font's `metrics`), from C++; its param `axis`, `y` stacked or `x` side by side | a column of rows in the place over a framed fill, or a row of tabs over a ground: `rects`, `labels`, `characters`; and `shown`, where each Item shows, for `hit` |
 
 A part that shows text writes them as a node's C++ fills any buffer for another node's shader, with the types in `contracts/`:
@@ -773,6 +773,8 @@ frame.write(_rects, 1)[0] = {.offset = {24, 24}, .extent = {592, 88},
 # keymap.ini: a chord, = and the line it sends, as a line typed at the command port
 control+l = clear
 control+s = write
+f1        = mode edit
+f2        = mode perform
 ```
 
 - **A chord** holds `shift`, `control`, `alt` or `super`, joined by `+`, then presses a key named as section 15 names keys. A modifier or a key that is not there, a chord given twice, or a line no command takes stops the keys part, naming the line (`keymap.ini:1: no command takes clera`), and a fixed file brings it back. A key that types, as `a`, still types when a chord takes it, since the window sends text apart from keys; `control` on a letter, as `control+l`, types nothing on any system.
@@ -798,6 +800,25 @@ control+s = write
 - **One editor a run**: its commands have one owner (B5), so a second text part is left out, as a second command-line is.
 - **Where:** `src/recipes/parts/text/`.
 
+**Modes and the Perform panel.** The `modes` part chooses what reaches the window, and shows a view the `ide` hosts without it drawing over the `ide` (section 13):
+
+| Command | What it does |
+| --- | --- |
+| `present <name>` | connects the window of a view the `ide` hosts to the Perform panel's image and the one that fills the window, in place of the one presented before |
+| `mode edit` | gives the window to the dock; what is presented shows in the Perform panel. `f1` sends it |
+| `mode perform` | gives the window to what is presented, and the dock no room, so the dock draws and takes nothing; `f2` sends it |
+
+```text
+> view load src/examples/triangle
+src/examples/triangle> present triangle     # the triangle, in the Perform panel, letterboxed
+src/examples/triangle> mode perform         # the triangle, over the whole window
+```
+
+- **The Perform panel** sits beside the editor in the dock's top row. Its tabs name the views the `ide` hosts, the one presented marked, and a press on one presents it. Its image shows the view's window letterboxed, at the window's size, so a view draws as on its own; in perform mode it matches the view's own window pixel for pixel.
+- **The mode is a param** of the modes node, `param set ide.modes mode perform`, which `mode` sends, so a save keeps it and a replay restores it; each switch rebuilds the `ide`.
+- **present** makes one connection, `present`, from `<view>:` to the images the modes node's `to` param names, ports joined by commas. It checks the view is hosted, and connects as the next frame cooks, from the view as that frame runs it, so the connection the log keeps is the one made; a view hosted but not presented draws over the `ide`, as before. `child remove` of the view presented is refused until `: disconnect present`.
+- **Where:** `src/recipes/parts/modes/`, `src/recipes/parts/image/`.
+
 ## 15. What a node's C++ can reach
 
 A node's C++ includes `runtime/Operator.h`, and `runtime/View.h` when it reads the graph. The template shows every call, commented; these are the ports besides the pass block of section 4.
@@ -820,11 +841,11 @@ void command(VP::Call &call) override {
 
 A command name is one command: a second node registering it is refused, as the drop in section 11 shows.
 
-**The graph, during a frame.** `frame.view()` in `cook` is the view the node runs in, as this frame runs it, with each recipe a node of the library uses unfolded; a rebuild replaces it, so a node reads it while it cooks and never keeps it:
+**The graph, during a frame.** `frame.view()` in `cook` is the view the node runs in, as this frame runs it, with each recipe a node of the library uses unfolded; a rebuild replaces it, so a node reads it while it cooks and never keeps it. The modes part lists the views its view hosts this way, a tab each:
 
 ```cpp
 for (const VP::Child &child : frame.view().children)   // the views its view hosts
-  show(child.name);                                     // the node's own way of showing it
+  tabs.push_back({.label = child.name, .command = "present " + child.name});
 ```
 
 **Its own name.** `node.name()` in `bind` is the node's name as a line names it, so a node can send a command about itself. The split part sends where its seam was dragged to this way, so the log keeps it and a replay puts the seam back:
