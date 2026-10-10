@@ -30,7 +30,7 @@ Parts hold all of the library's code and use no other recipe (RV06). A drawing p
 | `rects` | shaders | — | Rect, Palette | draws |
 | `glyphs` | shaders | — | Label, Font, Palette, an image | draws |
 | `curves` | shaders | — | Curve, Palette | draws |
-| `image` | shaders | — | Rect, an image handle | draws |
+| `image` | shaders | — | Rect, an image | draws the image into each Rect, letterboxed |
 | `font` | `Font` | files | — | Font, an image |
 | `palette` | `Palette` | files | — | Palette |
 | `viewport` | `Viewport` | — | — | Rect: the window's |

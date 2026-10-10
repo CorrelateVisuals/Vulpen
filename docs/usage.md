@@ -707,6 +707,7 @@ The engine's placeholder kinds are a closed list (`name`, `node`, `port`, `file`
 | `font` | the font file its `face` param names in its folder, at its `height` param in pixels | `font`, its cell and atlas layout; `atlas`, its glyphs; `metrics`, the same Font for C++ that lays text out |
 | `rects` | `rects`, `palette` | a quad a Rect, in its role's color |
 | `glyphs` | `labels`, `characters`, `font`, `atlas`, `palette` | a quad a character |
+| `image` | `place`, Rects, and `picture`, an image: one a draw renders into, or one C++ fills | the image in each Rect, letterboxed: as large as fits at its own aspect, centered |
 | `list` | `items`, `place` (a Rect) and `font` (the font's `metrics`), from C++; its param `axis`, `y` stacked or `x` side by side | a column of rows in the place over a framed fill, or a row of tabs over a ground: `rects`, `labels`, `characters`; and `shown`, where each Item shows, for `hit` |
 
 A part that shows text writes them as a node's C++ fills any buffer for another node's shader, with the types in `contracts/`:
