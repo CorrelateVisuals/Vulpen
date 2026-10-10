@@ -602,7 +602,7 @@ src/examples/zz-demo> view new src/examples/other  # this would mean src/example
 
 The first keeps every typed path meaning one thing wherever you are, and matches the prompt; the second keeps a project's files next to it. Lines from a script always count from the script's folder either way.
 
-**The terminal in a window.** The `ide` app is, so far, the theme, the font, the keys, the modes part, a dock that seats the editor and the Perform panel side by side in its top row and the `terminal` component, in a panel, in its bottom row, and `inspect` and `library` as in the CLI; the graph panel waits. The terminal is the same `command-line` part with `param = on=window`: it reads the keyboard instead of standard input, and shows above the line typed what lines answer and the whole log, errors in red and warnings in amber, so a refused line names its cause there, a frame later.
+**The terminal in a window.** The `ide` app is, so far, the theme, the font, the keys, the modes part, a dock that seats in its top row the editor beside the graph over the Perform panel, and the `terminal` component, in a panel, in its bottom row, and `inspect` and `library` as in the CLI. The terminal is the same `command-line` part with `param = on=window`: it reads the keyboard instead of standard input, and shows above the line typed what lines answer and the whole log, errors in red and warnings in amber, so a refused line names its cause there, a frame later.
 
 ```text
 $ ./run.sh src/recipes/apps/ide/view.vlp
@@ -728,6 +728,7 @@ The engine's placeholder kinds are a closed list (`name`, `node`, `port`, `file`
 | `rects` | `rects`, `palette` | a quad a Rect, in its role's color |
 | `glyphs` | `labels`, `characters`, `font`, `atlas`, `palette` | a quad a character |
 | `image` | `area`, a Rect, and `picture`, an image: one a draw renders into, the window of a view its view hosts, or one C++ fills | the image in the Rect, letterboxed: as large as fits at its own aspect, centered; nothing while the Rect is empty or nothing reaches `picture` |
+| `curves` | `curves`, `palette` | a strip of quads along each Curve, a cubic that leaves its start heading right and reaches its end from the left, 2 pixels wide, in its role's color |
 | `list` | `items`, `place` (a Rect) and `font` (the font's `metrics`), from C++; its param `axis`, `y` stacked or `x` side by side | a column of rows in the place over a framed fill, or a row of tabs over a ground: `rects`, `labels`, `characters`; and `shown`, where each Item shows, for `hit` |
 
 A part that shows text writes them as a node's C++ fills any buffer for another node's shader, with the types in `contracts/`:
@@ -819,6 +820,18 @@ src/examples/triangle> mode perform         # the triangle, over the whole windo
 - **present** makes one connection, `present`, from `<view>:` to the images the modes node's `to` param names, ports joined by commas. It checks the view is hosted, and connects as the next frame cooks, from the view as that frame runs it, so the connection the log keeps is the one made; a view hosted but not presented draws over the `ide`, as before. `child remove` of the view presented is refused until `: disconnect present`.
 - **Where:** `src/recipes/parts/modes/`, `src/recipes/parts/image/`.
 
+**The graph.** The `graph` part lays out the graph of the view the `ide` hosted most recently, the one the terminal's lines go to, and its tab names it, as `graph - wave`; with no view hosted it shows nothing. The `graph-editor` component is it with `curves`, `rects` and `glyphs`, and the `ide` seats one in a panel over the Perform panel.
+
+```text
+> view load src/examples/wave       # the graph panel shows wave and probe, a curve between
+```
+
+- **The layout follows from the graph**, since the manifest holds no places (V04): a box a node, with its name, a column past every node it reads from, and down each column in the manifest's order. A connection is a curve from the middle of its writer's right side to the middle of its reader's left; one that passes a column runs along a lane of its own below that column's boxes, not behind them. Nodes past 256 are cut.
+- **A press on a box** opens the node's first file in the editor, as `open <file>` typed would, so a node's C++ is a press away. A drag on the ground, or the wheel, moves the graph; how far stays with the part, as the editor's scroll does, out of the log.
+- **Only what lies in its area is drawn**: a box cut at its edge, a name cut to the characters inside it, and a curve whose ends both lie inside. Its ground is a dot every 24 pixels, drawn as Rects.
+- **Given no room it draws and takes nothing**, as every part does.
+- **Where:** `src/recipes/parts/graph/`, `src/recipes/parts/curves/`, `src/recipes/components/graph-editor/`.
+
 ## 15. What a node's C++ can reach
 
 A node's C++ includes `runtime/Operator.h`, and `runtime/View.h` when it reads the graph. The template shows every call, commented; these are the ports besides the pass block of section 4.
@@ -846,6 +859,13 @@ A command name is one command: a second node registering it is refused, as the d
 ```cpp
 for (const VP::Child &child : frame.view().children)   // the views its view hosts
   tabs.push_back({.label = child.name, .command = "present " + child.name});
+```
+
+A view its view hosts it reads by name, `frame.hosted(name)`, as the changes so far left it, which is what a command addressed to that view reads; the graph part lays out the newest so:
+
+```cpp
+const std::vector<VP::Child> &children = frame.view().children;
+const VP::View *const shown = children.empty() ? nullptr : frame.hosted(children.back().name);
 ```
 
 **Its own name.** `node.name()` in `bind` is the node's name as a line names it, so a node can send a command about itself. The split part sends where its seam was dragged to this way, so the log keeps it and a replay puts the seam back:

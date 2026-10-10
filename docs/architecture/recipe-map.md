@@ -42,7 +42,7 @@ Parts hold all of the library's code and use no other recipe (RV06). A drawing p
 | `text` | `Text` | input, files, commands | Font, Rect, Typed | Label, Rect, Item (a tab a file open) |
 | `command-line` | `CommandLine` | input, commands (the log too), terminal | Font, Rect, Typed | Label, Item (its completions, and its tab), Rect |
 | `command-items` | `CommandItems` | commands | Item | Item |
-| `graph` | `Graph`, shaders | input, commands, graph | Rect, Relation | Rect, Label, Curve; draws its backdrop |
+| `graph` | `Graph` | input, commands, graph | Rect, Font (Relation once relations land) | Rect: its boxes and the dots of its ground; Label, Curve, Item (its tab) |
 | `relations` | `Relations` | files | — | Relation |
 | `modes` | `Modes` | commands, graph | Rect | Rect: two, the dock's room and what is presented; Item (a tab a hosted view); the connection that presents a view |
 | `inspect` | `Inspect` | commands, graph | — | — |
