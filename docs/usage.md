@@ -798,7 +798,7 @@ input focus off
 ```
 
 - **Neither goes through the log.** The log keeps what input caused, an edit or a save, so a replay rebuilds the graph but not the hands that drove it.
-- **Key names**: the character a key prints in the keyboard's layout, or `space`, `enter`, `escape`, `tab`, `backspace`, `insert`, `delete`, `left`, `right`, `up`, `down`, `page_up`, `page_down`, `home`, `end`, `shift`, `control`, `alt`, `super`, `f1` to `f12`. Buttons are `left`, `right` and `middle`. A held key repeats as more `down` events.
+- **Key names**: the character a key prints in the keyboard's layout without shift, so `l` and never `L`, or `space`, `enter`, `escape`, `tab`, `backspace`, `insert`, `delete`, `left`, `right`, `up`, `down`, `page_up`, `page_down`, `home`, `end`, `shift`, `control`, `alt`, `super`, `f1` to `f12`; `frame.input().names_key(name)` says whether a name is one, as the keys part checks its keymap. Buttons are `left`, `right` and `middle`. A held key repeats as more `down` events.
 - **The pointer** counts pixels from the window's top left, so it matches the frame block's `cursor`; moves within a frame keep the last.
 
 **Files.** A file a node holds is opened in `bind` and watched; any other goes by absolute path. A sketch, as the palette part would read its theme:
