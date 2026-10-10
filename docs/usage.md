@@ -100,7 +100,7 @@ from = wave.values          # the node.port that writes it
 to   = probe.values         # the node.port that reads it; repeat `to` for more readers
 ```
 
-- **The words.** `[node]` takes `recipe`, `operator`, `file`, `invocations`, `vertex_count`, `instance_count`, `param`, `image` and `log`; `[connection]` takes `from` and `to`; `[view]` takes `file` (section 13). A dispatch counts its `invocations`; a draw counts its `vertex_count`, and `instance_count = 64` draws 64 instances, one when left out (VK04: `vkCmdDraw(vertexCount, instanceCount, …)`). `recipe` names where a dropped node came from (section 11).
+- **The words.** `[node]` takes `recipe`, `operator`, `file`, `invocations`, `vertex_count`, `instance_count`, `param`, `image` and `log`; `[connection]` takes `from` and `to`, each a `node.port`, and `from` also `<view>:`, the window of a view the manifest hosts; `[view]` takes `file` (section 13). A dispatch counts its `invocations`; a draw counts its `vertex_count`, and `instance_count = 64` draws 64 instances, one when left out (VK04: `vkCmdDraw(vertexCount, instanceCount, …)`). `recipe` names where a dropped node came from (section 11).
 - **The folder decides a node's files.** The `file` lines list what the node's folder holds, and vulpen keeps them so: a file put in `wave/` is one of the node's at the next load, edit or live scan, one taken out is no longer, and `view save` writes the list. A command never names a file. A folder that no node names is a warning at load, since every folder is a node.
 - **Loading runs edits.** Each section goes through the same edits a command makes (section 8), so a loaded view and a typed one pass the same checks.
 - **Order.** Nodes run writers before readers, as the connections order them, then in the manifest's order.
@@ -292,7 +292,7 @@ The `image` word gives an image its format, by Vulkan's name (VK04), and C++ fil
 | `R16_SFLOAT`, `R16G16_SFLOAT`, `R16G16B16A16_SFLOAT` | `std::uint16_t`, `glm::u16vec2`, `glm::u16vec4`, each a 16-bit float's bits, as `glm::packHalf1x16` gives them |
 | `R32_SFLOAT`, `R32G32_SFLOAT`, `R32G32B32A32_SFLOAT` | `float`, `glm::vec2`, `glm::vec4` |
 
-The upload makes the image the size and format given, and the frame copies the pixels in before its passes. The image keeps them through rebuilds while the node, the port and the format stay, so a node uploads once. They stay with the node that fills them, so a connection removed and made again finds them, until `image clear <port>` drops them, named by the port that fills them or one that samples them. Until a node fills its image, and after a clear, its `Texture` holds 0, which means unbound and samples as nothing, and `frame.empty` says so to the node's C++. A `Texture` nothing fills, an image nothing samples, a format there is not or one this GPU cannot sample filtered, and pixels that do not make the size given are refused.
+The upload makes the image the size and format given, and the frame copies the pixels in before its passes. The image keeps them through rebuilds while the node, the port and the format stay, so a node uploads once. They stay with the node that fills them, so a connection removed and made again finds them, until `image clear <port>` drops them, named by the port that fills them or one that samples them. Until a node fills its image, and after a clear, its `Texture` holds 0, which means unbound and samples as nothing, and `frame.empty` says so to the node's C++; so does a `Texture` no connection reaches yet, as the `ide`'s waits for the view it presents. An image nothing samples, a format there is not or one this GPU cannot sample filtered, and pixels that do not make the size given are refused.
 
 **An image a draw renders into.** A draw's fragment shader writes one color, a port by its name. Unconnected, it goes into the window; taken by a connection to `Texture`s, the draw renders into an image instead, for those nodes to sample, so which draw reaches the screen stays a fact of the manifest (A7). The image starts each frame cleared to nothing at all, so what the draw leaves uncovered samples as transparent:
 
@@ -312,7 +312,7 @@ to   = image.picture                         # a Texture
 
 - **Barriers** follow from the qualifiers: a pass waits for what an earlier pass wrote, with no barrier placed by hand.
 - **Memory** follows from who uses a buffer: one C++ writes or reads back lives where the CPU maps it; any other stays on the GPU (VK03). A buffer holds one element per invocation of its writer, a dispatch's thread or a draw's vertex, and starts zeroed.
-- **Passes run in graph order**: the dispatches and the draws into images as the connections order them, then the draws into the window, in one render pass. Each draw blends premultiplied over what came before: an opaque color covers, and alpha lets what is behind show.
+- **Passes run in graph order**: the dispatches and the draws into images as the connections order them, then the draws into the window, in one render pass. Each draw blends premultiplied over what came before: an opaque color covers, and alpha lets what is behind show. A hosted view's passes run before those of the view hosting it, so a host samples what a view it hosts drew that frame (section 13).
 - **No instances, no draw.** A draw whose port-counted instances are 0 this frame is not recorded, while its pipeline and buffers stay. So a part with nothing to show writes nothing, and what is hidden costs no GPU work and shows again the next frame it is given something: no room, no work, everything kept.
 - **The frame block** is written once a frame, after the window's image is acquired, so a resized window's size shows at once; with no window, its resolution is `--size`'s. Its layout comes from reflection, and a shader whose push constant is anything else is refused.
 - **Shared GLSL** (GLSL01): `sample_nearest` samples the texel nearest `uv`, for an image drawn a texel a pixel, as a glyph is; `quad_corner(gl_VertexIndex)` gives the corners of a quad's two triangles, so a draw of `vertex_count = 6` places a rectangle an instance; `pixel_clip` puts a point in pixels from the window's top left into clip space.
@@ -425,7 +425,7 @@ The first eight lines applied, and the saved view now holds `param = every=30`, 
 
 - **What happens.** An edit that breaks the view's shape is refused at once, naming why, and changes nothing: a name used twice, a port in two connections, a connection that would close a cycle, a node inside no node, a file named by a command. A node whose shaders or C++ disagree is left out at the rebuild, naming its line; the rest runs.
 - **Files stay.** No edit writes or deletes a file: `node remove` leaves the folder, and `node add` takes the files its folder holds.
-- **The window follows.** An edit that adds the first draw into the window opens it before the rebuild, and one that removes the last closes it; connecting a draw's output takes its draw out of the window:
+- **The window follows.** An edit that adds the first draw into the window opens it before the rebuild, and one that removes the last closes it; connecting a draw's output takes its draw out of the window, and connecting a hosted view's window takes its draws out of it:
 
   ```text
   {run} a node draws into the window, so it opens
@@ -647,6 +647,26 @@ w …/wave/view.vlp                          # child list: the hosted views, in 
 - **A line a command sends** goes to the same view as the line that ran it, unless it names one; a script's lines each stand alone.
 - **Where:** `src/runtime/Views.cpp`.
 
+**A hosted view's window.** Without anything more, a hosted view draws into the window over its host. A connection from `<view>:` takes what it draws into its window as one image instead, which the host's `Texture`s sample. The view runs as it would on its own and knows nothing of who takes it (V03):
+
+```ini
+# host/view.vlp
+[view "demo"]
+
+[node "show"]                # samples the Texture picture, as the image part does
+…
+
+[connection "present"]
+from = demo:                 # the window of the view demo, as one image
+to   = show.picture          # repeat to for more readers
+```
+
+- **What it holds**: the view's draws into its window, stacked in graph order, and those of the views it hosts that draw into its window, over them, as in a window of its own. It starts each frame cleared to nothing at all, so what they leave uncovered samples as transparent.
+- **Its format** is `R8G8B8A8_SRGB`, as the window takes it, so the view's draws blend and band as they would in its own window. **Its size** is the window's, or `--size`'s with none, as a draw's image is.
+- **Order**: the view's passes run first, its draws into the image in one render pass, then the host's, so a host's dispatch or draw samples what the view drew that frame.
+- **Connecting or disconnecting** rebuilds the hosted view too, so its draws' pipelines fit what they draw into now.
+- **Refused**, naming why: `<view>:` naming no view this view hosts (`connection stage is from inner:, but this view hosts no view inner`), a connection to a view's window, a reader that is no `Texture`, and `child remove` of a view a connection takes (`view inner is connected through stage; disconnect it first`).
+
 ## 14. The library
 
 The `library` part works on recipe and view folders through the file port. It runs in the CLI.
@@ -800,6 +820,13 @@ void command(VP::Call &call) override {
 
 A command name is one command: a second node registering it is refused, as the drop in section 11 shows.
 
+**The graph, during a frame.** `frame.view()` in `cook` is the view the node runs in, as this frame runs it, with each recipe a node of the library uses unfolded; a rebuild replaces it, so a node reads it while it cooks and never keeps it:
+
+```cpp
+for (const VP::Child &child : frame.view().children)   // the views its view hosts
+  show(child.name);                                     // the node's own way of showing it
+```
+
 **Its own name.** `node.name()` in `bind` is the node's name as a line names it, so a node can send a command about itself. The split part sends where its seam was dragged to this way, so the log keeps it and a replay puts the seam back:
 
 ```cpp
@@ -938,11 +965,13 @@ Every mistake surfaces at load or at its line, naming its cause (A02):
 | a C++ struct and a shader's put a member at different offsets | `node shape: shapes: member size is a float at byte 12 in C++, but a float at byte 8 in the shader` | the rest of the view; that node is left out |
 | two C++ nodes disagree on what a connection carries | `node take: input count is a std::vector<int, …> of 24 bytes, but give writes a vp_mistakes::Count of 8 bytes` | the rest of the view; that node is left out |
 | C++ writes more elements than its buffer holds | `node shape: the operator writes 8 elements of shapes, which holds 4; …; its operator stops` | the rest of the view; that node stops |
-| a `Texture` nothing fills, or an image C++ fills that nothing samples | `node picture: picture samples nothing: connect it to an image another node's C++ fills, or fill it from the operator` | the rest of the view; that node is left out |
+| an image C++ fills that nothing samples | `node picture: the operator fills image stray, which nothing samples: no Texture of its shaders, and no connection` | the rest of the view; that node is left out |
 | C++ uploads pixels that do not make the size it gives | `node picture: the operator uploads 7 pixels to picture, which is 4 by 2; its operator stops` | the rest of the view; that node stops |
 | C++ fills an image with another pixel than its format takes, or the format is none there is | `node picture: the operator fills picture with uint8 pixels, but its format R32_SFLOAT takes float` | the rest of the view; that node is left out |
 | shaders that make neither a draw nor a dispatch, or the wrong count | `node fill: it runs a .comp, so it counts its invocations, and no vertex_count` | the rest of the view |
 | a draw's image taken to a port that is no `Texture`, or a draw of more colors than one | `node sum: connection painted: paint draws an image, which values is no Texture to sample` | the rest of the view; that node is left out |
+| a view's window taken from a view the view does not host, or taken to a view | `view.vlp:8: connection stage is from inner:, but this view hosts no view inner` | nothing: the load stops |
+| a view's window taken to a port that is no `Texture` | `node sum: connection stage: view inner draws an image, which values is no Texture to sample` | the rest of the view; that node is left out |
 | a param nothing reads, a field nothing sets | `node wave: param spare: nothing reads it` | the rest of the view |
 | an edit that cannot apply | `refuse.txt:2: node wave is connected through values; disconnect it first` | nothing changes; a script stops there |
 | a command that does not exist, or does not fit its usage | `unknown command frobnicate; the commands are …` | nothing changes |
