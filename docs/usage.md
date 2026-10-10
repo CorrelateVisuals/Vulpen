@@ -44,13 +44,14 @@ How each part of Vulpen works today, shown the way you use it. Each section has 
          --fps 0                      # unpaced; the default is 60 frames a second
 #        --first-frame N              # start counting frames at N, so a test reaches years in a moment
 #        --source script.txt          # run a file of commands before the first frame
+#        --size 1280x720              # with no window: the size of images draws render into
 ```
 
 What it prints:
 
 ```text
 {run} vulpen 9656e19                                                # the commit it was built from (RC07)
-{run} view wave from …/src/examples/wave/view.vlp: no node draws, so it runs headless   # V07
+{run} view wave from …/src/examples/wave/view.vlp: no node draws into the window, so it runs headless   # V07
 {gpu} Vulkan validation is on
 {gpu} runs on NVIDIA GeForce RTX 5070 Laptop GPU: discrete, Vulkan 1.4.312
 {nod} wave: pipeline from Wave.comp                                # each node's pipeline and operator
@@ -64,7 +65,7 @@ What it prints:
 {run} ran 61 frames in 0.01 s
 ```
 
-- **Headless or a window.** A view runs headless unless a node draws; `./run.sh src/examples/triangle/view.vlp` says `a node draws, so it opens a window`. The window also opens and closes while running, as draws come and go (section 8).
+- **Headless or a window.** A view runs headless unless a node draws into the window; `./run.sh src/examples/triangle/view.vlp` says `a node draws into the window, so it opens one`. A draw whose output a connection takes on renders into an image instead (section 5), so it needs no window: a run with none renders it at the size `--size` gives, and without one records nothing. The window also opens and closes while running, as draws into it come and go (section 8).
 - **Quiet by default.** At `warn` a run that goes as meant prints only the frame around the log; `{!!!}` marks an error and `{ ! }` a warning (C09).
 - **Exit code.** 0, or 1 when a node is in error when the run ends, or the view cannot load.
 - **Where:** `src/runtime/Runtime.cpp` parses the arguments and runs the loop; `src/baseclasses/Log.h` lists what each level and tag shows.
@@ -185,7 +186,7 @@ Data moves by different routes, told apart by who writes it and how much there i
 | a shader, C++ | `node.readback<T>`, read a frame after the GPU wrote it | the probe's `samples` |
 | a shader, a shader | a connection, which never leaves the GPU (VK03) | `wave.values` to `probe.values` |
 | C++, C++ | a connection: `node.output<T>` in the writer, `node.input<T>` in each reader, one object both hold by reference (section 15) | the fail-loud fixture's `give.count` to `take.count` |
-| the engine, both | the frame block for shaders (section 5); `frame.index()` and `frame.resolution()`, the window's size, zero without one, for C++ | `frame.resolution` |
+| the engine, both | the frame block for shaders (section 5); `frame.index()` and `frame.resolution()`, the window's size, or `--size`'s without one, zero without either, for C++ | `frame.resolution` |
 
 - **The names meet at load, not at compile time.** The loader reads each shader's SPIR-V (reflection, RA03) and checks every request of `bind` against it, and every param and pass-block field against the node. Nothing is looked up during a frame.
 - **A mismatch leaves the node out**, naming why; the rest of the view runs:
@@ -223,7 +224,7 @@ layout(buffer_reference, std430) writeonly buffer FloatsOut { float at[]; }; // 
 
 // What every pass may read about the frame; the push constant holds its address.
 layout(buffer_reference, std430) readonly buffer FrameBlock {
-  uvec2 resolution; // of the window in pixels; zero without one
+  uvec2 resolution; // of the window in pixels, or without one --size's; else zero
   vec2 cursor;      // the pointer, in pixels; zero until it moves
   float time;       // seconds, from the frame index at the run's rate
   uint index;       // the frame, as the node's C++ counts it
@@ -293,13 +294,29 @@ The `image` word gives an image its format, by Vulkan's name (VK04), and C++ fil
 
 The upload makes the image the size and format given, and the frame copies the pixels in before its passes. The image keeps them through rebuilds while the node, the port and the format stay, so a node uploads once. They stay with the node that fills them, so a connection removed and made again finds them, until `image clear <port>` drops them, named by the port that fills them or one that samples them. Until a node fills its image, and after a clear, its `Texture` holds 0, which means unbound and samples as nothing, and `frame.empty` says so to the node's C++. A `Texture` nothing fills, an image nothing samples, a format there is not or one this GPU cannot sample filtered, and pixels that do not make the size given are refused.
 
+**An image a draw renders into.** A draw's fragment shader writes one color, a port by its name. Unconnected, it goes into the window; taken by a connection to `Texture`s, the draw renders into an image instead, for those nodes to sample, so which draw reaches the screen stays a fact of the manifest (A7). The image starts each frame cleared to nothing at all, so what the draw leaves uncovered samples as transparent:
+
+```ini
+[node "paint"]                               # Paint.frag: layout(location = 0) out vec4 color;
+vertex_count = 3
+image        = color=R16G16B16A16_SFLOAT     # its format; R8G8B8A8_UNORM without the word
+
+[connection "painted"]
+from = paint.color
+to   = image.picture                         # a Texture
+```
+
+- **Its size** is the window's, or with no window the size `--size` gives, and the image is made again when the size changes. With no size there is no image: its draw records nothing, and its readers sample nothing, as with a 0 slot.
+- **Who reads it**: a draw, or a dispatch, after the draw in graph order, samples what it drew that frame.
+- **Refused, naming why**: a reader that is no `Texture`, a fragment shader that writes other than one color, and a format there is not, or one this GPU cannot sample and blend into.
+
 - **Barriers** follow from the qualifiers: a pass waits for what an earlier pass wrote, with no barrier placed by hand.
 - **Memory** follows from who uses a buffer: one C++ writes or reads back lives where the CPU maps it; any other stays on the GPU (VK03). A buffer holds one element per invocation of its writer, a dispatch's thread or a draw's vertex, and starts zeroed.
-- **Draws** run after the dispatches, in graph order, into the window, each blended premultiplied over what came before: an opaque color covers, and alpha lets what is behind show.
+- **Passes run in graph order**: the dispatches and the draws into images as the connections order them, then the draws into the window, in one render pass. Each draw blends premultiplied over what came before: an opaque color covers, and alpha lets what is behind show.
 - **No instances, no draw.** A draw whose port-counted instances are 0 this frame is not recorded, while its pipeline and buffers stay. So a part with nothing to show writes nothing, and what is hidden costs no GPU work and shows again the next frame it is given something: no room, no work, everything kept.
-- **The frame block** is written once a frame, after the window's image is acquired, so a resized window's size shows at once. Its layout comes from reflection, and a shader whose push constant is anything else is refused.
+- **The frame block** is written once a frame, after the window's image is acquired, so a resized window's size shows at once; with no window, its resolution is `--size`'s. Its layout comes from reflection, and a shader whose push constant is anything else is refused.
 - **Shared GLSL** (GLSL01): `sample_nearest` samples the texel nearest `uv`, for an image drawn a texel a pixel, as a glyph is; `quad_corner(gl_VertexIndex)` gives the corners of a quad's two triangles, so a draw of `vertex_count = 6` places a rectangle an instance; `pixel_clip` puts a point in pixels from the window's top left into clip space.
-- **Where:** `src/baseclasses/GpuLayout.glsl`; `src/baseclasses/Shader.cpp` reflects; `src/baseclasses/Pipelines.cpp` owns the frame block and set 0; `src/baseclasses/Engine.cpp` records the frame, the copies into images first.
+- **Where:** `src/baseclasses/GpuLayout.glsl`; `src/baseclasses/Shader.cpp` reflects; `src/baseclasses/Pipelines.cpp` owns the frame block, set 0 and the render passes of images draws render into; `src/baseclasses/Engine.cpp` records the frame, the copies into images first; `src/runtime/Schedule.cpp` makes each image a draw renders into, at the frame's size.
 
 ## 6. Live code
 
@@ -408,11 +425,11 @@ The first eight lines applied, and the saved view now holds `param = every=30`, 
 
 - **What happens.** An edit that breaks the view's shape is refused at once, naming why, and changes nothing: a name used twice, a port in two connections, a connection that would close a cycle, a node inside no node, a file named by a command. A node whose shaders or C++ disagree is left out at the rebuild, naming its line; the rest runs.
 - **Files stay.** No edit writes or deletes a file: `node remove` leaves the folder, and `node add` takes the files its folder holds.
-- **The window follows.** An edit that adds the first draw opens the window before the rebuild, and one that removes the last closes it:
+- **The window follows.** An edit that adds the first draw into the window opens it before the rebuild, and one that removes the last closes it; connecting a draw's output takes its draw out of the window:
 
   ```text
-  {run} a node draws, so the window opens
-  {run} no node draws, so the window closes
+  {run} a node draws into the window, so it opens
+  {run} no node draws into the window, so it closes
   ```
 
 - **Errors name the line that last changed the node**, the manifest's or the script's, as `param set wave spare 1` does:
@@ -924,6 +941,7 @@ Every mistake surfaces at load or at its line, naming its cause (A02):
 | C++ uploads pixels that do not make the size it gives | `node picture: the operator uploads 7 pixels to picture, which is 4 by 2; its operator stops` | the rest of the view; that node stops |
 | C++ fills an image with another pixel than its format takes, or the format is none there is | `node picture: the operator fills picture with uint8 pixels, but its format R32_SFLOAT takes float` | the rest of the view; that node is left out |
 | shaders that make neither a draw nor a dispatch, or the wrong count | `node fill: it runs a .comp, so it counts its invocations, and no vertex_count` | the rest of the view |
+| a draw's image taken to a port that is no `Texture`, or a draw of more colors than one | `node sum: connection painted: paint draws an image, which values is no Texture to sample` | the rest of the view; that node is left out |
 | a param nothing reads, a field nothing sets | `node wave: param spare: nothing reads it` | the rest of the view |
 | an edit that cannot apply | `refuse.txt:2: node wave is connected through values; disconnect it first` | nothing changes; a script stops there |
 | a command that does not exist, or does not fit its usage | `unknown command frobnicate; the commands are …` | nothing changes |

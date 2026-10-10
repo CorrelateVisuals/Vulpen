@@ -613,7 +613,7 @@ vec4 sample_linear(Texture image, vec2 uv) {
 
 // What every pass may read about the frame; the push constant holds its address (RV02).
 layout(buffer_reference, std430) readonly buffer FrameBlock {
-  uvec2 resolution; // of the window in pixels; zero without one
+  uvec2 resolution; // of the window in pixels, or without one --size's; else zero
   vec2 cursor;      // in pixels, from the top left; zero until the input port feeds it
   float time;       // seconds, from the frame index at the run's rate, so a replay
                     // matches (C01); a float steps coarser than a frame after about 3 days
