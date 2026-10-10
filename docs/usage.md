@@ -602,7 +602,24 @@ src/examples/zz-demo> view new src/examples/other  # this would mean src/example
 
 The first keeps every typed path meaning one thing wherever you are, and matches the prompt; the second keeps a project's files next to it. Lines from a script always count from the script's folder either way.
 
-**The terminal in a window.** The `ide` app is, so far, the theme, the font, the keys, the modes part, a dock that seats in its top row the editor beside the graph over the Perform panel, and the `terminal` component, in a panel, in its bottom row, and `inspect` and `library` as in the CLI. The terminal is the same `command-line` part with `param = on=window`: it reads the keyboard instead of standard input, and shows above the line typed what lines answer and the whole log, errors in red and warnings in amber, so a refused line names its cause there, a frame later.
+**The `ide`.** The `ide` app is the CLI's parts in a window, with four panels in a dock: the theme, the font, the keys, the modes part, `inspect` and `library` as in the CLI, and in the dock the editor, the graph, the Perform panel and the terminal. Each panel is a `panel` around a content, and each seam is a `split`'s:
+
+```text
++-------------------------+--------------------------+
+| triangle/Triangle.cpp   | graph - triangle         |
+|  the editor (section 14)|  a box a node (14)       |
+|                         +--------------------------+
+|                         | triangle                 |
+|                         |  the Perform panel (14)  |
++-------------------------+--------------------------+
+| terminal - triangle                                |
+|  the log, and the line typed                       |
++----------------------------------------------------+
+```
+
+A session, from the terminal: `view load src/examples/triangle` hosts the triangle, and the graph shows its node; `present triangle` shows its window in the Perform panel; a press on its box opens `triangle/Triangle.cpp` in the editor, and after an edit `control+s` writes it, which the live build swaps in, so the Perform panel shows the change a moment later (section 6). `f2` gives the triangle the whole window, and `f1` gives it back.
+
+**The terminal in a window.** The terminal is the same `command-line` part with `param = on=window`: it reads the keyboard instead of standard input, and shows above the line typed what lines answer and the whole log, errors in red and warnings in amber, so a refused line names its cause there, a frame later.
 
 ```text
 $ ./run.sh src/recipes/apps/ide/view.vlp
