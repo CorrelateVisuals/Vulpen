@@ -576,6 +576,7 @@ node cli
 ```
 
 - **The prompt** shows the folder of the project your lines go to, from where you started vulpen, as a shell shows its folder; `>` alone means the CLI itself. It shows only when you type at a terminal, so a piped script's output stays clean.
+- **A run in the background** (`./run.sh … &`) reads nothing from the terminal until it is brought to the foreground, since a read would stop it; what is typed meanwhile is the shell's.
 - **Lines go to the newest project.** `view new` and `view load` host a project and make it the one lines go to; `child remove` falls back to the one before, or the CLI. The CLI sends `zz-demo: ls` for your `ls`, so every log line names its view.
 - **`name: …`** sends one line to another hosted project, and **`: …`** to the CLI itself.
 - **A new node builds at once.** In a debug build, the live build compiles `spinner/` a moment after `node new` wrote it, and swaps it in; until then the node is left out, naming the module it waits for (section 16).
@@ -620,7 +621,7 @@ The first keeps every typed path meaning one thing wherever you are, and matches
 
 `control` with `=` or `+` makes all of it larger, `control` with `-` smaller, and `control+0` puts it back (section 14). A session, from the terminal: `view load src/examples/triangle` hosts the triangle, the graph shows its node, and the Perform panel shows its window under a tab of its own; a press on its box opens `triangle/Triangle.cpp` in the editor, and after an edit `control+s` writes it, which the live build swaps in, so the Perform panel shows the change a moment later (section 6). `f2` gives the triangle the whole window, and `f1` or `escape` gives it back. `escape` in edit mode lets go of what is selected, then of the focus, and then ends the run.
 
-**The terminal in a window.** The terminal is the same `command-line` part with `param = on=window`: it reads the keyboard instead of standard input, and shows above the line typed what lines answer and the whole log, errors in red and warnings in amber, so a refused line names its cause there, a frame later.
+**The terminal in a window.** The terminal is the same `command-line` part with `param = on=window`: it reads the keyboard instead of standard input, and shows above the line typed what lines answer and the whole log, errors in red and warnings in amber, so a refused line names its cause there, a frame later. The terminal vulpen was started from takes lines too, as the CLI's does: they go where the window's lines go, and what they answer prints there, while the log shows in both. The end of its input, as a launcher that gives none or a script piped in has, ends no run; the window does.
 
 ```text
 $ ./run.sh src/recipes/apps/ide/view.vlp
