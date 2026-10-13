@@ -617,7 +617,7 @@ The first keeps every typed path meaning one thing wherever you are, and matches
 +----------------------------------------------------+
 ```
 
-A session, from the terminal: `view load src/examples/triangle` hosts the triangle, and the graph shows its node; `present triangle` shows its window in the Perform panel; a press on its box opens `triangle/Triangle.cpp` in the editor, and after an edit `control+s` writes it, which the live build swaps in, so the Perform panel shows the change a moment later (section 6). `f2` gives the triangle the whole window, and `f1` gives it back.
+A session, from the terminal: `view load src/examples/triangle` hosts the triangle, the graph shows its node, and the Perform panel shows its window under a tab of its own; a press on its box opens `triangle/Triangle.cpp` in the editor, and after an edit `control+s` writes it, which the live build swaps in, so the Perform panel shows the change a moment later (section 6). `f2` gives the triangle the whole window, and `f1` or `escape` gives it back. `escape` in edit mode lets go of what is selected, then of the focus, and then ends the run.
 
 **The terminal in a window.** The terminal is the same `command-line` part with `param = on=window`: it reads the keyboard instead of standard input, and shows above the line typed what lines answer and the whole log, errors in red and warnings in amber, so a refused line names its cause there, a frame later.
 
@@ -625,7 +625,7 @@ A session, from the terminal: `view load src/examples/triangle` hosts the triang
 $ ./run.sh src/recipes/apps/ide/view.vlp
 ```
 
-- **Keys:** typing inserts at the caret, which Left, Right, Home and End move; Backspace and Delete erase, Enter sends the line, and Up and Down step through the lines sent.
+- **Keys:** typing inserts at the caret, which Left, Right, Home and End move; Backspace and Delete erase, Enter sends the line, and Up and Down step through the lines sent. Escape closes the completions, and with none open lets go of the focus.
 - **Tab** completes as a shell does: the word at the caret takes what every candidate shares, a word only one candidate fits is finished with a blank, and several are listed above the line until the next key. A placeholder such as `<name>` is listed but never typed in. Tab sends `complete`, which takes `""` for a word not begun.
 - **A press on a completion** types the rest of its word, by sending `input text <rest>`, as if you typed it; no blank follows, unlike Tab.
 - **The seam** above the terminal lights up under the pointer, and a drag moves it, the terminal following. Letting go sends one `param set ide.dock.split ratio 0.416`, so the log keeps one line a drag, and a replay or a save puts the seam back.
@@ -796,9 +796,11 @@ f2        = mode perform
 ```
 
 - **A chord** holds `shift`, `control`, `alt` or `super`, joined by `+`, then presses a key named as section 15 names keys. A modifier or a key that is not there, a chord given twice, or a line no command takes stops the keys part, naming the line (`keymap.ini:1: no command takes clera`), and a fixed file brings it back. A key that types, as `a`, still types when a chord takes it, since the window sends text apart from keys; `control` on a letter, as `control+l`, types nothing on any system.
-- **The focus** is a node's name: `focus <node>` moves it, and the keys part's `focus` param says where it starts, as the `ide` starts it in its terminal. A node that does not read `typed` is refused, naming those that do (`ide.dock reads no keys from ide.keys; these do: ide.terminal.command-line`). A press in the terminal's area gives it the focus, and only the part in focus shows its caret. Like input, a focus change stays out of the log.
+- **The focus** is a node's name: `focus <node>` moves it, `focus` alone leaves no node in focus, and the keys part's `focus` param says where it starts, as the `ide` starts it in its terminal. A node that does not read `typed` is refused, naming those that do (`ide.dock reads no keys from ide.keys; these do: ide.terminal.command-line`). A press in the terminal's area gives it the focus, and only the part in focus shows its caret. Like input, a focus change stays out of the log.
+- **With no node in focus** the keys go to the empty name, `typed.to("")`, which the `ide`'s modes part reads.
+- **Escape** is no chord: the part in focus takes it, letting go of its selection, or of its completions, and with none of the focus. With no node in focus, modes takes it: in perform mode it sends `mode edit`, and in edit mode `quit`. So `escape` steps back one thing at a time: perform mode, the selection, the focus, the run.
 - **A part that takes keys** reads `typed`, not the input port, and acts only when the name in it is its own; it still reads the pointer and its buttons from the input port. Given no room it takes none, as it draws none, so a terminal whose panel is closed runs no line typed unseen; the keys go nowhere until a press gives a part that shows the focus.
-- **In the order they came**: a focus line takes effect as the keys part next hands keys on, so every part reading them in one frame finds the same node in focus. A key after a press waits for the next frame, since the press may give another part the focus, and so does a chord after keys, so its line runs once the part in focus took them. A script that types, presses and types again in one frame puts each key where a person's would go.
+- **In the order they came**: a focus line takes effect as the keys part next hands keys on, so every part reading them in one frame finds the same node in focus. A key after a press, a chord or `escape` waits for the next frame, since each may move the focus, and so does a chord after keys, so its line runs once the part in focus took them. A script that types, presses and types again in one frame puts each key where a person's would go.
 - **Where:** `src/recipes/parts/keys/`.
 
 **The editor.** The `text` part holds the files open and shows one. The `text-area` component is it with `rects` and `glyphs`, and the `ide` seats one in a panel in the dock's top row, a tab a file open:
@@ -811,7 +813,7 @@ f2        = mode perform
 | `discard` | closes the file shown, dropping its changes |
 | `find <value>...` | selects the next place the file shown holds the words, joined by single blanks, after the caret, and from its start past its end |
 
-- **Keys**, while it has the focus: typed text goes in at the caret. `left` and `right` step a character, `up` and `down` a row, `page_up` and `page_down` a page, and `home` and `end` go to the row's start and end, selecting while `shift` is held. `enter` breaks the row, keeping its indent; `tab` types spaces to the next even column; `backspace` and `delete` take out a character, or the selection. A press puts the caret where it was and gives the editor the focus, a drag selects, and the wheel scrolls.
+- **Keys**, while it has the focus: typed text goes in at the caret. `left` and `right` step a character, `up` and `down` a row, `page_up` and `page_down` a page, and `home` and `end` go to the row's start and end, selecting while `shift` is held. `enter` breaks the row, keeping its indent; `tab` types spaces to the next even column; `backspace` and `delete` take out a character, or the selection; `escape` lets go of the selection, and with none of the focus. A press puts the caret where it was and gives the editor the focus, a drag selects, and the wheel scrolls.
 - **A tab** reads the file's folder and name, as `keys/Keys.cpp`, with `*` while it has changes, and a press on it shows the file; the tab shown is in the content's color. `close` on a file with changes is refused, naming `write` and `discard` (`keys/Keys.cpp* has changes: write saves them, and discard drops them`).
 - **Files** are read once, as they open, so what was typed is never read over; a change on disk to a file open does not show. `write` saves through the file port (RA04), and a file not open is never written.
 - **The font draws ASCII**, so a character past it shows as a blank cell a byte, `—` as three. The caret steps over it whole and no edit splits it, so the rest of a file stays as it was.
@@ -823,18 +825,18 @@ f2        = mode perform
 | Command | What it does |
 | --- | --- |
 | `present <name>` | connects the window of a view the `ide` hosts to the Perform panel's image and the one that fills the window, in place of the one presented before |
-| `mode edit` | gives the window to the dock; what is presented shows in the Perform panel. `f1` sends it |
+| `mode edit` | gives the window to the dock; what is presented shows in the Perform panel. `f1` sends it, and `escape` in perform mode |
 | `mode perform` | gives the window to what is presented, and the dock no room, so the dock draws and takes nothing; `f2` sends it |
 
 ```text
-> view load src/examples/triangle
-src/examples/triangle> present triangle     # the triangle, in the Perform panel, letterboxed
+> view load src/examples/triangle           # the triangle, in the Perform panel, letterboxed
 src/examples/triangle> mode perform         # the triangle, over the whole window
 ```
 
 - **The Perform panel** sits beside the editor in the dock's top row. Its tabs name the views the `ide` hosts, the one presented marked, and a press on one presents it. Its image shows the view's window letterboxed, at the window's size, so a view draws as on its own; in perform mode it matches the view's own window pixel for pixel.
-- **The mode is a param** of the modes node, `param set ide.modes mode perform`, which `mode` sends, so a save keeps it and a replay restores it; each switch rebuilds the `ide`.
-- **present** makes one connection, `present`, from `<view>:` to the images the modes node's `to` param names, ports joined by commas. It checks the view is hosted, and connects as the next frame cooks, from the view as that frame runs it, so the connection the log keeps is the one made; a view hosted but not presented draws over the `ide`, as before. `child remove` of the view presented is refused until `: disconnect present`.
+- **Each view the `ide` hosts is presented as it comes**, in a tab of its own, so the views loaded before keep theirs. A view not presented draws nowhere and keeps running (section 13), so no project ever draws over the `ide`.
+- **The mode is a param** of the modes node, `param set ide.modes mode perform`, which `mode` sends, so a save keeps it and a replay restores it; each switch rebuilds the `ide`. Perform mode leaves the panels no room, so it takes the focus from the part that had it, and edit mode gives it back.
+- **present** makes one connection, `present`, from `<view>:` to the images the modes node's `to` param names, ports joined by commas. It checks the view is hosted and connects at once, from the `ide`'s connections as the lines so far left them, whichever view the line addressed, so the next frame shows it. `child remove` of the view presented is refused until `: disconnect present`.
 - **Where:** `src/recipes/parts/modes/`, `src/recipes/parts/image/`.
 
 **The graph.** The `graph` part lays out the graph of the view the `ide` hosted most recently, the one the terminal's lines go to, and its tab names it, as `graph - wave`; with no view hosted it shows nothing. The `graph-editor` component is it with `curves`, `rects` and `glyphs`, and the `ide` seats one in a panel over the Perform panel.
