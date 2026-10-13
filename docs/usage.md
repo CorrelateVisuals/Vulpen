@@ -337,6 +337,7 @@ $ ./run.sh src/examples/wave/view.vlp --log info
 ```
 
 - **How.** The runtime scans the views' folders every 100 ms; a change seen twice runs the build on a thread, so the frame never waits. Between frames, it unloads the modules the build rewrote, reads the manifest again if it changed on disk, takes each node's files from its folder, and rebuilds.
+- **A name that starts with `.`** is no node's: the loader, the build and the scan all skip it, so what a part keeps beside a view, as the graph its `.vulpen/graph.ini` (section 14), starts no build.
 - **What stays:** pipelines of unchanged SPIR-V, buffers of unchanged shape with their contents, operators whose folder's module stayed, and the edits typed since the manifest was read.
 - **What resets:** a swapped module's operators start over, so state that must survive belongs in params or GPU buffers.
 - **A failed build swaps nothing**, and its compiler output is logged; a manifest that does not load keeps the running graph.
@@ -761,6 +762,7 @@ frame.write(_rects, 1)[0] = {.offset = {24, 24}, .extent = {592, 88},
 ```
 
 - **A Label** shows `count` characters of the one list of characters, from `first`, one cell a character from its `offset`; a character past its `extent` is not drawn. Each character names its Label, and `glyphs` draws as many as the list's used length.
+- **Its `scale`** sizes its cells, the font's times it, as the graph's zoom does; 0, as a Label written without one has, draws at the font's size. `glyphs` samples the atlas smoothly, which at the font's size changes no pixel, since each cell lies on whole pixels.
 - **A theme** gives each role red, green and blue from 0 to 1, linear, with alpha after when it is not opaque. A key that is no role, a role left out or a color that is no such numbers stops the palette, naming the line (`theme.ini:5: pannel is no role; the roles are background, panel, border, text, accent, error, warning`).
 - **The font** is the file its `face` param names, printable ASCII baked a cell a glyph; the library's is Roboto Mono. Another face is a file put in the font node's folder and named, as `param set font face RobotoMono-Bold.ttf` does, and a font node bakes again after the edit. A face named with a folder is refused, so the font moves with its view (V03), and so is a font that is not monospace. Two faces or heights at once are two font nodes.
 - **Draws stack in graph order**, so `rects` listed before `glyphs` puts text over its panel. The fail-loud test's `text` case wires all four to the fixture's `sign`.
@@ -843,11 +845,34 @@ src/examples/triangle> mode perform         # the triangle, over the whole windo
 
 ```text
 > view load src/examples/wave       # the graph panel shows wave and probe, a curve between
+
++-----------+     +------------+
+| wave      |~~~~~| probe      |    # the node's name, in the accent color
+| Wave.comp |     | Probe.comp |    # under it its files, as its folder sorts them
+| Wave.cpp  |     | Probe.cpp  |
++-----------+     +------------+
 ```
 
-- **The layout follows from the graph**, since the manifest holds no places (V04): a box a node, with its name, a column past every node it reads from, and down each column in the manifest's order. A connection is a curve from the middle of its writer's right side to the middle of its reader's left; one that passes a column runs along a lane of its own below that column's boxes, not behind them. Nodes past 256 are cut.
-- **A press on a box** opens the node's first file in the editor, as `open <file>` typed would, so a node's C++ is a press away. A drag on the ground, or the wheel, moves the graph; how far stays with the part, as the editor's scroll does, out of the log.
-- **Only what lies in its area is drawn**: a box cut at its edge, a name cut to the characters inside it, and a curve whose ends both lie inside. Its ground is a dot every 24 pixels, drawn as Rects.
+```ini
+# src/examples/wave/.vulpen/graph.ini, as the graph writes it once a box is dragged
+pan  = 50 23            # how far the graph moved, in pixels
+zoom = 3.636            # how near: from 0.25 to 4
+place probe = 0 200     # each box, from the graph's top left at zoom 1
+place wave = -10 -5
+```
+
+- **The layout follows from the graph** until a box is dragged, since the manifest holds no places (V04): a box a node, with its name and a row a file under it, a column past every node it reads from, and down each column in the manifest's order. A node's C++ and GLSL are its files, not nodes of their own, so the triangle is one box of five rows. A connection is a curve from the middle of its writer's name row on the right to its reader's on the left; one that passes a column runs along a lane of its own below that column's boxes, not behind them. Nodes past 256 are cut.
+- **A press on a box** opens the file of the row pressed in the editor, as `open <file>` typed would, and a press on its name the node's first file. It opens on letting go, so a box pressed and moved is dragged instead.
+- **A dragged box stays where it is put.** The first drag places every box where it shows, so moving one moves no other, and a node added later takes its column's place; lanes are left out from then on, as the boxes no longer keep to columns.
+- **The wheel moves the graph**, as two fingers on a touchpad do, and so does a drag on the ground. With `control` held, the wheel zooms about the pointer, which stays over the same place of the graph, and the text scales with the boxes. GLFW gives no pinch event, so a pinch does nothing.
+- **A restart shows the graph as it was left.** Where the boxes are, how far the graph moved and how near it is are a look at the graph, not its plumbing, so they stay out of the manifest (V04) and the log (V08), in `.vulpen/graph.ini` beside the view's manifest, which moves with the project (V03). A drag saves as it ends, and the wheel once it rests for 30 frames, through the file port (RA04); the build and the live scan skip the folder (section 6), and this repository's `.gitignore` leaves it out. Deleting the file lays the graph out from the graph again; a node that is gone keeps its place there.
+- **A mistake in the file** is named, and the graph lays the view out from the graph alone and never writes over it, so nothing typed there is lost:
+
+  ```text
+  {!!!} ide.graph.graph: graph.ini:2: zoom = 9 is none of pan = x y, zoom = z from 0.25 to 4, place <node> = x y; the graph lays the view out from the graph alone, and keeps the file as it is
+  ```
+
+- **Only what lies in its area is drawn**: a box cut at its edge, a row cut to the characters inside it, and a curve whose ends both lie inside. Its ground is a dot every 24 pixels at zoom 1, drawn as Rects; zoomed out, every other dot goes, so it never crowds.
 - **Given no room it draws and takes nothing**, as every part does.
 - **Where:** `src/recipes/parts/graph/`, `src/recipes/parts/curves/`, `src/recipes/components/graph-editor/`.
 
