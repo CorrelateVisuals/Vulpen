@@ -386,7 +386,7 @@ child add <name> <file>            hosts the view a view.vlp holds, or an empty 
 child remove <name>                stops hosting a view; its files stay
 ```
 
-- **Who registers them.** The engine registers the edits, the log, save, `child list`, `image clear`, `input` and `quit`; every other command is a node's: `help`, `complete` and `clear` are the command-line part's, `ls` and `info` the inspect part's, `recipe …`, `node new …` and `view new`/`view load` the library part's, `focus` the keys part's, `open`, `write`, `close`, `discard` and `find` the text part's, and `present`, `mode edit` and `mode perform` the modes part's; the `ide` has these last three parts and the CLI has not (V05).
+- **Who registers them.** The engine registers the edits, the log, save, `child list`, `image clear`, `input` and `quit`; every other command is a node's: `help`, `complete` and `clear` are the command-line part's, `ls` and `info` the inspect part's, `recipe …`, `node new …` and `view new`/`view load` the library part's, `focus` the keys part's, `open`, `write`, `close`, `discard` and `find` the text part's, `present`, `mode edit` and `mode perform` the modes part's, and `zoom in`, `zoom out` and `zoom reset` the font part's; the `ide` has these last four parts and the CLI has not (V05).
 - **A usage is its completion.** Its placeholders say what can come there, so `complete` knows. The last may end in `...`, one argument or more, and stand in brackets, which a line may leave out: `node add ui` adds a group.
 
   ```text
@@ -618,7 +618,7 @@ The first keeps every typed path meaning one thing wherever you are, and matches
 +----------------------------------------------------+
 ```
 
-A session, from the terminal: `view load src/examples/triangle` hosts the triangle, the graph shows its node, and the Perform panel shows its window under a tab of its own; a press on its box opens `triangle/Triangle.cpp` in the editor, and after an edit `control+s` writes it, which the live build swaps in, so the Perform panel shows the change a moment later (section 6). `f2` gives the triangle the whole window, and `f1` or `escape` gives it back. `escape` in edit mode lets go of what is selected, then of the focus, and then ends the run.
+`control` with `=` or `+` makes all of it larger, `control` with `-` smaller, and `control+0` puts it back (section 14). A session, from the terminal: `view load src/examples/triangle` hosts the triangle, the graph shows its node, and the Perform panel shows its window under a tab of its own; a press on its box opens `triangle/Triangle.cpp` in the editor, and after an edit `control+s` writes it, which the live build swaps in, so the Perform panel shows the change a moment later (section 6). `f2` gives the triangle the whole window, and `f1` or `escape` gives it back. `escape` in edit mode lets go of what is selected, then of the focus, and then ends the run.
 
 **The terminal in a window.** The terminal is the same `command-line` part with `param = on=window`: it reads the keyboard instead of standard input, and shows above the line typed what lines answer and the whole log, errors in red and warnings in amber, so a refused line names its cause there, a frame later.
 
@@ -742,7 +742,7 @@ The engine's placeholder kinds are a closed list (`name`, `node`, `port`, `file`
 | Part | Reads | Gives |
 | --- | --- | --- |
 | `palette` | `theme.ini` in its folder, again once it changes | `palette`: a color a role |
-| `font` | the font file its `face` param names in its folder, at its `height` param in pixels | `font`, its cell and atlas layout; `atlas`, its glyphs; `metrics`, the same Font for C++ that lays text out |
+| `font` | the font file its `face` param names in its folder, at its `height` param in pixels, times the zoom it keeps | `font`, its cell and atlas layout; `atlas`, its glyphs; `metrics`, the same Font for C++ that lays text out |
 | `rects` | `rects`, `palette` | a quad a Rect, in its role's color |
 | `glyphs` | `labels`, `characters`, `font`, `atlas`, `palette` | a quad a character |
 | `image` | `area`, a Rect, and `picture`, an image: one a draw renders into, the window of a view its view hosts, or one C++ fills | the image in the Rect, letterboxed: as large as fits at its own aspect, centered; nothing while the Rect is empty or nothing reaches `picture` |
@@ -764,7 +764,9 @@ frame.write(_rects, 1)[0] = {.offset = {24, 24}, .extent = {592, 88},
 - **A Label** shows `count` characters of the one list of characters, from `first`, one cell a character from its `offset`; a character past its `extent` is not drawn. Each character names its Label, and `glyphs` draws as many as the list's used length.
 - **Its `scale`** sizes its cells, the font's times it, as the graph's zoom does; 0, as a Label written without one has, draws at the font's size. `glyphs` samples the atlas smoothly, which at the font's size changes no pixel, since each cell lies on whole pixels.
 - **A theme** gives each role red, green and blue from 0 to 1, linear, with alpha after when it is not opaque. A key that is no role, a role left out or a color that is no such numbers stops the palette, naming the line (`theme.ini:5: pannel is no role; the roles are background, panel, border, text, accent, error, warning`).
-- **The font** is the file its `face` param names, printable ASCII baked a cell a glyph; the library's is Roboto Mono. Another face is a file put in the font node's folder and named, as `param set font face RobotoMono-Bold.ttf` does, and a font node bakes again after the edit. A face named with a folder is refused, so the font moves with its view (V03), and so is a font that is not monospace. Two faces or heights at once are two font nodes.
+- **The font** is the file its `face` param names, printable ASCII baked a cell a glyph; the library's is Roboto Mono. Another face is a file put in the font node's folder and named, as `param set font face RobotoMono-Bold.ttf` does, and a font node bakes again after the edit. A face named with a folder is refused, so the font moves with its view (V03), and so is a font that is not monospace.
+- **Zoom.** `zoom in` draws the text a step larger, a tenth more, up to 4 times the `height` param; `zoom out` a step smaller, down to half of it; and `zoom reset` at the `height` again. Every part lays text out in cells, so all of them grow with the font, and in the `ide` that is the whole window but its seams. The zoom is a look at the text, not the view, so it stays out of the manifest (V04) and the log (V08), in `.vulpen/font.ini` in the font node's folder, which the font reads again once it changes and a restart reads; the `ide`'s font is the library's part, so its zoom is kept in `src/recipes/parts/font/.vulpen/`. A mistake in the file is named, the font draws at its `height`, and a zoom is refused rather than writing over it (`.vulpen/font.ini:1: zoom = 9 is no zoom = z from 0.5 to 4`).
+- **One font a run.** Its zoom commands have one owner (B5), so a second font node is left out, naming them (``command `zoom in` registers twice``), as a second text part is; two faces or heights at once wait until something needs them (C00).
 - **Draws stack in graph order**, so `rects` listed before `glyphs` puts text over its panel. The fail-loud test's `text` case wires all four to the fixture's `sign`.
 
 **Layout and the pointer.** Four parts place what the drawing parts draw, and find what a press is on:
@@ -791,13 +793,18 @@ frame.write(_rects, 1)[0] = {.offset = {24, 24}, .extent = {592, 88},
 
 ```ini
 # keymap.ini: a chord, = and the line it sends, as a line typed at the command port
-control+l = clear
-control+s = write
-f1        = mode edit
-f2        = mode perform
+control+l       = clear
+control+s       = write
+control+=       = zoom in        # the = key, which types + with shift
+shift+control+= = zoom in
+control++       = zoom in        # a + key, as the keypad's
+control+-       = zoom out
+control+0       = zoom reset
+f1              = mode edit
+f2              = mode perform
 ```
 
-- **A chord** holds `shift`, `control`, `alt` or `super`, joined by `+`, then presses a key named as section 15 names keys. A modifier or a key that is not there, a chord given twice, or a line no command takes stops the keys part, naming the line (`keymap.ini:1: no command takes clera`), and a fixed file brings it back. A key that types, as `a`, still types when a chord takes it, since the window sends text apart from keys; `control` on a letter, as `control+l`, types nothing on any system.
+- **A chord** holds `shift`, `control`, `alt` or `super`, joined by `+`, then presses a key named as section 15 names keys, `+` and `=` too: the `=` after the chord sends. A modifier or a key that is not there, a chord given twice, or a line no command takes stops the keys part, naming the line (`keymap.ini:1: no command takes clera`), and a fixed file brings it back. A key that types, as `a`, still types when a chord takes it, since the window sends text apart from keys; `control` on a letter, as `control+l`, types nothing on any system.
 - **The focus** is a node's name: `focus <node>` moves it, `focus` alone leaves no node in focus, and the keys part's `focus` param says where it starts, as the `ide` starts it in its terminal. A node that does not read `typed` is refused, naming those that do (`ide.dock reads no keys from ide.keys; these do: ide.terminal.command-line`). A press in the terminal's area gives it the focus, and only the part in focus shows its caret. Like input, a focus change stays out of the log.
 - **With no node in focus** the keys go to the empty name, `typed.to("")`, which the `ide`'s modes part reads.
 - **Escape** is no chord: the part in focus takes it, letting go of its selection, or of its completions, and with none of the focus. With no node in focus, modes takes it: in perform mode it sends `mode edit`, and in edit mode `quit`. So `escape` steps back one thing at a time: perform mode, the selection, the focus, the run.

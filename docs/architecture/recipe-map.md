@@ -31,7 +31,7 @@ Parts hold all of the library's code and use no other recipe (RV06). A drawing p
 | `glyphs` | shaders | — | Label, Font, Palette, an image | draws |
 | `curves` | shaders | — | Curve, Palette | draws |
 | `image` | `Image`, shaders | — | Rect, an image: a draw's, a hosted view's window, or one C++ fills | draws the image into the Rect, letterboxed |
-| `font` | `Font` | files | — | Font, an image |
+| `font` | `Font` | files, commands | — | Font, an image |
 | `palette` | `Palette` | files | — | Palette |
 | `viewport` | `Viewport` | — | — | Rect: the window's |
 | `split` | `Split` | input, commands | Rect | Rect: two, and the ground and seam for `rects` |
