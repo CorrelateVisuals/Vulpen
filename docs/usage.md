@@ -664,7 +664,7 @@ w …/wave/view.vlp                          # child list: the hosted views, in 
 - **A line a command sends** goes to the same view as the line that ran it, unless it names one; a script's lines each stand alone.
 - **Where:** `src/runtime/Views.cpp`.
 
-**A hosted view's window.** Without anything more, a hosted view draws into the window over its host. A connection from `<view>:` takes what it draws into its window as one image instead, which the host's `Texture`s sample. The view runs as it would on its own and knows nothing of who takes it (V03):
+**A hosted view's window.** A hosted view draws into the window over a host that draws nothing there, as the CLI. A host that draws into the window itself has it to itself (A01), so a view it hosts draws nowhere: it keeps running, its C++ cooking and its dispatches running, and its buffers and images kept, but it records no draw, as the `ide` keeps a project it does not present (`child triangle: draws nowhere, since its host draws there and no connection takes its window`, at `--log info`). A connection from `<view>:` takes what it draws into its window as one image, which the host's `Texture`s sample. The view runs as it would on its own and knows nothing of who takes it (V03):
 
 ```ini
 # host/view.vlp
@@ -681,7 +681,7 @@ to   = show.picture          # repeat to for more readers
 - **What it holds**: the view's draws into its window, stacked in graph order, and those of the views it hosts that draw into its window, over them, as in a window of its own. It starts each frame cleared to nothing at all, so what they leave uncovered samples as transparent.
 - **Its format** is `R8G8B8A8_SRGB`, as the window takes it, so the view's draws blend and band as they would in its own window. **Its size** is the window's, or `--size`'s with none, as a draw's image is.
 - **Order**: the view's passes run first, its draws into the image in one render pass, then the host's, so a host's dispatch or draw samples what the view drew that frame.
-- **Connecting or disconnecting** rebuilds the hosted view too, so its draws' pipelines fit what they draw into now.
+- **Connecting or disconnecting** rebuilds the hosted view too, so its draws' pipelines fit what they draw into now; drawing nowhere, its draws have none.
 - **Refused**, naming why: `<view>:` naming no view this view hosts (`connection stage is from inner:, but this view hosts no view inner`), a connection to a view's window, a reader that is no `Texture`, and `child remove` of a view a connection takes (`view inner is connected through stage; disconnect it first`).
 
 ## 14. The library
@@ -883,6 +883,12 @@ A view its view hosts it reads by name, `frame.hosted(name)`, as the changes so 
 ```cpp
 const std::vector<VP::Child> &children = frame.view().children;
 const VP::View *const shown = children.empty() ? nullptr : frame.hosted(children.back().name);
+```
+
+A command reads a view by the name a line addresses it with, `call.view(name)`, empty for the one vulpen started with, as `:` addresses it, so it acts at once on another view than the one its line addressed. `present` typed in the `ide`'s terminal addresses the project, and reads the `ide`'s own connections so:
+
+```cpp
+const VP::View &own = *call.view("");   // the ide's, as the lines so far left it
 ```
 
 **Its own name.** `node.name()` in `bind` is the node's name as a line names it, so a node can send a command about itself. The split part sends where its seam was dragged to this way, so the log keeps it and a replay puts the seam back:
