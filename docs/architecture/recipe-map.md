@@ -10,7 +10,7 @@ The core (`baseclasses/`, `runtime/`) knows no recipe. These are the ports the r
 
 | Port | What a part gets | Status |
 | --- | --- | --- |
-| input | keys and pointer | `InputPort` |
+| input | keys, pointer and clipboard | `InputPort` |
 | files | read, watch and save (RA04) | `FilePort` |
 | commands | send text, read the log, list the registered commands (RV04) | `CommandPort` |
 | graph | read the view; writes stay commands (V06) | `runtime/View.h`, once [D1](migration-and-implementation.md#open-decisions) is settled |
