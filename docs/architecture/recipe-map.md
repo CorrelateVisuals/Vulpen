@@ -29,6 +29,7 @@ The core (`baseclasses/`, `runtime/`) knows no recipe. These are the ports the r
 | --- | --- | --- |
 | `Scroll` | rows shown from a first row that the wheel and a drag on a bar's thumb move, keeping a step's fraction | `text`, `command-line` |
 | `Words` | the run a double click selects in a row: letters, digits and `_`, blanks, or other characters | `text`, `command-line` |
+| `PanZoom` | how far what an area shows moved and how near it is: a drag moves it, and the wheel zooms it about the pointer | `graph`, `image` |
 
 ## Parts
 
@@ -39,7 +40,7 @@ Parts hold all of the library's code but the shared code, and use no other recip
 | `rects` | shaders | — | Rect, Palette | draws |
 | `glyphs` | shaders | — | Label, Font, Palette, an image | draws |
 | `curves` | shaders | — | Curve, Palette | draws |
-| `image` | `Image`, shaders | — | Rect, an image: a draw's, a hosted view's window, or one C++ fills | draws the image into the Rect, letterboxed |
+| `image` | `Image`, shaders | input, with `moves=yes` | Rect, an image: a draw's, a hosted view's window, or one C++ fills | draws the image into the Rect, letterboxed, and with `moves=yes` moved and zoomed, cut at the Rect's edge |
 | `font` | `Font` | files, commands | — | Font, an image |
 | `palette` | `Palette` | files | — | Palette |
 | `viewport` | `Viewport` | — | — | Rect: the window's |
