@@ -65,7 +65,7 @@ What it prints:
 {run} ran 61 frames in 0.01 s
 ```
 
-- **Headless or a window.** A view runs headless unless a node draws into the window; `./run.sh src/examples/triangle/view.vlp` says `a node draws into the window, so it opens one`. A draw whose output a connection takes on renders into an image instead (section 5), so it needs no window: a run with none renders it at the size `--size` gives, and without one records nothing. The window also opens and closes while running, as draws into it come and go (section 8).
+- **Headless or a window.** A view runs headless unless a node draws into the window; `./run.sh src/examples/triangle/view.vlp` says `a node draws into the window, so it opens one`. A draw whose output a connection takes on renders into an image instead (section 5), so it needs no window: a run with none renders it at the size `--size` gives, and without one records nothing. The window also opens and closes while running, as draws into it come and go (section 8). It is titled after the view, as `triangle - vulpen`, and the desktop knows it as `vulpen`, Wayland's app id and X11's class, which a dock finds it by; its close button sends `quit` (section 7).
 - **Quiet by default.** At `warn` a run that goes as meant prints only the frame around the log; `{!!!}` marks an error and `{ ! }` a warning (C09).
 - **Exit code.** 0, or 1 when a node is in error when the run ends, or the view cannot load.
 - **Where:** `src/runtime/Runtime.cpp` parses the arguments and runs the loop; `src/baseclasses/Log.h` lists what each level and tag shows.
