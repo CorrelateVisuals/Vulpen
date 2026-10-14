@@ -348,7 +348,8 @@ $ ./run.sh src/examples/wave/view.vlp --log info
 Every action is a command: a line of text through one port (V06). A command registers with its usage and help, or not at all (RV04). The CLI app lists them with `help`:
 
 ```text
-quit                               ends the run before its next frame
+quit                               ends the run before its next frame, unless a node holds work the end would lose, …
+quit force                         ends the run before its next frame, even while a node holds work the end would lose
 source <file>                      runs a file's commands, one a line, and stops at the first that fails
 log save <file>                    writes the session's edits to a file, which source replays
 input key down <value>             presses a key, named by the character it prints, or as space, enter or f1, …
@@ -395,6 +396,13 @@ child remove <name>                stops hosting a view; its files stay
   draw
   > complete param set s      # a <node> comes next: the view's nodes starting with s
   spinner
+  ```
+
+- **`quit` refuses while a node holds work** the end would lose, as the editor a file's changes, naming the node and what (section 15). The window's close button sends `quit`, so a refusal keeps the window open; `quit force` ends the run anyway.
+
+  ```text
+  {!!!} quit would lose what nodes hold, so the run goes on; quit force ends it anyway:
+        ide.editor.text: keys/Keys.cpp* has changes: write saves the file shown, and discard drops its changes
   ```
 
 - **A line may name the view it addresses** as `<name>: <command>`, and `:` alone names the one vulpen started with (section 13).
@@ -619,7 +627,7 @@ The first keeps every typed path meaning one thing wherever you are, and matches
 +----------------------------------------------------+
 ```
 
-`control` with `=` or `+` makes all of it larger, `control` with `-` smaller, and `control+0` puts it back (section 14). A session, from the terminal: `view load src/examples/triangle` hosts the triangle, the graph shows its node, and the Perform panel shows its window under a tab of its own; a press on its box opens `triangle/Triangle.cpp` in the editor, and after an edit `control+s` writes it, which the live build swaps in, so the Perform panel shows the change a moment later (section 6). `f2` gives the triangle the whole window, and `f1` or `escape` gives it back. `escape` in edit mode lets go of what is selected, then of the focus, and then ends the run.
+`control` with `=` or `+` makes all of it larger, `control` with `-` smaller, and `control+0` puts it back (section 14). A session, from the terminal: `view load src/examples/triangle` hosts the triangle, the graph shows its node, and the Perform panel shows its window under a tab of its own; a press on its box opens `triangle/Triangle.cpp` in the editor, and after an edit `control+s` writes it, which the live build swaps in, so the Perform panel shows the change a moment later (section 6). `f2` gives the triangle the whole window, and `f1` or `escape` gives it back. `escape` in edit mode lets go of what is selected, then of the focus, and then sends `quit`, which, as the window's close button, ends the run unless a file has changes (section 7).
 
 **The terminal in a window.** The terminal is the same `command-line` part with `param = on=window`: it reads the keyboard instead of standard input, and shows above the line typed what lines answer and the whole log, the lines typed in the accent color, what they answer and what nodes write (`{out}`) in the text color, the rest of the log muted, errors in red and warnings in amber, so a refused line names its cause there, a frame later. The terminal vulpen was started from takes lines too, as the CLI's does: they go where the window's lines go, and what they answer prints there, while the log shows in both. The end of its input, as a launcher that gives none or a script piped in has, ends no run; the window does.
 
@@ -825,7 +833,7 @@ f2              = mode perform
 | `find <value>...` | selects the next place the file shown holds the words, joined by single blanks, after the caret, and from its start past its end |
 
 - **Keys**, while it has the focus: typed text goes in at the caret. `left` and `right` step a character, `up` and `down` a row, `page_up` and `page_down` a page, and `home` and `end` go to the row's start and end, selecting while `shift` is held. `enter` breaks the row, keeping its indent; `tab` types spaces to the next even column; `backspace` and `delete` take out a character, or the selection; `escape` lets go of the selection, and with none of the focus. `control` with `c` copies the selection, with `x` cuts it, and with `v` pastes in its place, each line break of the paste starting a row. A press puts the caret where it was and gives the editor the focus, a drag selects, and the wheel scrolls.
-- **A tab** reads the file's folder and name, as `keys/Keys.cpp`, with `*` while it has changes, and a press on it shows the file; the tab shown is in the content's color. `close` on a file with changes is refused, naming `write` and `discard` (`keys/Keys.cpp* has changes: write saves them, and discard drops them`).
+- **A tab** reads the file's folder and name, as `keys/Keys.cpp`, with `*` while it has changes, and a press on it shows the file; the tab shown is in the content's color. `close` on a file with changes is refused, naming `write` and `discard` (`keys/Keys.cpp* has changes: write saves them, and discard drops them`); `quit` is refused too, naming every file with changes (section 7).
 - **Colors**: C++ and GLSL files, by their ending (`.cpp`, `.h`, `.glsl`, `.vert`, `.frag`, `.comp`, and the template's `.cpp.in` by its name), show comments, `#` directives, quotes, numbers, keywords and types in the theme's roles for them; a type is one of the languages' own, a name in CamelCase, as types are named here (RC01), one ending in `_t`, or a GLSL vector or matrix, as `uvec2`. A manifest and an `.ini` show their `#` comments, quotes, numbers, and each row's first word, its key or its section, so the manifest's words need no list of their own in the editor. Any other file shows in one color. A block comment's rows are found again from the file's top after an edit, not each frame.
 - **Files** are read once, as they open, so what was typed is never read over; a change on disk to a file open does not show. `write` saves through the file port (RA04), and a file not open is never written.
 - **The font draws ASCII**, so a character past it shows as a blank cell a byte, `—` as three. The caret steps over it whole and no edit splits it, so the rest of a file stays as it was.
@@ -1036,6 +1044,17 @@ to   = take.count
 - **A reference lasts until the next `bind`**: every rebuild binds every node again, so none is kept anywhere else.
 
 **The frame index and the log.** `frame.index()` is the frame, as the frame block's `index` is; `frame.log(VP::Level::info, "text")` logs at the node's level (V09).
+
+**Work the end would lose.** A node that holds such work, as the editor a file's changes, calls `frame.hold(what)` in each frame it does. `quit` then refuses, naming the node and what, while the node held this frame or the one before, whichever node sends it and wherever it cooks; the window's close button sends `quit`, and `quit force` ends the run anyway (section 7). A node that stops, or goes, holds nothing, so no hold outlives its node:
+
+```cpp
+// _unsaved: "keys/Keys.cpp* has changes: write saves the file shown, …", named when the
+// tabs are, so a frame allocates nothing for it (CPP10)
+if (!_unsaved.empty())
+  frame.hold(_unsaved);
+```
+
+A `write` and a `quit` sent in one frame, as a pasted pair of lines, may still be refused once, since the frame before held.
 
 **The engine by hand.** A node may include any engine header and reach the engine through `node.engine()`, within the [runtime boundary](plans/native-cpp.md#the-runtime-boundary): what it makes, it destroys, and nothing it borrows outlives the next `bind`. The fail-loud fixture's `scratch`, shortened:
 
