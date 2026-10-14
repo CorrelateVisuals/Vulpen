@@ -28,6 +28,7 @@ The core (`baseclasses/`, `runtime/`) knows no recipe. These are the ports the r
 | Shared code | What it does | Included by |
 | --- | --- | --- |
 | `Scroll` | rows shown from a first row that the wheel and a drag on a bar's thumb move, keeping a step's fraction | `text`, `command-line` |
+| `Words` | the run a double click selects in a row: letters, digits and `_`, blanks, or other characters | `text`, `command-line` |
 
 ## Parts
 

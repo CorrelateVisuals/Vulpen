@@ -348,43 +348,43 @@ $ ./run.sh src/examples/wave/view.vlp --log info
 Every action is a command: a line of text through one port (V06). A command registers with its usage and help, or not at all (RV04). The CLI app lists them with `help`:
 
 ```text
-quit                               ends the run before its next frame, unless a node holds work the end would lose, …
-quit force                         ends the run before its next frame, even while a node holds work the end would lose
-source <file>                      runs a file's commands, one a line, and stops at the first that fails
-log save <file>                    writes the session's edits to a file, which source replays
-input key down <value>             presses a key, named by the character it prints, or as space, enter or f1, …
-input key up <value>               lets a key go
-input text <value>...              types the words, joined by single blanks
-input pointer <value> <value>      moves the pointer to x and y, in pixels from the window's top left
-input button down <value>          presses a pointer button: left, right or middle
-input button up <value>            lets a pointer button go
-input wheel <value> <value>        turns the wheel by x and y
-input focus on                     gives the window focus
-input focus off                    takes focus from the window
-help                               lists every command, with its usage and what it does
-complete <value>...                lists the words that may come next, the last word given being the start of one, or "" for one not begun
-clear                              clears the terminal
-ls                                 lists the views the view hosts, its nodes and its connections
-info [<node>]                      shows a node's words, and the connections it writes and reads; with none, …
-recipe list                        lists the library's recipes, by kind
-node new draw <name>               adds a draw node, and writes its first files from the template into its folder: …
-node new dispatch <name>           adds a dispatch node, and writes its first files from the template into its folder: …
-recipe drop <recipe> <name>        copies a library recipe into the view as a node of that name, with the nodes inside it …
-recipe sync <node>                 brings a dropped recipe up to the library's, while what it copied is unchanged; …
-view new <file>                    hosts a new, empty view in a folder, and saves its view.vlp
-view load <file>                   hosts the view in a folder's view.vlp
-view save                          writes the view over its manifest, keeping the comments in it
-child list                         lists the hosted views, with their files, in the order hosted
-image clear <port>                 drops the pixels of an image a node's C++ fills, named by that port or one that …
-node add <name> [<word=value>...]  adds a node, given the manifest's node words; its files are what its folder holds
-node remove <node>                 removes a node that no connection names and no node is inside; its folder stays
-node set <node> <word=value>...    gives a node the words named, clearing those given empty; param and image words …
-connect <name> <port> <port>...    joins the port that writes a buffer to the ports that read it
-disconnect <connection>            removes a connection
-param set <node> <key> <value>     sets a param of a node
-param unset <node> <key>           removes a param of a node
-child add <name> <file>            hosts the view a view.vlp holds, or an empty one that view save writes; …
-child remove <name>                stops hosting a view; its files stay
+quit                                 ends the run before its next frame, unless a node holds work the end would lose, …
+quit force                           ends the run before its next frame, even while a node holds work the end would lose
+source <file>                        runs a file's commands, one a line, and stops at the first that fails
+log save <file>                      writes the session's edits to a file, which source replays
+input key down <value>               presses a key, named by the character it prints, or as space, enter or f1, …
+input key up <value>                 lets a key go
+input text <value>...                types the words, joined by single blanks
+input pointer <value> <value>        moves the pointer to x and y, in pixels from the window's top left
+input button down <value> [<value>]  presses a pointer button: left, right or middle; a count after it, as 2, makes it …
+input button up <value>              lets a pointer button go
+input wheel <value> <value>          turns the wheel by x and y
+input focus on                       gives the window focus
+input focus off                      takes focus from the window
+help                                 lists every command, with its usage and what it does
+complete <value>...                  lists the words that may come next, the last word given being the start of one, or "" for one not begun
+clear                                clears the terminal
+ls                                   lists the views the view hosts, its nodes and its connections
+info [<node>]                        shows a node's words, and the connections it writes and reads; with none, …
+recipe list                          lists the library's recipes, by kind
+node new draw <name>                 adds a draw node, and writes its first files from the template into its folder: …
+node new dispatch <name>             adds a dispatch node, and writes its first files from the template into its folder: …
+recipe drop <recipe> <name>          copies a library recipe into the view as a node of that name, with the nodes inside it …
+recipe sync <node>                   brings a dropped recipe up to the library's, while what it copied is unchanged; …
+view new <file>                      hosts a new, empty view in a folder, and saves its view.vlp
+view load <file>                     hosts the view in a folder's view.vlp
+view save                            writes the view over its manifest, keeping the comments in it
+child list                           lists the hosted views, with their files, in the order hosted
+image clear <port>                   drops the pixels of an image a node's C++ fills, named by that port or one that …
+node add <name> [<word=value>...]    adds a node, given the manifest's node words; its files are what its folder holds
+node remove <node>                   removes a node that no connection names and no node is inside; its folder stays
+node set <node> <word=value>...      gives a node the words named, clearing those given empty; param and image words …
+connect <name> <port> <port>...      joins the port that writes a buffer to the ports that read it
+disconnect <connection>              removes a connection
+param set <node> <key> <value>       sets a param of a node
+param unset <node> <key>             removes a param of a node
+child add <name> <file>              hosts the view a view.vlp holds, or an empty one that view save writes; …
+child remove <name>                  stops hosting a view; its files stay
 ```
 
 - **Who registers them.** The engine registers the edits, the log, save, `child list`, `image clear`, `input` and `quit`; every other command is a node's: `help`, `complete` and `clear` are the command-line part's, `ls` and `info` the inspect part's, `recipe …`, `node new …` and `view new`/`view load` the library part's, `focus` the keys part's, `open`, `write`, `close`, `discard` and `find` the text part's, `present`, `mode edit` and `mode perform` the modes part's, `zoom in`, `zoom out` and `zoom reset` the font part's, and `select`, `selected` and `delete` the graph part's; the `ide` has these last five parts and the CLI has not (V05).
@@ -641,7 +641,7 @@ $ ./run.sh src/recipes/apps/ide/view.vlp
 ```
 
 - **Keys:** typing inserts at the caret, which Left, Right, Home and End move; Backspace and Delete erase, Enter sends the line, and Up and Down step through the lines sent. Escape closes the completions, with none open lets go of the selection, and with none of the focus.
-- **Selecting:** a drag over the rows above the line selects their text, and `control+c` copies it; `control+v` types what the clipboard holds at the caret, as a shell takes a paste: each line break sends the line typed so far. A selection stays on its text as new rows push it up, and goes with its rows once the scrollback drops them, or `clear` does.
+- **Selecting:** a drag over the rows above the line selects their text, a double click a word, and a third press the row, and `control+c` copies it; `control+v` types what the clipboard holds at the caret, as a shell takes a paste: each line break sends the line typed so far. A selection stays on its text as new rows push it up, and goes with its rows once the scrollback drops them, or `clear` does.
 - **Tab** completes as a shell does: the word at the caret takes what every candidate shares, a word only one candidate fits is finished with a blank, and several are listed above the line until the next key. A placeholder such as `<name>` is listed but never typed in. Tab sends `complete`, which takes `""` for a word not begun. A folder is finished with no blank, so Tab again lists what it holds, each name from after the path's last `/`: `view load src/exa` and Tab gives `src/examples/`, and Tab again lists `triangle/` and `wave/` under the rest of the word.
 - **A press on a completion** types the rest of its word, by sending `input text <rest>`, as if you typed it; no blank follows, unlike Tab.
 - **The seam** above the terminal lights up under the pointer, and a drag moves it, the terminal following. Letting go sends one `param set ide.dock.split ratio 0.416`, so the log keeps one line a drag, and a replay or a save puts the seam back.
@@ -838,7 +838,7 @@ f2              = mode perform
 | `discard` | closes the file shown, dropping its changes |
 | `find <value>...` | selects the next place the file shown holds the words, joined by single blanks, after the caret, and from its start past its end |
 
-- **Keys**, while it has the focus: typed text goes in at the caret. `left` and `right` step a character, `up` and `down` a row, `page_up` and `page_down` a page, and `home` and `end` go to the row's start and end, selecting while `shift` is held. `enter` breaks the row, keeping its indent; `tab` types spaces to the next even column; `backspace` and `delete` take out a character, or the selection; `escape` lets go of the selection, and with none of the focus. `control` with `c` copies the selection, with `x` cuts it, and with `v` pastes in its place, each line break of the paste starting a row. A press puts the caret where it was and gives the editor the focus, a drag selects, and the wheel scrolls, as the terminal's does, until the last row shows alone; so does a drag on the bar at the right edge, which shows while a row is out of view.
+- **Keys**, while it has the focus: typed text goes in at the caret. `left` and `right` step a character, `up` and `down` a row, `page_up` and `page_down` a page, and `home` and `end` go to the row's start and end, selecting while `shift` is held. `enter` breaks the row, keeping its indent; `tab` types spaces to the next even column; `backspace` and `delete` take out a character, or the selection; `escape` lets go of the selection, and with none of the focus. `control` with `c` copies the selection, with `x` cuts it, and with `v` pastes in its place, each line break of the paste starting a row. A press puts the caret where it was and gives the editor the focus, a drag selects, a double click selects a word, of letters, digits and `_`, of blanks, or of other characters, and a third press the row with its break, and the wheel scrolls, as the terminal's does, until the last row shows alone; so does a drag on the bar at the right edge, which shows while a row is out of view.
 - **A tab** reads the file's folder and name, as `keys/Keys.cpp`, with `*` while it has changes, and a press on it shows the file; the tab shown is in the content's color. `close` on a file with changes is refused, naming `write` and `discard` (`keys/Keys.cpp* has changes: write saves them, and discard drops them`); `quit` is refused too, naming every file with changes (section 7).
 - **Colors**: C++ and GLSL files, by their ending (`.cpp`, `.h`, `.glsl`, `.vert`, `.frag`, `.comp`, and the template's `.cpp.in` by its name), show comments, `#` directives, quotes, numbers, keywords and types in the theme's roles for them; a type is one of the languages' own, a name in CamelCase, as types are named here (RC01), one ending in `_t`, or a GLSL vector or matrix, as `uvec2`. A manifest and an `.ini` show their `#` comments, quotes, numbers, and each row's first word, its key or its section, so the manifest's words need no list of their own in the editor. Any other file shows in one color. A block comment's rows are found again from the file's top after an edit, not each frame.
 - **Files** are read once, as they open, so what was typed is never read over; a change on disk to a file open does not show. `write` saves through the file port (RA04), and a file not open is never written.
@@ -1007,12 +1007,14 @@ input key down a
 input text hello world
 input pointer 12.5 40
 input button down left
+input button down left 2     # the second press of a double click
 input wheel 0 -1
 input focus off
 ```
 
 - **Neither goes through the log.** The log keeps what input caused, an edit or a save, so a replay rebuilds the graph but not the hands that drove it.
 - **Key names**: the character a key prints in the keyboard's layout without shift, so `l` and never `L`, or `space`, `enter`, `escape`, `tab`, `backspace`, `insert`, `delete`, `left`, `right`, `up`, `down`, `page_up`, `page_down`, `home`, `end`, `shift`, `control`, `alt`, `super`, `f1` to `f12`; `frame.input().names_key(name)` says whether a name is one, as the keys part checks its keymap. Buttons are `left`, `right` and `middle`. A held key repeats as more `down` events.
+- **Presses in a row**: a button pressed carries `event.presses`, its place in a row of presses of that button, each within 500 ms of the one before and 6 pixels of where it was, so a double click's second press is 2 and a third 3. The engine counts them for the window, one interval and one distance for every part; `input button down <button> <count>` gives the count, 1 when left out, so a script's double click does not depend on the clock.
 - **The pointer** counts pixels from the window's top left, so it matches the frame block's `cursor`; moves within a frame keep the last.
 - **The clipboard**: `frame.input().clipboard()` is the text the system's clipboard holds, and `frame.input().copy(text)` puts text there, as the editor and the terminal do for `control` with `c`, `x` and `v`. Without a window it is a text of the run's own, so a headless run pastes what it copied (V07). Its owner may take a moment to hand it over, which a paste waits for.
 - **A script's events all reach the first frame**: the parts read the pointer and its buttons that frame, and only keys wait, as the keys part holds them back. So a script cannot press what shows only later, as a completion Tab lists once `complete` answers, and two presses in different parts both act in the first frame, the second taking the focus before the keys between them reach the first.
