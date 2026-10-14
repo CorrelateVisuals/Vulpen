@@ -388,7 +388,7 @@ child remove <name>                stops hosting a view; its files stay
 ```
 
 - **Who registers them.** The engine registers the edits, the log, save, `child list`, `image clear`, `input` and `quit`; every other command is a node's: `help`, `complete` and `clear` are the command-line part's, `ls` and `info` the inspect part's, `recipe …`, `node new …` and `view new`/`view load` the library part's, `focus` the keys part's, `open`, `write`, `close`, `discard` and `find` the text part's, `present`, `mode edit` and `mode perform` the modes part's, and `zoom in`, `zoom out` and `zoom reset` the font part's; the `ide` has these last four parts and the CLI has not (V05).
-- **A usage is its completion.** Its placeholders say what can come there, so `complete` knows. The last may end in `...`, one argument or more, and stand in brackets, which a line may leave out: `node add ui` adds a group.
+- **A usage is its completion.** Its placeholders say what can come there, so `complete` knows. The last may end in `...`, one argument or more, and stand in brackets, which a line may leave out: `node add ui` adds a group. Such a placeholder completes each word after it too, as `<node>` does for every node `[<node>...]` takes.
 
   ```text
   > complete node new d       # the word after `node new` that starts with d
@@ -396,7 +396,12 @@ child remove <name>                stops hosting a view; its files stay
   draw
   > complete param set s      # a <node> comes next: the view's nodes starting with s
   spinner
+  > complete view load src/ex # a <file>: what the folder holds, from where vulpen started
+  src/examples/
+  src/external-libraries/
   ```
+
+- **A `<file>` completes from its folder**, which the path begun names, counted as a typed line's path is (section 12). A name with a blank is left out, since it would split into two words, and a hidden one shows once the name begun starts with `.`, as in a shell. A path that names no folder that can be listed, as a file followed by `/`, is refused, naming why.
 
 - **`quit` refuses while a node holds work** the end would lose, as the editor a file's changes, naming the node and what (section 15). The window's close button sends `quit`, so a refusal keeps the window open; `quit force` ends the run anyway.
 
@@ -637,7 +642,7 @@ $ ./run.sh src/recipes/apps/ide/view.vlp
 
 - **Keys:** typing inserts at the caret, which Left, Right, Home and End move; Backspace and Delete erase, Enter sends the line, and Up and Down step through the lines sent. Escape closes the completions, with none open lets go of the selection, and with none of the focus.
 - **Selecting:** a drag over the rows above the line selects their text, and `control+c` copies it; `control+v` types what the clipboard holds at the caret, as a shell takes a paste: each line break sends the line typed so far. A selection stays on its text as new rows push it up, and goes with its rows once the scrollback drops them, or `clear` does.
-- **Tab** completes as a shell does: the word at the caret takes what every candidate shares, a word only one candidate fits is finished with a blank, and several are listed above the line until the next key. A placeholder such as `<name>` is listed but never typed in. Tab sends `complete`, which takes `""` for a word not begun.
+- **Tab** completes as a shell does: the word at the caret takes what every candidate shares, a word only one candidate fits is finished with a blank, and several are listed above the line until the next key. A placeholder such as `<name>` is listed but never typed in. Tab sends `complete`, which takes `""` for a word not begun. A folder is finished with no blank, so Tab again lists what it holds, each name from after the path's last `/`: `view load src/exa` and Tab gives `src/examples/`, and Tab again lists `triangle/` and `wave/` under the rest of the word.
 - **A press on a completion** types the rest of its word, by sending `input text <rest>`, as if you typed it; no blank follows, unlike Tab.
 - **The seam** above the terminal lights up under the pointer, and a drag moves it, the terminal following. Letting go sends one `param set ide.dock.split ratio 0.416`, so the log keeps one line a drag, and a replay or a save puts the seam back.
 - **The tab** over the terminal names it and the view its lines go to: `terminal`, and `terminal - demo` after `view new demo`. It is the command-line's, from its `title` param, and has no command, so a press on it sends nothing.
