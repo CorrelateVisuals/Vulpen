@@ -28,7 +28,7 @@ How each part of Vulpen works today, shown the way you use it. Each section has 
 | node | one `[node]` of a manifest and the folder its name names: a C++ class, shaders, or both, and the nodes inside it (RV08) | `<view>/<node>/` |
 | connection | one buffer: one node's port writes it, other nodes' ports read it | the manifest |
 | recipe | a node of the library with the nodes inside it, which a drop copies into a view | `src/recipes/<kind>/<name>/` |
-| library | the recipes views copy from: parts hold code; components and apps only use other recipes (RV06) | `src/recipes/{parts,components,apps}/` |
+| library | the recipes views copy from: parts hold code, and `parts/shared/` the code parts share; components and apps only use other recipes (RV06, RV09) | `src/recipes/{parts,components,apps}/` |
 | child view | a view another view's manifest names, which runs on its own schedule; commands reach it by name | `[view "<name>"]` |
 | command | a line of text that does one thing; every action is one (V06) | the command port |
 | primitive | a command that edits or saves a view; the log keeps exactly these (V08) | the log |
@@ -523,7 +523,7 @@ operator = Inspect
 file = Inspect.cpp                 # copied into look/, which the live build compiles
 ```
 
-- **What a drop copies:** the recipe's files into the node's folder, the recipes it uses into the folders of the nodes inside it, and the contracts their files include into the view's `contracts/` (RV05). A contract the view has already stays as it is.
+- **What a drop copies:** the recipe's files into the node's folder, the recipes it uses into the folders of the nodes inside it, the contracts their files include into the view's `contracts/` (RV05), and the shared code they include into the view's `shared/`, a header with its `.cpp` (RV09). A contract or shared file the view has already stays as it is.
 - **Nothing links back.** A later edit of the library reaches the copy only through `recipe sync` (V03).
 
 `recipe sync <node>` brings a drop up to the library's version while what it copied is unchanged:
