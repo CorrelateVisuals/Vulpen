@@ -21,6 +21,14 @@ The core (`baseclasses/`, `runtime/`) knows no recipe. These are the ports the r
 
 `contracts/` holds `Rect`, `Label`, `Curve`, `Palette`, `Font`, `Item`, `Typed` and `Relation`: each is what one connection carries (RV05).
 
+## Shared code
+
+`parts/shared/` holds code parts share, for a job too small to be a node: a header, and its `.cpp` if it has one, which the header includes (RV09). It reaches no port; the part that includes it hands it what it needs.
+
+| Shared code | What it does | Included by |
+| --- | --- | --- |
+| `Scroll` | rows shown from a first row that the wheel and a drag on a bar's thumb move, keeping a step's fraction | `text`, `command-line` |
+
 ## Parts
 
 Parts hold all of the library's code but the shared code, and use no other recipe (RV06). A drawing part draws into its host's target.
