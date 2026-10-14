@@ -365,7 +365,7 @@ help                               lists every command, with its usage and what 
 complete <value>...                lists the words that may come next, the last word given being the start of one, or "" for one not begun
 clear                              clears the terminal
 ls                                 lists the views the view hosts, its nodes and its connections
-info <node>                        shows a node's words, and the connections it writes and reads
+info [<node>]                      shows a node's words, and the connections it writes and reads; with none, …
 recipe list                        lists the library's recipes, by kind
 node new draw <name>               adds a draw node, and writes its first files from the template into its folder: …
 node new dispatch <name>           adds a dispatch node, and writes its first files from the template into its folder: …
@@ -387,7 +387,7 @@ child add <name> <file>            hosts the view a view.vlp holds, or an empty 
 child remove <name>                stops hosting a view; its files stay
 ```
 
-- **Who registers them.** The engine registers the edits, the log, save, `child list`, `image clear`, `input` and `quit`; every other command is a node's: `help`, `complete` and `clear` are the command-line part's, `ls` and `info` the inspect part's, `recipe …`, `node new …` and `view new`/`view load` the library part's, `focus` the keys part's, `open`, `write`, `close`, `discard` and `find` the text part's, `present`, `mode edit` and `mode perform` the modes part's, and `zoom in`, `zoom out` and `zoom reset` the font part's; the `ide` has these last four parts and the CLI has not (V05).
+- **Who registers them.** The engine registers the edits, the log, save, `child list`, `image clear`, `input` and `quit`; every other command is a node's: `help`, `complete` and `clear` are the command-line part's, `ls` and `info` the inspect part's, `recipe …`, `node new …` and `view new`/`view load` the library part's, `focus` the keys part's, `open`, `write`, `close`, `discard` and `find` the text part's, `present`, `mode edit` and `mode perform` the modes part's, `zoom in`, `zoom out` and `zoom reset` the font part's, and `select`, `selected` and `delete` the graph part's; the `ide` has these last five parts and the CLI has not (V05).
 - **A usage is its completion.** Its placeholders say what can come there, so `complete` knows. The last may end in `...`, one argument or more, and stand in brackets, which a line may leave out: `node add ui` adds a group. Such a placeholder completes each word after it too, as `<node>` does for every node `[<node>...]` takes.
 
   ```text
@@ -820,7 +820,7 @@ f2              = mode perform
 ```
 
 - **A chord** holds `shift`, `control`, `alt` or `super`, joined by `+`, then presses a key named as section 15 names keys, `+` and `=` too: the `=` after the chord sends. A modifier or a key that is not there, a chord given twice, or a line no command takes stops the keys part, naming the line (`keymap.ini:1: no command takes clera`), and a fixed file brings it back. A key that types, as `a`, still types when a chord takes it, since the window sends text apart from keys; `control` on a letter, as `control+l`, types nothing on any system.
-- **The focus** is a node's name: `focus <node>` moves it, `focus` alone leaves no node in focus, and the keys part's `focus` param says where it starts, as the `ide` starts it in its terminal. A node that does not read `typed` is refused, naming those that do (`ide.dock reads no keys from ide.keys; these do: ide.terminal.command-line`). A press in the terminal's area gives it the focus, and only the part in focus shows its caret. Like input, a focus change stays out of the log.
+- **The focus** is a node's name: `focus <node>` moves it, `focus` alone leaves no node in focus, and the keys part's `focus` param says where it starts, as the `ide` starts it in its terminal. A node that does not read `typed` is refused, naming those that do (`ide.dock reads no keys from ide.keys; these do: ide.terminal.command-line`). A press in the area of the terminal, the editor or the graph gives it the focus, and only the part in focus shows its caret. Like input, a focus change stays out of the log.
 - **With no node in focus** the keys go to the empty name, `typed.to("")`, which the `ide`'s modes part reads.
 - **Escape** is no chord: the part in focus takes it, letting go of its selection, or of its completions, and with none of the focus. With no node in focus, modes takes it: in perform mode it sends `mode edit`, and in edit mode `quit`. So `escape` steps back one thing at a time: perform mode, the selection, the focus, the run.
 - **A part that takes keys** reads `typed`, not the input port, and acts only when the name in it is its own; it still reads the pointer and its buttons from the input port. Given no room it takes none, as it draws none, so a terminal whose panel is closed runs no line typed unseen; the keys go nowhere until a press gives a part that shows the focus.
@@ -885,10 +885,29 @@ place wave = -10 -5
 ```
 
 - **The layout follows from the graph** until a box is dragged, since the manifest holds no places (V04): a box a node, with its name and a row a file under it, a column past every node it reads from, and down each column in the manifest's order. A node's C++ and GLSL are its files, not nodes of their own, so the triangle is one box of five rows. A connection is a curve from the middle of its writer's name row on the right to its reader's on the left; one that passes a column runs along a lane of its own below that column's boxes, not behind them. Nodes past 256 are cut.
-- **A press on a box** opens the file of the row pressed in the editor, as `open <file>` typed would, and a press on its name the node's first file. It opens on letting go, so a box pressed and moved is dragged instead.
+- **A press on a box selects it**, and draws its border wider, in the accent color; `shift` with a press adds a box to the selection or takes it out. A press on a box selected keeps the selection, so a drag moves every box selected, and letting go where it was leaves only that box selected. A press on the ground lets go of the selection, unless `shift` is held. A press on one of a box's files opens it in the editor, as `open <file>` typed would, on letting go, so a box pressed and moved is dragged instead; its name opens none. A press in the graph gives it the focus.
+- **The selection is the graph's, through three commands**, so a script or an agent selects as a press does (V06). They act on the view the graph shows, the one lines go to, and refuse any other:
+
+  | Command | What it does |
+  | --- | --- |
+  | `select [<node>...]` | selects those nodes, in place of those selected; with none, none |
+  | `selected` | lists the nodes selected, a line each |
+  | `delete` | removes the nodes selected and every node inside them, deepest first; a connection one of them writes is let go, and one they read is made again with the readers that stay. One command, so the log keeps one group (V08). Their folders stay, as with `node remove`, and their boxes leave the `.ini` |
+
+  ```text
+  src/examples/wave> select probe
+  src/examples/wave> info         # with no node: each selected, under its header
+  [node "probe"]
+  operator = Probe
+  …
+  reads values from wave.values
+  src/examples/wave> delete       # probe goes, and values with it, which only probe read
+  ```
+
+- **Keys**, while the graph has the focus: `delete` or `backspace` sends `delete`, and `escape` lets go of the selection, and with none of the focus.
 - **A dragged box stays where it is put.** The first drag places every box where it shows, so moving one moves no other, and a node added later takes its column's place; lanes are left out from then on, as the boxes no longer keep to columns.
 - **The wheel moves the graph**, as two fingers on a touchpad do, and so does a drag on the ground. With `control` held, the wheel zooms about the pointer, which stays over the same place of the graph, and the text scales with the boxes. GLFW gives no pinch event, so a pinch does nothing.
-- **A restart shows the graph as it was left.** Where the boxes are, how far the graph moved and how near it is are a look at the graph, not its plumbing, so they stay out of the manifest (V04) and the log (V08), in `.vulpen/graph.ini` beside the view's manifest, which moves with the project (V03). A drag saves as it ends, and the wheel once it rests for 30 frames, through the file port (RA04); the build and the live scan skip the folder (section 6), and this repository's `.gitignore` leaves it out. Deleting the file lays the graph out from the graph again; a node that is gone keeps its place there.
+- **A restart shows the graph as it was left.** Where the boxes are, how far the graph moved and how near it is are a look at the graph, not its plumbing, so they stay out of the manifest (V04) and the log (V08), in `.vulpen/graph.ini` beside the view's manifest, which moves with the project (V03). A drag saves as it ends, and the wheel once it rests for 30 frames, through the file port (RA04); the build and the live scan skip the folder (section 6), and this repository's `.gitignore` leaves it out. Deleting the file lays the graph out from the graph again; a node `delete` removes leaves it, and one gone otherwise keeps its place there.
 - **A mistake in the file** is named, and the graph lays the view out from the graph alone and never writes over it, so nothing typed there is lost:
 
   ```text
