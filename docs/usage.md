@@ -859,7 +859,7 @@ f2              = mode perform
 src/examples/triangle> mode perform         # the triangle, over the whole window
 ```
 
-- **The Perform panel** sits beside the editor in the dock's top row. Its tabs name the views the `ide` hosts, the one presented marked, and a press on one presents it. Its image shows the view's window letterboxed, at the window's size, so a view draws as on its own; in perform mode it matches the view's own window pixel for pixel. A drag moves the window in the panel and the wheel zooms it about the pointer, as in the graph, cut at the panel's edge; the image part does so only with `param = moves=yes`, which the `ide` gives the panel and not the one that fills the window in perform mode. A press in the panel gives it the focus, and `h` then brings the window home, letterboxed as at first; `escape` lets go of the focus. Neither is kept: a restart shows the window letterboxed again.
+- **The Perform panel** sits beside the editor in the dock's top row. Its tabs name the views the `ide` hosts, the one presented marked, and a press on one presents it. Its image shows the view's window letterboxed, at the window's size, so a view draws as on its own; in perform mode it matches the view's own window pixel for pixel. A drag moves the window in the panel and the wheel zooms it about the pointer, as in the graph, cut at the panel's edge; the image part does so only with `param = moves=yes`, which the `ide` gives the panel and not the one that fills the window in perform mode. A press in the panel gives it the focus, and `h` then brings the window home, letterboxed as at first; `escape` lets go of the focus. Neither is kept: a restart, and another view presented, show the window letterboxed again.
 - **Each view the `ide` hosts is presented as it comes**, in a tab of its own, so the views loaded before keep theirs. A view not presented draws nowhere and keeps running (section 13), so no project ever draws over the `ide`.
 - **The mode is a param** of the modes node, `param set ide.modes mode perform`, which `mode` sends, so a save keeps it and a replay restores it; each switch rebuilds the `ide`. Perform mode leaves the panels no room, so it takes the focus from the part that had it, and edit mode gives it back.
 - **present** makes one connection, `present`, from `<view>:` to the images the modes node's `to` param names, ports joined by commas. It checks the view is hosted and connects at once, from the `ide`'s connections as the lines so far left them, whichever view the line addressed, so the next frame shows it. `child remove` of the view presented is refused until `: disconnect present`.
@@ -879,8 +879,6 @@ src/examples/triangle> mode perform         # the triangle, over the whole windo
 
 ```ini
 # src/examples/wave/.vulpen/graph.ini, as the graph writes it once a box is dragged
-pan  = 50 23            # how far the graph moved, in pixels
-zoom = 3.636            # how near: from 0.25 to 4
 place probe = 0 200     # each box, from the graph's top left at zoom 1
 place wave = -10 -5
 ```
@@ -905,14 +903,15 @@ place wave = -10 -5
   src/examples/wave> delete       # probe goes, and values with it, which only probe read
   ```
 
-- **Keys**, while the graph has the focus: `delete` or `backspace` sends `delete`, `escape` lets go of the selection, and with none of the focus, and `h` brings the graph home, unmoved and at zoom 1, as it first shows.
+- **The graph starts at home**, whenever it shows a view, as `view load` and a switch to another view do: unmoved at zoom 1 while every box shows whole there; otherwise the boxes from their top left, as far in as the graph puts its first box, and as near as lets them all show, never nearer than zoom 1, so text keeps its size where it can. Where even a quarter cannot hold them, they show from their top left at a quarter.
+- **Keys**, while the graph has the focus: `delete` or `backspace` sends `delete`, `escape` lets go of the selection, and with none of the focus, and `h` brings the graph home.
 - **A dragged box stays where it is put.** The first drag places every box where it shows, so moving one moves no other, and a node added later takes its column's place; lanes are left out from then on, as the boxes no longer keep to columns.
 - **A drag on the ground moves the graph, and the wheel zooms it**, about the pointer, which stays over the same place of the graph, from a quarter to four times as near, and the text scales with the boxes; the wheel's turn sideways does nothing yet. GLFW gives no pinch event, so a pinch does nothing. The Perform panel moves alike, through the same shared `PanZoom` (RV09).
-- **A restart shows the graph as it was left.** Where the boxes are, how far the graph moved and how near it is are a look at the graph, not its plumbing, so they stay out of the manifest (V04) and the log (V08), in `.vulpen/graph.ini` beside the view's manifest, which moves with the project (V03). A drag saves as it ends, and the wheel once it rests for 30 frames, through the file port (RA04); the build and the live scan skip the folder (section 6), and this repository's `.gitignore` leaves it out. Deleting the file lays the graph out from the graph again; a node `delete` removes leaves it, and one gone otherwise keeps its place there.
+- **A restart shows the boxes where they were left.** Where the boxes are is a look at the graph, not its plumbing, so it stays out of the manifest (V04) and the log (V08), in `.vulpen/graph.ini` beside the view's manifest, which moves with the project (V03). A drag saves as it ends, through the file port (RA04); the build and the live scan skip the folder (section 6), and this repository's `.gitignore` leaves it out. How far the graph moved and how near it is are not kept, since it starts at home. Deleting the file lays the graph out from the graph again; a node `delete` removes leaves it, and one gone otherwise keeps its place there.
 - **A mistake in the file** is named, and the graph lays the view out from the graph alone and never writes over it, so nothing typed there is lost:
 
   ```text
-  {!!!} ide.graph.graph: graph.ini:2: zoom = 9 is none of pan = x y, zoom = z from 0.25 to 4, place <node> = x y; the graph lays the view out from the graph alone, and keeps the file as it is
+  {!!!} ide.graph.graph: graph.ini:5: zoom = 1.388: the graph keeps no pan or zoom, as it starts at home; delete the line; the graph lays the view out from the graph alone, and keeps the file as it is
   ```
 
 - **Only what lies in its area is drawn**: a box cut at its edge, a row of text cut at its edge too, so it shows until it goes out of view, and a curve cut at its edge, which the graph hands `curves` as its ground, so a curve to a box dragged out of view runs to the edge. Its ground is a line a pixel wide every 24 pixels at zoom 1 and a stronger one every tenth, which the graph's own shaders draw under the rest, over the whole area at any zoom; zoomed out, the lesser lines fade, so it never crowds.
