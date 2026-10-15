@@ -915,7 +915,7 @@ place wave = -10 -5
   {!!!} ide.graph.graph: graph.ini:2: zoom = 9 is none of pan = x y, zoom = z from 0.25 to 4, place <node> = x y; the graph lays the view out from the graph alone, and keeps the file as it is
   ```
 
-- **Only what lies in its area is drawn**: a box cut at its edge, a row cut to the characters inside it, and a curve whose ends both lie inside. Its ground is a dot every 24 pixels at zoom 1, drawn as Rects; zoomed out, every other dot goes, so it never crowds.
+- **Only what lies in its area is drawn**: a box cut at its edge, a row cut to the characters inside it, and a curve whose ends both lie inside. Its ground is a line a pixel wide every 24 pixels at zoom 1 and a stronger one every tenth, which the graph's own shaders draw under the rest, over the whole area at any zoom; zoomed out, the lesser lines fade, so it never crowds.
 - **Given no room it draws and takes nothing**, as every part does.
 - **Where:** `src/recipes/parts/graph/`, `src/recipes/parts/curves/`, `src/recipes/components/graph-editor/`.
 
