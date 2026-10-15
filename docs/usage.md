@@ -397,7 +397,7 @@ view
   save                           writes the view over its manifest, keeping the comments in it
 ```
 
-- **Who registers them.** The engine registers the edits, the log, save, `child list`, `image clear`, `input` and `quit`; every other command is a node's: `help`, `complete` and `clear` are the command-line part's, `ls` and `info` the inspect part's, `recipe …`, `node new …` and `view new`/`view load` the library part's, `focus` the keys part's, `open`, `write`, `close`, `discard` and `find` the text part's, `present`, `mode edit`, `mode perform` and `mode toggle` the modes part's, `zoom in`, `zoom out` and `zoom reset` the font part's, and `select`, `selected` and `delete` the graph part's; the `ide` has these last five parts and the CLI has not (V05).
+- **Who registers them.** The engine registers the edits, the log, save, `child list`, `image clear`, `input` and `quit`; every other command is a node's: `help`, `complete` and `clear` are the command-line part's, `ls` and `info` the inspect part's, `recipe …`, `node new …` and `view new`/`view load` the library part's, `focus` the keys part's, `open`, `write`, `close`, `close force` and `find` the text part's, `present`, `mode edit`, `mode perform` and `mode toggle` the modes part's, `zoom in`, `zoom out` and `zoom reset` the font part's, and `select`, `selected` and `delete` the graph part's; the `ide` has these last five parts and the CLI has not (V05).
 - **A usage is its completion.** Its placeholders say what can come there, so `complete` knows. The last may end in `...`, one argument or more, and stand in brackets, which a line may leave out: `node add ui` adds a group. Such a placeholder completes each word after it too, as `<node>` does for every node `[<node>...]` takes.
 
   ```text
@@ -417,7 +417,7 @@ view
 
   ```text
   {!!!} quit would lose what nodes hold, so the run goes on; quit force ends it anyway:
-        ide.editor.text: keys/Keys.cpp* has changes: write saves the file shown, and discard drops its changes
+        ide.editor.text: keys/Keys.cpp* has changes: write saves the file shown, and close force drops its changes
   ```
 
 - **A line may name the view it addresses** as `<name>: <command>`, and `:` alone names the one vulpen started with (section 13).
@@ -845,11 +845,11 @@ f1              = mode toggle
 | `open <file>` | opens a file as a tab and shows it, or shows it if it is open |
 | `write` | saves the file shown; `control+s` sends it |
 | `close` | closes the file shown, unless it has changes |
-| `discard` | closes the file shown, dropping its changes |
+| `close force` | closes the file shown, dropping its changes, as `quit force` ends the run however `quit` was refused |
 | `find <value>...` | selects the next place the file shown holds the words, joined by single blanks, after the caret, and from its start past its end |
 
 - **Keys**, while it has the focus: typed text goes in at the caret. `left` and `right` step a character, `up` and `down` a row, `page_up` and `page_down` a page, and `home` and `end` go to the row's start and end, selecting while `shift` is held. `enter` breaks the row, keeping its indent; `tab` types spaces to the next even column; `backspace` and `delete` take out a character, or the selection; `escape` lets go of the selection, and with none of the focus. `control` with `c` copies the selection, with `x` cuts it, and with `v` pastes in its place, each line break of the paste starting a row. A press puts the caret where it was and gives the editor the focus, a drag selects, a double click selects a word, of letters, digits and `_`, of blanks, or of other characters, and a third press the row with its break, and the wheel scrolls, as the terminal's does, until the last row shows alone; so does a drag on the bar at the right edge, which shows while a row is out of view. Turned sideways, or with `shift` held, the wheel scrolls across, until the end of the widest row shows, as does a drag on the bar along the bottom edge, which shows while a column is out of view; as the caret moves, the rows and columns shown follow it.
-- **A tab** reads the file's folder and name, as `keys/Keys.cpp`, with `*` while it has changes, and a press on it shows the file; the tab shown is in the content's color. `close` on a file with changes is refused, naming `write` and `discard` (`keys/Keys.cpp* has changes: write saves them, and discard drops them`); `quit` is refused too, naming every file with changes (section 7).
+- **A tab** reads the file's folder and name, as `keys/Keys.cpp`, with `*` while it has changes, and a press on it shows the file; the tab shown is in the content's color. `close` on a file with changes is refused, naming `write` and `close force` (`keys/Keys.cpp* has changes: write saves them, and close force drops them`); `quit` is refused too, naming every file with changes (section 7).
 - **Colors**: C++ and GLSL files, by their ending (`.cpp`, `.h`, `.glsl`, `.vert`, `.frag`, `.comp`, and the template's `.cpp.in` by its name), show comments, `#` directives, quotes, numbers, keywords and types in the theme's roles for them; a type is one of the languages' own, a name in CamelCase, as types are named here (RC01), one ending in `_t`, or a GLSL vector or matrix, as `uvec2`. A manifest and an `.ini` show their `#` comments, quotes, numbers, and each row's first word, its key or its section, so the manifest's words need no list of their own in the editor. Any other file shows in one color. A block comment's rows are found again from the file's top after an edit, not each frame.
 - **Files** are read once, as they open, so what was typed is never read over; a change on disk to a file open does not show. `write` saves through the file port (RA04), and a file not open is never written.
 - **The font draws ASCII**, so a character past it shows as a blank cell a byte, `—` as three. The caret steps over it whole and no edit splits it, so the rest of a file stays as it was.
