@@ -39,7 +39,7 @@ Parts hold all of the library's code but the shared code, and use no other recip
 | --- | --- | --- | --- | --- |
 | `rects` | shaders | — | Rect, Palette | draws |
 | `glyphs` | shaders | — | Label, Font, Palette, an image | draws |
-| `curves` | shaders | — | Curve, Palette | draws |
+| `curves` | shaders | — | Curve, Rect (the area it cuts at), Palette | draws |
 | `image` | `Image`, shaders | input and commands (the focus), with `moves=yes` | Rect, an image: a draw's, a hosted view's window, or one C++ fills; Typed, with `moves=yes` | draws the image into the Rect, letterboxed, and with `moves=yes` moved and zoomed, cut at the Rect's edge |
 | `font` | `Font` | files, commands | — | Font, an image |
 | `palette` | `Palette` | files | — | Palette |

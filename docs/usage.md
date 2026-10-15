@@ -762,7 +762,7 @@ The engine's placeholder kinds are a closed list (`name`, `node`, `port`, `file`
 | `rects` | `rects`, `palette` | a quad a Rect, in its role's color |
 | `glyphs` | `labels`, `characters`, `font`, `atlas`, `palette` | a quad a character |
 | `image` | `area`, a Rect, and `picture`, an image: one a draw renders into, the window of a view its view hosts, or one C++ fills | the image in the Rect, letterboxed: as large as fits at its own aspect, centered; nothing while the Rect is empty or nothing reaches `picture` |
-| `curves` | `curves`, `palette` | a strip of quads along each Curve, a cubic that leaves its start heading right and reaches its end from the left, 2 pixels wide, in its role's color |
+| `curves` | `curves`, `area` (a Rect, its first), `palette` | a strip of quads along each Curve, a cubic that leaves its start heading right and reaches its end from the left, 2 pixels wide, in its role's color, cut at the area's edge |
 | `list` | `items`, `place` (a Rect) and `font` (the font's `metrics`), from C++; its param `axis`, `y` stacked or `x` side by side | a column of rows in the place over a framed fill, or a row of tabs over a ground: `rects`, `labels`, `characters`; and `shown`, where each Item shows, for `hit` |
 
 A part that shows text writes them as a node's C++ fills any buffer for another node's shader, with the types in `contracts/`:
@@ -915,7 +915,7 @@ place wave = -10 -5
   {!!!} ide.graph.graph: graph.ini:2: zoom = 9 is none of pan = x y, zoom = z from 0.25 to 4, place <node> = x y; the graph lays the view out from the graph alone, and keeps the file as it is
   ```
 
-- **Only what lies in its area is drawn**: a box cut at its edge, a row cut to the characters inside it, and a curve whose ends both lie inside. Its ground is a line a pixel wide every 24 pixels at zoom 1 and a stronger one every tenth, which the graph's own shaders draw under the rest, over the whole area at any zoom; zoomed out, the lesser lines fade, so it never crowds.
+- **Only what lies in its area is drawn**: a box cut at its edge, a row cut to the characters inside it, and a curve cut at its edge, which the graph hands `curves` as its ground, so a curve to a box dragged out of view runs to the edge. Its ground is a line a pixel wide every 24 pixels at zoom 1 and a stronger one every tenth, which the graph's own shaders draw under the rest, over the whole area at any zoom; zoomed out, the lesser lines fade, so it never crowds.
 - **Given no room it draws and takes nothing**, as every part does.
 - **Where:** `src/recipes/parts/graph/`, `src/recipes/parts/curves/`, `src/recipes/components/graph-editor/`.
 
