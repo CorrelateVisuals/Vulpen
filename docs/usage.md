@@ -372,7 +372,7 @@ input
   text <value>...                types the words, joined by single blanks
   wheel <value> <value>          turns the wheel by x and y
 log save <file>                  writes the session's edits to a file, which source replays
-ls                               lists the views the view hosts, its nodes and its connections
+ls                               lists the view as folders: each node with its files, and each view it hosts
 node
   add <name> [<word=value>...]   adds a node, given the manifest's node words; its files are what its folder holds
   new
@@ -583,23 +583,28 @@ $ ./run.sh src/recipes/apps/cli/view.vlp
 src/examples/zz-demo> node new draw spinner
 wrote Spinner.cpp, Spinner.glsl, Spinner.vert, Spinner.frag in …/src/examples/zz-demo/spinner, and added node spinner
 src/examples/zz-demo> ls                 # this line went to zz-demo: the prompt says where you are
-node spinner
+spinner/                                 # a node is a folder, its files under it
+  Spinner.cpp
+  Spinner.frag
+  Spinner.glsl
+  Spinner.vert
 src/examples/zz-demo> : ls               # `:` sends a line to the CLI itself
-view zz-demo from …/src/examples/zz-demo/view.vlp
-node cli
-node cli.command-line of recipe command-line
-node cli.inspect of recipe inspect
-node cli.library of recipe library
+zz-demo/         view, from …/src/examples/zz-demo/view.vlp
+cli/
+  command-line/  recipe command-line     # inside cli, using a library recipe as it is
+  inspect/       recipe inspect
+  library/       recipe library
 src/examples/zz-demo> view save
 src/examples/zz-demo> view close zz-demo
 > ls                                     # no project now: lines go to the CLI itself
-node cli
+cli/
 …
 >                                        # ctrl-D ends the input, and the run
 ```
 
 - **The prompt** shows the folder of the project your lines go to, from where you started vulpen, as a shell shows its folder; `>` alone means the CLI itself. It shows only when you type at a terminal, so a piped script's output stays clean.
 - **A run in the background** (`./run.sh … &`) reads nothing from the terminal until it is brought to the foreground, since a read would stop it; what is typed meanwhile is the shell's.
+- **`ls` shows the view as folders**, as its nodes are (RV08): each node a folder under the node it is inside, its files under it, and beside it the recipe it uses, or was dropped from as `recipe probe@3f2a9c1e`; each view it hosts is a folder too, beside it the file it is hosted from. A node's connections are `info <node>`'s.
 - **Lines go to the newest project.** `view new` and `view load` host a project and make it the one lines go to; `view close` falls back to the one before, or the CLI. The CLI sends `zz-demo: ls` for your `ls`, so every log line names its view.
 - **`name: …`** sends one line to another hosted project, and **`: …`** to the CLI itself.
 - **A new node builds at once.** In a debug build, the live build compiles `spinner/` a moment after `node new` wrote it, and swaps it in; until then the node is left out, naming the module it waits for (section 16).
@@ -937,13 +942,13 @@ A node's C++ includes `runtime/Operator.h`, and `runtime/View.h` when it reads t
 
 ```cpp
 void bind(VP::Bind &node) override {
-  _ls = node.command("ls", "lists the views the view hosts, its nodes and its connections");
+  _ls = node.command("ls", "lists the view as folders: each node with its files, and …");
 }
 void command(VP::Call &call) override {
   if (!call.is(_ls))
     return;
   for (const VP::Node &node : call.view().nodes) // the view the line addresses, as edited
-    call.reply(std::format("node {}", node.name)); // the answer
+    call.reply(node.name + '/'); // the answer, a row a reply
   // call.commands().send("w: param set wave amplitude 0.5"); // a line inside this one:
   //   it joins this command's log group, and a refusal fails this command too
 }
