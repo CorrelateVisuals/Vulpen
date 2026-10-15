@@ -895,6 +895,7 @@ src/examples/triangle> mode perform         # the triangle, over the whole windo
 
 ```ini
 # src/examples/wave/.vulpen/graph.ini, as the graph writes it once a box is dragged
+color dispatch = number # written by a person: a kind of node's boxes in a theme role
 place probe = 0 200     # each box, from the graph's top left at zoom 1
 place wave = -10 -5
 ```
@@ -924,6 +925,7 @@ place wave = -10 -5
 - **A dragged box stays where it is put.** The first drag places every box where it shows, so moving one moves no other, and a node added later takes its column's place; lanes are left out from then on, as the boxes no longer keep to columns.
 - **A drag on the ground moves the graph, and the wheel zooms it**, about the pointer, which stays over the same place of the graph, from a quarter to four times as near, and the text scales with the boxes; the wheel's turn sideways does nothing yet. GLFW gives no pinch event, so a pinch does nothing. The Perform panel moves alike, through the same shared `PanZoom` (RV09).
 - **A restart shows the boxes where they were left.** Where the boxes are is a look at the graph, not its plumbing, so it stays out of the manifest (V04) and the log (V08), in `.vulpen/graph.ini` beside the view's manifest, which moves with the project (V03). A drag saves as it ends, through the file port (RA04); the build and the live scan skip the folder (section 6), and this repository's `.gitignore` leaves it out. How far the graph moved and how near it is are not kept, since it starts at home. Deleting the file lays the graph out from the graph again; a node `delete` removes leaves it, and one gone otherwise keeps its place there.
+- **Colors per kind of node**: a line `color <kind> = <role>` draws the border and the name of each box of that kind in a role `theme.ini` names, so the theme keeps every color and the `.ini` picks among them. A node's files make its kind, the first that fits: `draw` (a `.vert` or a `.frag`), `dispatch` (a `.comp`), `code` (C++ or GLSL and no shader), `data` (files and no code) and `group` (no files of its own). A kind with no line, and a box selected, are drawn as before. The graph writes the lines back with every save, and a kind or a role there is not, or a kind given twice, is a mistake in the file.
 - **A mistake in the file** is named, and the graph lays the view out from the graph alone and never writes over it, so nothing typed there is lost:
 
   ```text
