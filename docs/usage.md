@@ -387,7 +387,7 @@ child add <name> <file>              hosts the view a view.vlp holds, or an empt
 child remove <name>                  stops hosting a view; its files stay
 ```
 
-- **Who registers them.** The engine registers the edits, the log, save, `child list`, `image clear`, `input` and `quit`; every other command is a node's: `help`, `complete` and `clear` are the command-line part's, `ls` and `info` the inspect part's, `recipe …`, `node new …` and `view new`/`view load` the library part's, `focus` the keys part's, `open`, `write`, `close`, `discard` and `find` the text part's, `present`, `mode edit` and `mode perform` the modes part's, `zoom in`, `zoom out` and `zoom reset` the font part's, and `select`, `selected` and `delete` the graph part's; the `ide` has these last five parts and the CLI has not (V05).
+- **Who registers them.** The engine registers the edits, the log, save, `child list`, `image clear`, `input` and `quit`; every other command is a node's: `help`, `complete` and `clear` are the command-line part's, `ls` and `info` the inspect part's, `recipe …`, `node new …` and `view new`/`view load` the library part's, `focus` the keys part's, `open`, `write`, `close`, `discard` and `find` the text part's, `present`, `mode edit`, `mode perform` and `mode toggle` the modes part's, `zoom in`, `zoom out` and `zoom reset` the font part's, and `select`, `selected` and `delete` the graph part's; the `ide` has these last five parts and the CLI has not (V05).
 - **A usage is its completion.** Its placeholders say what can come there, so `complete` knows. The last may end in `...`, one argument or more, and stand in brackets, which a line may leave out: `node add ui` adds a group. Such a placeholder completes each word after it too, as `<node>` does for every node `[<node>...]` takes.
 
   ```text
@@ -816,8 +816,7 @@ shift+control+= = zoom in
 control++       = zoom in        # a + key, as the keypad's
 control+-       = zoom out
 control+0       = zoom reset
-f1              = mode edit
-f2              = mode perform
+f1              = mode toggle
 ```
 
 - **A chord** holds `shift`, `control`, `alt` or `super`, joined by `+`, then presses a key named as section 15 names keys, `+` and `=` too: the `=` after the chord sends. A modifier or a key that is not there, a chord given twice, or a line no command takes stops the keys part, naming the line (`keymap.ini:1: no command takes clera`), and a fixed file brings it back. A key that types, as `a`, still types when a chord takes it, since the window sends text apart from keys; `control` on a letter, as `control+l`, types nothing on any system.
@@ -851,8 +850,9 @@ f2              = mode perform
 | Command | What it does |
 | --- | --- |
 | `present <name>` | connects the window of a view the `ide` hosts to the Perform panel's image and the one that fills the window, in place of the one presented before |
-| `mode edit` | gives the window to the dock; what is presented shows in the Perform panel. `f1` sends it, and `escape` in perform mode |
-| `mode perform` | gives the window to what is presented, and the dock no room, so the dock draws and takes nothing; `f2` sends it |
+| `mode edit` | gives the window to the dock; what is presented shows in the Perform panel. `escape` in perform mode sends it |
+| `mode perform` | gives the window to what is presented, and the dock no room, so the dock draws and takes nothing |
+| `mode toggle` | switches to the other mode; `f1` sends it, so one key goes there and back, while a script names the mode it wants |
 
 ```text
 > view load src/examples/triangle           # the triangle, in the Perform panel, letterboxed
