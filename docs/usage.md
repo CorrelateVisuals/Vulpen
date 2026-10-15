@@ -384,7 +384,7 @@ disconnect <connection>              removes a connection
 param set <node> <key> <value>       sets a param of a node
 param unset <node> <key>             removes a param of a node
 child add <name> <file>              hosts the view a view.vlp holds, or an empty one that view save writes; …
-child remove <name>                  stops hosting a view; its files stay
+view close <name>                    stops hosting a view, letting go of the connections that take its window; …
 ```
 
 - **Who registers them.** The engine registers the edits, the log, save, `child list`, `image clear`, `input` and `quit`; every other command is a node's: `help`, `complete` and `clear` are the command-line part's, `ls` and `info` the inspect part's, `recipe …`, `node new …` and `view new`/`view load` the library part's, `focus` the keys part's, `open`, `write`, `close`, `discard` and `find` the text part's, `present`, `mode edit`, `mode perform` and `mode toggle` the modes part's, `zoom in`, `zoom out` and `zoom reset` the font part's, and `select`, `selected` and `delete` the graph part's; the `ide` has these last five parts and the CLI has not (V05).
@@ -452,7 +452,7 @@ The first eight lines applied, and the saved view now holds `param = every=30`, 
   {!!!} spare.txt:1 node wave: param spare: nothing reads it
   ```
 
-- **Other edits:** `param unset <node> <key>` removes a param, and `child add` and `child remove` change the views a view hosts (section 13).
+- **Other edits:** `param unset <node> <key>` removes a param, and `child add` and `view close` change the views a view hosts (section 13).
 
 - **Where:** `src/runtime/Edits.cpp`; `src/runtime/Views.cpp` keeps the edited view until the rebuild.
 
@@ -581,7 +581,7 @@ node cli.command-line of recipe command-line
 node cli.inspect of recipe inspect
 node cli.library of recipe library
 src/examples/zz-demo> view save
-src/examples/zz-demo> child remove zz-demo
+src/examples/zz-demo> view close zz-demo
 > ls                                     # no project now: lines go to the CLI itself
 node cli
 …
@@ -590,7 +590,7 @@ node cli
 
 - **The prompt** shows the folder of the project your lines go to, from where you started vulpen, as a shell shows its folder; `>` alone means the CLI itself. It shows only when you type at a terminal, so a piped script's output stays clean.
 - **A run in the background** (`./run.sh … &`) reads nothing from the terminal until it is brought to the foreground, since a read would stop it; what is typed meanwhile is the shell's.
-- **Lines go to the newest project.** `view new` and `view load` host a project and make it the one lines go to; `child remove` falls back to the one before, or the CLI. The CLI sends `zz-demo: ls` for your `ls`, so every log line names its view.
+- **Lines go to the newest project.** `view new` and `view load` host a project and make it the one lines go to; `view close` falls back to the one before, or the CLI. The CLI sends `zz-demo: ls` for your `ls`, so every log line names its view.
 - **`name: …`** sends one line to another hosted project, and **`: …`** to the CLI itself.
 - **A new node builds at once.** In a debug build, the live build compiles `spinner/` a moment after `node new` wrote it, and swaps it in; until then the node is left out, naming the module it waits for (section 16).
 
@@ -672,8 +672,8 @@ w …/wave/view.vlp                          # child list: the hosted views, in 
 {out} probe: frame     60: +0.4141257 +0.442029 …   # half the wave of section 2
 ```
 
-- **Hosting follows the manifest.** Loading a view hosts the views it names; `child add` and `child remove` are edits of the view a line addresses, which `view save` writes, and the log keeps. A child's own `[view]` sections host views in turn, and removing a child takes them along.
-- **`child remove <name>` reaches the view that hosts the child** from wherever the line goes, so `child remove zz-demo` typed in zz-demo closes it.
+- **Hosting follows the manifest.** Loading a view hosts the views it names; `child add` and `view close` are edits of the view a line addresses, which `view save` writes, and the log keeps. A child's own `[view]` sections host views in turn, and removing a child takes them along.
+- **`view close <name>` reaches the view that hosts it** from wherever the line goes, so `view close zz-demo` typed in zz-demo closes it. It lets go first of every connection that takes the view's window (below), in the same edit, so the log keeps one line, and nothing takes the view's place: the `ide`'s Perform panel shows nothing until another view is presented. Its files stay.
 - **Each frame** cooks the host, then the hosted views in the order hosted, and runs all their passes. The window opens while a node of any view draws.
 - **A view whose `view.vlp` does not exist yet** starts empty, and its `view save` writes it, folder included: so a log can rebuild a project from nothing.
 - **No two hosted views share a name**, since a line addresses one by it; nor two views' folders, since the build tree mirrors each view by its folder's name.
@@ -699,7 +699,7 @@ to   = show.picture          # repeat to for more readers
 - **Its format** is `R8G8B8A8_SRGB`, as the window takes it, so the view's draws blend and band as they would in its own window. **Its size** is the window's, or `--size`'s with none, as a draw's image is.
 - **Order**: the view's passes run first, its draws into the image in one render pass, then the host's, so a host's dispatch or draw samples what the view drew that frame.
 - **Connecting or disconnecting** rebuilds the hosted view too, so its draws' pipelines fit what they draw into now; drawing nowhere, its draws have none.
-- **Refused**, naming why: `<view>:` naming no view this view hosts (`connection stage is from inner:, but this view hosts no view inner`), a connection to a view's window, a reader that is no `Texture`, and `child remove` of a view a connection takes (`view inner is connected through stage; disconnect it first`).
+- **Refused**, naming why: `<view>:` naming no view this view hosts (`connection stage is from inner:, but this view hosts no view inner`), a connection to a view's window, and a reader that is no `Texture`. `view close` of a view a connection takes lets go of the connection first.
 
 ## 14. The library
 
@@ -862,7 +862,7 @@ src/examples/triangle> mode perform         # the triangle, over the whole windo
 - **The Perform panel** sits beside the editor in the dock's top row. Its tabs name the views the `ide` hosts, the one presented marked, and a press on one presents it. Its image shows the view's window letterboxed, at the window's size, so a view draws as on its own; in perform mode it matches the view's own window pixel for pixel. A drag moves the window in the panel and the wheel zooms it about the pointer, as in the graph, cut at the panel's edge; the image part does so only with `param = moves=yes`, which the `ide` gives the panel and not the one that fills the window in perform mode. A press in the panel gives it the focus, and `h` then brings the window home, letterboxed as at first; `escape` lets go of the focus. Neither is kept: a restart, and another view presented, show the window letterboxed again.
 - **Each view the `ide` hosts is presented as it comes**, in a tab of its own, so the views loaded before keep theirs. A view not presented draws nowhere and keeps running (section 13), so no project ever draws over the `ide`.
 - **The mode is a param** of the modes node, `param set ide.modes mode perform`, which `mode` sends, so a save keeps it and a replay restores it; each switch rebuilds the `ide`. Perform mode leaves the panels no room, so it takes the focus from the part that had it, and edit mode gives it back.
-- **present** makes one connection, `present`, from `<view>:` to the images the modes node's `to` param names, ports joined by commas. It checks the view is hosted and connects at once, from the `ide`'s connections as the lines so far left them, whichever view the line addressed, so the next frame shows it. `child remove` of the view presented is refused until `: disconnect present`.
+- **present** makes one connection, `present`, from `<view>:` to the images the modes node's `to` param names, ports joined by commas. It checks the view is hosted and connects at once, from the `ide`'s connections as the lines so far left them, whichever view the line addressed, so the next frame shows it. `view close` of the view presented lets go of `present` first, so the Perform panel shows nothing, and nothing else is presented in its place.
 - **Where:** `src/recipes/parts/modes/`, `src/recipes/parts/image/`.
 
 **The graph.** The `graph` part lays out the graph of the view the `ide` hosted most recently, the one the terminal's lines go to, and its tab names it, as `graph - wave`; with no view hosted it shows nothing. The `graph-editor` component is it with `curves`, `rects` and `glyphs`, and the `ide` seats one in a panel over the Perform panel.

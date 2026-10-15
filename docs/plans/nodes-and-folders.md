@@ -32,7 +32,7 @@ A recipe is a node of the library, named like its folder, with the nodes inside 
 | `node add <name> [<word=value>...]` | adds a node; with no words, a group. A usage's last placeholder in brackets may be left out |
 | `node remove <node>` | refused while a connection names it or a node is inside it; its folder stays |
 | `recipe drop <recipe> <name>`, `recipe sync <node>` | above |
-| `child add <name> <file>`, `child remove <name>` | edits of the view a line addresses; `child remove` reaches the view that hosts the child, so a project closes from inside |
+| `child add <name> <file>`, `child remove <name>` | edits of the view a line addresses; `child remove` reaches the view that hosts the child, so a project closes from inside. Since 2026-10-15, on the lead's word, `view close <name>`, which lets go of the connections that take the view's window first |
 | `deploy add`, `deploy remove` | gone |
 
 ## What was built
@@ -52,7 +52,7 @@ Each is the lead's to keep or undo (A00):
 3. **Every folder is a node, data folders too.** The library part's `template/` and `template/header/` are nodes that hold files and run nothing. A folder no node names is a warning, not an automatic node, so `node remove` never brings a node back by its folder.
 4. **A sync lets go of a param the library let go**, naming it, rather than refusing: a sync cannot tell a value the view set from the default it copied, so refusing would stop every sync after the library drops or renames a param.
 5. **`node add` takes no words** for a group, through the new optional placeholder.
-6. **`child remove` reaches the host** of the child it names, from any view, as the CLI's docs had it.
+6. **`child remove` reaches the host** of the child it names, from any view, as the CLI's docs had it. Kept by the lead on 2026-10-15, as `view close`.
 7. **Renames past the decided ones:** `Recipes` to `Modules`, `recipe.cmake` to `nodes.cmake`, `recipe.so` to `module.so`, and the build target `vulpen_recipes` to `vulpen_modules`, so "recipe" means only the library's.
 
 ## Open
