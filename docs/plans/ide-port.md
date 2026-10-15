@@ -47,6 +47,8 @@ The engine today (`baseclasses/`, `runtime/` and `main.cpp`) is about 3,300 line
   - the panel and tab verbs, because a tab sends its content's own command and a panel closes by its dock's seam.
 
   Six verbs that fake input for tests become one `input` command.
+
+  As built on 2026-10-15, the `ide` registers 53 commands and the CLI 37 of them, which `help` lists as a tree of the words they start with ([usage](../usage.md#7-commands)).
 - **The POC's 13 channel kinds become four things a shader declares**: a value, a buffer, an image and the frame block. The POC's path from the manifest to GPU passes is `Chain/` (4,614), bindless passes (2,003), images (1,061) and resources (716). This tree's path is about 1,500 lines, and rows A1–A7 add about 720 more.
 - **No central command table.** The POC keeps each verb's spec in `command_spec.cpp` and its wiring in `commands.cpp`, 997 lines between them. Here a command registers with its spec where it is handled (RV04), and parts register their own commands.
 - **Layout by params.** A dock seam is a param of `split`, so `param set` moves it and replaying the log puts it back; a panel closes the same way, its seam at the edge. Tearing tabs out and dragging them between panels is a later row (D18).
@@ -126,7 +128,7 @@ The engine registers only the primitive edits, the log, save and migrate, hostin
 
 | Port | ID | Command | POC verbs it replaces | Registered by | New | Needs | Advice |
 | --- | --- | --- | --- | --- | --: | --- | --- |
-| [x] | D1 | `help`, `complete`, `quit`. On 2026-10-14, on the lead's word, `quit` refuses while a node holds work the end would lose (`Cook::hold`), as the editor a file's changes, and `quit force` ends the run anyway; the window's close button sends `quit` | `help`, `complete`, `quit` | part `command-line` (`help`, `complete`); engine (`quit`, `quit force`) | in B1, E12 | B1, E12 | core |
+| [x] | D1 | `help`, `complete`, `quit`. On 2026-10-14, on the lead's word, `quit` refuses while a node holds work the end would lose (`Cook::hold`), as the editor a file's changes, and `quit force` ends the run anyway; the window's close button sends `quit`. On 2026-10-15, on the lead's word, `help` lists the commands as a tree: a word more than one starts with once, their usages under it, indented, and so again for a second word, as `input key` | `help`, `complete`, `quit` | part `command-line` (`help`, `complete`); engine (`quit`, `quit force`) | in B1, E12 | B1, E12 | core |
 | [x] | D2 | `node add/remove/set`, `connect`, `disconnect`, `param set/unset` | `node new`, `node remove`, `node bind`, `wire connect`, `connect`, `wire disconnect`, `param set`, `param unset` | engine | in B2 | B2 | core |
 | [x] | D3 | `source`, `log save` | `source` | engine | in B3 | B3 | core |
 | [x] | D4 | `view new <folder>`, `view load <folder>`, `view save`: new and load host the view in a folder, named for it. On 2026-10-15, on the lead's word, `view close <name>` in place of `child remove`: it lets go of the connections that take the view's window first, so a view presented is unpresented and nothing takes its place, then stops hosting it | `view new`, `view load`, `view save`, `view close`, `child unmount` | part `library` (`new`, `load`); engine (`save`, `close`) | 40 | B4, B7, C3 | core |

@@ -345,46 +345,56 @@ $ ./run.sh src/examples/wave/view.vlp --log info
 
 ## 7. Commands
 
-Every action is a command: a line of text through one port (V06). A command registers with its usage and help, or not at all (RV04). The CLI app lists them with `help`:
+Every action is a command: a line of text through one port (V06). A command registers with its usage and help, or not at all (RV04). The CLI app lists them with `help`, as a tree of the words they start with: a word more than one command starts with shows once, with their usages under it, indented, and so again for a second word, as `input key`; a command named as its group, as `quit` beside `quit force`, is the group's row; groups come in the order of their words, and what each command does reads down one column:
 
 ```text
-quit                                 ends the run before its next frame, unless a node holds work the end would lose, …
-quit force                           ends the run before its next frame, even while a node holds work the end would lose
-source <file>                        runs a file's commands, one a line, and stops at the first that fails
-log save <file>                      writes the session's edits to a file, which source replays
-input key down <value>               presses a key, named by the character it prints, or as space, enter or f1, …
-input key up <value>                 lets a key go
-input text <value>...                types the words, joined by single blanks
-input pointer <value> <value>        moves the pointer to x and y, in pixels from the window's top left
-input button down <value> [<value>]  presses a pointer button: left, right or middle; a count after it, as 2, makes it …
-input button up <value>              lets a pointer button go
-input wheel <value> <value>          turns the wheel by x and y
-input focus on                       gives the window focus
-input focus off                      takes focus from the window
-help                                 lists every command, with its usage and what it does
-complete <value>...                  lists the words that may come next, the last word given being the start of one, or "" for one not begun
-clear                                clears the terminal
-ls                                   lists the views the view hosts, its nodes and its connections
-info [<node>]                        shows a node's words, and the connections it writes and reads; with none, …
-recipe list                          lists the library's recipes, by kind
-node new draw <name>                 adds a draw node, and writes its first files from the template into its folder: …
-node new dispatch <name>             adds a dispatch node, and writes its first files from the template into its folder: …
-recipe drop <recipe> <name>          copies a library recipe into the view as a node of that name, with the nodes inside it …
-recipe sync <node>                   brings a dropped recipe up to the library's, while what it copied is unchanged; …
-view new <file>                      hosts a new, empty view in a folder, and saves its view.vlp
-view load <file>                     hosts the view in a folder's view.vlp
-view save                            writes the view over its manifest, keeping the comments in it
-child list                           lists the hosted views, with their files, in the order hosted
-image clear <port>                   drops the pixels of an image a node's C++ fills, named by that port or one that …
-node add <name> [<word=value>...]    adds a node, given the manifest's node words; its files are what its folder holds
-node remove <node>                   removes a node that no connection names and no node is inside; its folder stays
-node set <node> <word=value>...      gives a node the words named, clearing those given empty; param and image words …
-connect <name> <port> <port>...      joins the port that writes a buffer to the ports that read it
-disconnect <connection>              removes a connection
-param set <node> <key> <value>       sets a param of a node
-param unset <node> <key>             removes a param of a node
-child add <name> <file>              hosts the view a view.vlp holds, or an empty one that view save writes; …
-view close <name>                    stops hosting a view, letting go of the connections that take its window; …
+child
+  add <name> <file>              hosts the view a view.vlp holds, or an empty one that view save writes; a line …
+  list                           lists the hosted views, with their files, in the order hosted
+clear                            clears the terminal
+complete <value>...              lists the words that may come next, the last word given being the start of one, or …
+connect <name> <port> <port>...  joins the port that writes a buffer to the ports that read it
+disconnect <connection>          removes a connection
+help                             lists every command, under the words it shares, and what each does
+image clear <port>               drops the pixels of an image a node's C++ fills, named by that port or one that …
+info [<node>]                    shows a node's words, and the connections it writes and reads; with none, each …
+input
+  button
+    down <value> [<value>]       presses a pointer button: left, right or middle; a count after it, as 2, makes it …
+    up <value>                   lets a pointer button go
+  focus
+    off                          takes focus from the window
+    on                           gives the window focus
+  key
+    down <value>                 presses a key, named by the character it prints, or as space, enter or f1, for the …
+    up <value>                   lets a key go
+  pointer <value> <value>        moves the pointer to x and y, in pixels from the window's top left
+  text <value>...                types the words, joined by single blanks
+  wheel <value> <value>          turns the wheel by x and y
+log save <file>                  writes the session's edits to a file, which source replays
+ls                               lists the views the view hosts, its nodes and its connections
+node
+  add <name> [<word=value>...]   adds a node, given the manifest's node words; its files are what its folder holds
+  new
+    dispatch <name>              adds a dispatch node, and writes its first files from the template into its folder: …
+    draw <name>                  adds a draw node, and writes its first files from the template into its folder: its …
+  remove <node>                  removes a node that no connection names and no node is inside; its folder stays
+  set <node> <word=value>...     gives a node the words named, clearing those given empty; param and image words …
+param
+  set <node> <key> <value>       sets a param of a node
+  unset <node> <key>             removes a param of a node
+quit                             ends the run before its next frame, unless a node holds work the end would lose, as …
+  force                          ends the run before its next frame, even while a node holds work the end would lose
+recipe
+  drop <recipe> <name>           copies a library recipe into the view as a node of that name, with the nodes inside …
+  list                           lists the library's recipes, by kind
+  sync <node>                    brings a dropped recipe up to the library's, while what it copied is unchanged; its …
+source <file>                    runs a file's commands, one a line, and stops at the first that fails
+view
+  close <name>                   stops hosting a view, letting go of the connections that take its window; its files …
+  load <file>                    hosts the view in a folder's view.vlp
+  new <file>                     hosts a new, empty view in a folder, and saves its view.vlp
+  save                           writes the view over its manifest, keeping the comments in it
 ```
 
 - **Who registers them.** The engine registers the edits, the log, save, `child list`, `image clear`, `input` and `quit`; every other command is a node's: `help`, `complete` and `clear` are the command-line part's, `ls` and `info` the inspect part's, `recipe …`, `node new …` and `view new`/`view load` the library part's, `focus` the keys part's, `open`, `write`, `close`, `discard` and `find` the text part's, `present`, `mode edit`, `mode perform` and `mode toggle` the modes part's, `zoom in`, `zoom out` and `zoom reset` the font part's, and `select`, `selected` and `delete` the graph part's; the `ide` has these last five parts and the CLI has not (V05).
