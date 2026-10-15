@@ -1,6 +1,6 @@
 # Views, modes and the Perform tabs
 
-A proposal for the lead (A00), asked on 2026-10-15: "We have to better think out UX for how multiple views and nested views and the perform and edit modes work and the present panel tabs." Nothing here is built. Each question gives the situation, what each option means, its pros and cons, whether the engine or only recipes change, and a pick. Reply like "1A 2A 3A …".
+A proposal for the lead (A00), asked on 2026-10-15: "We have to better think out UX for how multiple views and nested views and the perform and edit modes work and the present panel tabs." Nothing here is built. The same day the lead set it aside: "skip for now". Each question gives the situation, what each option means, its pros and cons, whether the engine or only recipes change, and a pick. Reply like "1A 2A 3A …".
 
 ## Now
 
