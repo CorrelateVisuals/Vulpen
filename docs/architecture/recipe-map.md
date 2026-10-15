@@ -27,9 +27,10 @@ The core (`baseclasses/`, `runtime/`) knows no recipe. These are the ports the r
 
 | Shared code | What it does | Included by |
 | --- | --- | --- |
-| `Scroll` | rows shown from a first row that the wheel and a drag on a bar's thumb move, keeping a step's fraction | `text`, `command-line` |
+| `Scroll` | rows shown from a first row that the wheel and a drag on a bar's thumb move, keeping a step's fraction; or columns, across | `text`, `command-line` |
 | `Words` | the run a double click selects in a row: letters, digits and `_`, blanks, or other characters | `text`, `command-line` |
 | `PanZoom` | how far what an area shows moved and how near it is: a drag moves it, the wheel zooms it about the pointer, and `h` brings it home | `graph`, `image` |
+| `Ini` | how an `.ini` reads: a row a line, `#` and what follows a comment, a row's key and value either side of its first `=`, and the numbers a value holds | `palette`, `keys`, `font`, `graph` |
 
 ## Parts
 
