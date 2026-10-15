@@ -777,7 +777,7 @@ frame.write(_rects, 1)[0] = {.offset = {24, 24}, .extent = {592, 88},
                              .role = VP_VIEW::role("panel")}; // a name no role has does not compile
 ```
 
-- **A Label** shows `count` characters of the one list of characters, from `first`, one cell a character from its `offset`; a character past its `extent` is not drawn. Each character names its Label, and `glyphs` draws as many as the list's used length.
+- **A Label** shows `count` characters of the one list of characters, from `first`, one cell a character from its `offset`, in the room its `extent` gives from there; a character past the room's edge is cut at it. Its `cut` moves the room's top left in from `offset`, so a run that starts above or left of what shows, as a graph's row half out of view, is cut there too; 0, as a Label written without one has, cuts nothing. Each character names its Label, and `glyphs` draws as many as the list's used length.
 - **Its `scale`** sizes its cells, the font's times it, as the graph's zoom does; 0, as a Label written without one has, draws at the font's size. `glyphs` samples the atlas smoothly, which at the font's size changes no pixel, since each cell lies on whole pixels.
 - **A theme** gives each role red, green and blue from 0 to 1, linear, with alpha after when it is not opaque. A key that is no role, a role left out or a color that is no such numbers stops the palette, naming the line (`theme.ini:5: pannel is no role; the roles are background, panel, border, text, accent, error, warning, muted, keyword, type, string, number, comment, directive`). `muted` is for text that matters less, as the terminal's log lines, and the last six for code, as the editor shows it.
 - **The font** is the file its `face` param names, printable ASCII baked a cell a glyph; the library's is Roboto Mono. Another face is a file put in the font node's folder and named, as `param set font face RobotoMono-Bold.ttf` does, and a font node bakes again after the edit. A face named with a folder is refused, so the font moves with its view (V03), and so is a font that is not monospace.
@@ -915,7 +915,7 @@ place wave = -10 -5
   {!!!} ide.graph.graph: graph.ini:2: zoom = 9 is none of pan = x y, zoom = z from 0.25 to 4, place <node> = x y; the graph lays the view out from the graph alone, and keeps the file as it is
   ```
 
-- **Only what lies in its area is drawn**: a box cut at its edge, a row cut to the characters inside it, and a curve cut at its edge, which the graph hands `curves` as its ground, so a curve to a box dragged out of view runs to the edge. Its ground is a line a pixel wide every 24 pixels at zoom 1 and a stronger one every tenth, which the graph's own shaders draw under the rest, over the whole area at any zoom; zoomed out, the lesser lines fade, so it never crowds.
+- **Only what lies in its area is drawn**: a box cut at its edge, a row of text cut at its edge too, so it shows until it goes out of view, and a curve cut at its edge, which the graph hands `curves` as its ground, so a curve to a box dragged out of view runs to the edge. Its ground is a line a pixel wide every 24 pixels at zoom 1 and a stronger one every tenth, which the graph's own shaders draw under the rest, over the whole area at any zoom; zoomed out, the lesser lines fade, so it never crowds.
 - **Given no room it draws and takes nothing**, as every part does.
 - **Where:** `src/recipes/parts/graph/`, `src/recipes/parts/curves/`, `src/recipes/components/graph-editor/`.
 
