@@ -11,7 +11,7 @@ The core (`baseclasses/`, `runtime/`) knows no recipe. These are the ports the r
 | Port | What a part gets | Status |
 | --- | --- | --- |
 | input | keys, pointer and clipboard | `InputPort` |
-| files | read, watch and save (RA04) | `FilePort` |
+| files | read, watch, save, copy and rename (RA04) | `FilePort` |
 | commands | send text, read the log and keep it to some views' lines, list the registered commands (RV04) | `CommandPort` |
 | graph | read the view; writes stay commands (V06) | `runtime/View.h`, once [D1](migration-and-implementation.md#open-decisions) is settled |
 | connections | the contracts on its connections | [D5](migration-and-implementation.md#open-decisions) |
@@ -60,6 +60,7 @@ Parts hold all of the library's code but the shared code, and use no other recip
 | `modes` | `Modes` | commands (the log too), graph | Rect, Typed (the keys no part in focus takes) | Rect: two, the dock's room and what is presented; Item (a tab a hosted view); the connection that presents a view |
 | `inspect` | `Inspect` | commands, graph | — | — |
 | `library` | `Library` | files, commands | — | — |
+| `projects` | `Projects` | files, commands | — | — |
 
 ## Components
 
@@ -78,5 +79,5 @@ Parts hold all of the library's code but the shared code, and use no other recip
 
 | App | Uses |
 | --- | --- |
-| `cli` | command-line, inspect, library |
-| `ide` | palette, font, viewport, keys, modes, image, inspect, library; dock, panel ×4, text-area, find-bar, terminal, graph-editor, menu ×2, tooltip |
+| `cli` | command-line, inspect, library, projects |
+| `ide` | palette, font, viewport, keys, modes, image, inspect, library, projects; dock, panel ×4, text-area, find-bar, terminal, graph-editor, menu ×2, tooltip |

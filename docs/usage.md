@@ -23,7 +23,7 @@ How each part of Vulpen works today, shown the way you use it. Each section has 
 
 | Word | What it is | Where |
 | --- | --- | --- |
-| view | a project: a folder with a `view.vlp`, a folder for each node, and the views it hosts. It loads, runs and moves as a whole (V03) | `src/runtime/examples/<name>/` |
+| view | a project: a folder with a `view.vlp`, a folder for each node, and the views it hosts. It loads, runs and moves as a whole (V03) | `projects/<name>/`, `src/runtime/examples/<name>/` |
 | manifest | a view's `view.vlp`: its nodes and their files, its connections, and the views it hosts (V00) | `<view>/view.vlp` |
 | node | one `[node]` of a manifest and the folder its name names: a C++ class, shaders, or both, and the nodes inside it (RV08) | `<view>/<node>/` |
 | connection | one buffer: one node's port writes it, other nodes' ports read it | the manifest |
@@ -36,7 +36,7 @@ How each part of Vulpen works today, shown the way you use it. Each section has 
 
 ## 2. Running a view
 
-`run.sh` (or `run.ps1` on Windows) builds the debug preset in parallel and runs `out/build/debug/vulpen` with your arguments; `--release` takes the release preset. `--cli` and `--ide` are the scripts' own and stand for an app's `view.vlp` (section 12), and with no view named the scripts run the app the line `default=--ide` at their top names.
+`run.sh` (or `run.ps1` on Windows) builds the debug preset in parallel and runs `out/build/debug/vulpen` with your arguments; `--release` takes the release preset. `--cli` and `--ide` are the scripts' own and stand for an app's `view.vlp` (section 12), and with no view named the scripts run the app the line `default=--ide` at their top names. `--<name>` stands for a project's, `projects/<name>/view.vlp`, which then runs alone (section 12); vulpen's options come first, so a project named like one, as `log`, runs by its path.
 
 ```bash
 ./run.sh src/runtime/examples/wave/view.vlp   # the view to run: one view.vlp
@@ -350,16 +350,13 @@ $ ./run.sh src/runtime/examples/wave/view.vlp --log info
 Every action is a command: a line of text through one port (V06). A command registers with its usage and help, or not at all (RV04). The CLI app lists them with `help`, as a tree of the words they start with: a word more than one command starts with shows once, with their usages under it, indented, and so again for a second word, as `input key`; a command named as its group, as `quit` beside `quit force`, is the group's row; groups come in the order of their words, and what each command does reads down one column:
 
 ```text
-child
-  add <name> <file>              hosts the view a view.vlp holds, or an empty one that view save writes; a line …
-  list                           lists the hosted views, with their files, in the order hosted
 clear                            clears the terminal
 complete <value>...              lists the words that may come next, the last word given being the start of one, or …
 connect <name> <port> <port>...  joins the port that writes a buffer to the ports that read it
 disconnect <connection>          removes a connection
 help                             lists every command, under the words it shares, and what each does
 image clear <port>               drops the pixels of an image a node's C++ fills, named by that port or one that …
-info [<node>]                    shows a node's words, and the connections it writes and reads; with none, each …
+info [<node>]                    shows a node's words, or a hosted view's, and the connections it writes and reads; …
 input
   button
     down <value> [<value>]       presses a pointer button: left, right or middle; a count after it, as 2, makes it …
@@ -378,28 +375,32 @@ ls                               lists the view as folders: each node with its f
 node
   add <name> [<word=value>...]   adds a node, given the manifest's node words; its files are what its folder holds
   new
-    dispatch <name>              adds a dispatch node, and writes its first files from the template into its folder: …
-    draw <name>                  adds a draw node, and writes its first files from the template into its folder: its …
+    dispatch <name>              adds a dispatch node, and writes its first files from the template into its …
+    draw <name>                  adds a draw node, and writes its first files from the template into its folder: …
   remove <node>                  removes a node that no connection names and no node is inside; its folder stays
   set <node> <word=value>...     gives a node the words named, clearing those given empty; param and image words …
 param
   set <node> <key> <value>       sets a param of a node
   unset <node> <key>             removes a param of a node
-quit                             ends the run before its next frame, unless a node holds work the end would lose, as …
+quit                             ends the run before its next frame, unless a node holds work the end would lose, …
   force                          ends the run before its next frame, even while a node holds work the end would lose
 recipe
-  drop <recipe> <name>           copies a library recipe into the view as a node of that name, with the nodes inside …
+  drop <recipe> <name>           copies a library recipe into the view as a node of that name, with the nodes …
   list                           lists the library's recipes, by kind
-  sync <node>                    brings a dropped recipe up to the library's, while what it copied is unchanged; its …
+  sync <node>                    brings a dropped recipe up to the library's, while what it copied is unchanged; …
 source <file>                    runs a file's commands, one a line, and stops at the first that fails
 view
-  close <name>                   stops hosting a view, letting go of the connections that take its window; its files …
-  load <file>                    hosts the view in a folder's view.vlp
-  new <file>                     hosts a new, empty view in a folder, and saves its view.vlp
+  add <name> <file>              hosts the view a view.vlp holds, or an empty one that view save writes; a line …
+  close <name>                   stops hosting a view, letting go of the connections that take its window; its …
+  list                           lists the views this view hosts, with their files, in the order hosted
+  load <view>                    hosts the view of a project by name, or of a folder by path
+  new <view>                     hosts a new, empty view, a project's by name or a folder's by path, and saves its …
+  rename <name>                  saves the view, renames its folder where it is, and hosts it under the new name
   save                           writes the view over its manifest, keeping the comments in it
+    as <name>                    copies the view, its edits too, into a new project and works on the copy; the …
 ```
 
-- **Who registers them.** The engine registers the edits, the log, save, `view list`, `image clear`, `input` and `quit`; every other command is a node's: `help`, `complete` and `clear` are the command-line part's, `ls` and `info` the inspect part's, `recipe …`, `node new …` and `view new`/`view load` the library part's, `focus` the keys part's, `open`, `write`, `close`, `close force` and `find` the text part's, `present`, `mode edit`, `mode perform` and `mode toggle` the modes part's, `zoom in`, `zoom out` and `zoom reset` the font part's, and `select`, `selected` and `delete` the graph part's; the `ide` has these last five parts and the CLI has not (V05).
+- **Who registers them.** The engine registers the edits, the log, save, `view list`, `image clear`, `input` and `quit`; every other command is a node's: `help`, `complete` and `clear` are the command-line part's, `ls` and `info` the inspect part's, `recipe …` and `node new …` the library part's, `view new`, `view load`, `view save as` and `view rename` the projects part's, `focus` the keys part's, `open`, `write`, `close`, `close force` and `find` the text part's, `present`, `mode edit`, `mode perform` and `mode toggle` the modes part's, `zoom in`, `zoom out` and `zoom reset` the font part's, and `select`, `selected` and `delete` the graph part's; the `ide` has these last five parts and the CLI has not (V05).
 - **A usage is its completion.** Its placeholders say what can come there, so `complete` knows. The last may end in `...`, one argument or more, and stand in brackets, which a line may leave out: `node add ui` adds a group. Such a placeholder completes each word after it too, as `<node>` does for every node `[<node>...]` takes.
 
   ```text
@@ -423,7 +424,7 @@ view
   ```
 
 - **A line may name the view it addresses** as `<name>: <command>`, and `:` alone names the one vulpen started with (section 13).
-- **A `<file>` argument arrives resolved:** beside the script that runs the line, or from where vulpen started for a typed line (section 12).
+- **A `<file>` argument arrives resolved:** beside the script that runs the line, or from where vulpen started for a typed line (section 12). A `<view>` is a project's name while it holds no `/`, and arrives as typed; with a `/` it is a folder's path, and arrives resolved as a `<file>` does. It completes as a `<file>` does.
 - **Where:** `src/runtime/Commands.cpp`.
 
 ## 8. Graph edits
@@ -500,7 +501,7 @@ view save
 
   ```text
   # notes.log, saved at the repo's root while a project was hosted
-  view add zz-demo src/runtime/examples/zz-demo/view.vlp
+  view add zz-demo projects/zz-demo/view.vlp
   zz-demo: view save
   zz-demo: node add spinner operator=Spinner vertex_count=3
   ```
@@ -527,9 +528,9 @@ view save
 A recipe is a node of the library, with the nodes inside it. A drop copies it into the view as a node under the name you give, and the copy is yours: every edit works, as if you had typed it (V02).
 
 ```text
-src/runtime/examples/zz-demo> recipe drop inspect look
-copied inspect into …/src/runtime/examples/zz-demo/look, as node look of recipe inspect@abb3239c
-src/runtime/examples/zz-demo> info look
+projects/zz-demo> recipe drop inspect look
+copied inspect into …/projects/zz-demo/look, as node look of recipe inspect@abb3239c
+projects/zz-demo> info look
 recipe = inspect@abb3239c          # where it came from, and a fingerprint of what was copied
 operator = Inspect
 file = Inspect.cpp                 # copied into look/, which the live build compiles
@@ -561,7 +562,7 @@ recipe sync d
 - **Refused, too:** a sync the library's version would take a connection from: one from the rest of the view to a node the library let go.
 - **The fingerprint** hashes what was copied, as FNV-1a over 64 bits folded to 32, so it is the same on every machine (C01).
 
-In the library, and in the apps beside it, a recipe uses others as they are, which keeps one copy of each part's code (V11). The CLI app is three parts used that way:
+In the library, and in the apps beside it, a recipe uses others as they are, which keeps one copy of each part's code (V11). The CLI app is four parts used that way:
 
 ```ini
 # src/runtime/recipes/cli/view.vlp
@@ -577,27 +578,28 @@ recipe = command-line        # no fingerprint: the library's own part, unfolded 
 
 ## 12. The CLI
 
-The `cli` app is three library parts used together: `command-line` (a line in, an answer out), `inspect` (`ls`, `info`) and `library` (recipes, nodes and views). It runs headless on the terminal.
+The `cli` app is four library parts used together: `command-line` (a line in, an answer out), `inspect` (`ls`, `info`), `library` (recipes and nodes) and `projects` (views of their own). It runs headless on the terminal.
 
 ```text
 $ ./run.sh --cli
-> view new src/runtime/examples/zz-demo  # hosts an empty project and saves its view.vlp
-src/runtime/examples/zz-demo> node new draw spinner
-wrote Spinner.cpp, Spinner.glsl, Spinner.vert, Spinner.frag in …/src/runtime/examples/zz-demo/spinner, and added node spinner
-src/runtime/examples/zz-demo> ls         # this line went to zz-demo: the prompt says where you are
+> view new zz-demo                       # hosts an empty project in projects/zz-demo/, and saves its view.vlp
+projects/zz-demo> node new draw spinner
+wrote Spinner.cpp, Spinner.glsl, Spinner.vert, Spinner.frag in …/projects/zz-demo/spinner, and added node spinner
+projects/zz-demo> ls                     # this line went to zz-demo: the prompt says where you are
 spinner/                                 # a node is a folder, its files under it
   Spinner.cpp
   Spinner.frag
   Spinner.glsl
   Spinner.vert
-src/runtime/examples/zz-demo> : ls       # `:` sends a line to the CLI itself
-zz-demo/         view, from …/src/runtime/examples/zz-demo/view.vlp
+projects/zz-demo> : ls                   # `:` sends a line to the CLI itself
+zz-demo/         view, from …/projects/zz-demo/view.vlp
 cli/
   command-line/  recipe command-line     # inside cli, using a library recipe as it is
   inspect/       recipe inspect
   library/       recipe library
-src/runtime/examples/zz-demo> view save
-src/runtime/examples/zz-demo> view close zz-demo
+  projects/      recipe projects
+projects/zz-demo> view save
+projects/zz-demo> view close zz-demo
 > ls                                     # no project now: lines go to the CLI itself
 cli/
 …
@@ -607,34 +609,45 @@ cli/
 - **The prompt** shows the folder of the project your lines go to, from where you started vulpen, as a shell shows its folder; `>` alone means the CLI itself. It shows only when you type at a terminal, so a piped script's output stays clean.
 - **A run in the background** (`./run.sh … &`) reads nothing from the terminal until it is brought to the foreground, since a read would stop it; what is typed meanwhile is the shell's.
 - **`ls` shows the view as folders**, as its nodes are (RV08): each node a folder under the node it is inside, its files under it, and beside it the recipe it uses, or was dropped from as `recipe probe@3f2a9c1e`; each view it hosts is a folder too, beside it the file it is hosted from. A node's connections are `info <node>`'s.
-- **Lines go to the newest project** of those the CLI hosts itself: `view new` and `view load` host a project and make it the one lines go to; `view close` falls back to the one before, or the CLI. A view a project hosts in turn is reached by its name. The CLI sends `zz-demo: ls` for your `ls`, so every log line names its view. The log keeps to that project too: another project's node lines stay off the console, its errors and warnings excepted. In the `ide`, the view presented comes first (section 14).
+- **Lines go to the newest project** of those the CLI hosts itself: `view new`, `view load`, `view save as` and `view rename` host a project and make it the one lines go to; `view close` falls back to the one before, or the CLI. A view a project hosts in turn is reached by its name. The CLI sends `zz-demo: ls` for your `ls`, so every log line names its view. The log keeps to that project too: another project's node lines stay off the console, its errors and warnings excepted. In the `ide`, the view presented comes first (section 14).
 - **`name: …`** sends one line to another hosted project, and **`: …`** to the CLI itself.
 - **A new node builds at once.** In a debug build, the live build compiles `spinner/` a moment after `node new` wrote it, and swaps it in; until then the node is left out, naming the module it waits for (section 16).
+
+**Projects** are views of their own (V03) in `projects/` at the top of the repository, which git ignores but for its README, so each person's stay theirs. The `projects` part keeps them:
+
+- **A name or a path.** `view new <view>` and `view load <view>` take a project's name, a word without a `/`, which means `projects/<name>/`, or a folder's path, from where vulpen started. A name is letters, digits, `_` and `-`, so it also addresses the view, as `zz-demo: ls`, and runs it, as `./run.sh --zz-demo`. `view new` saves the new view's empty `view.vlp`, and refuses a folder that holds one; `view load` refuses a folder that holds none. In the log, both are a `view add` of the CLI's view, and `view new` a `view save` too.
+- **`view save as <name>`** copies the view's folder into `projects/<name>/`, whole or not at all, its look in `.vulpen/` too, and writes the manifest there as the edits left it; then it closes the view and hosts the copy, which lines go to from then on. So the view's own files stay as last saved, and a view from elsewhere, as an example, comes into `projects/`. It refuses a view that hosts views from its folder, since their copies would share their names.
+- **`view rename <name>`** saves the view, renames its folder where it is, and hosts it under the new name. Nothing inside a project names it: the build names its contracts and modules from the folder.
+- **Both work on a view the CLI hosts**, not on the CLI itself, nor on a view a project hosts, which goes with that project. A name a hosted view has already, or a folder in its place, is refused.
+- **`./run.sh --<name>`** runs a project alone, as the view vulpen starts with: no command line, its window or none.
+- **The build compiles every project**, as it does the examples, and a project made while vulpen runs at the next live build. It holds one view of each name, so a project named like another view it compiles, as `wave`, `triangle` or `library`, fails the build, naming both folders: `view rename` it.
+- **Elsewhere:** the folder is the `projects` part's `folder` param, from the part's own folder (RP02); working elsewhere is `param = folder=…` on `cli.projects` in the CLI's manifest, and the build compiles projects only in `projects/`.
+- **Where:** `src/runtime/recipes/library/parts/projects/Projects.cpp`; the file port's `copy`, `rename` and `save` of a view at another file in `src/runtime/Ports.cpp`.
 
 **Decision 2 of the 2026-10-03 handoff: where a path you type points.** A relative path in a typed line counts from where you started vulpen, which is also what the prompt's path counts from:
 
 ```text
 $ cd ~/Documents/GitHub/Vulpen && ./run.sh --cli
-> view new src/runtime/examples/zz-demo
-src/runtime/examples/zz-demo> log save notes.log
+> view new zz-demo
+projects/zz-demo> log save notes.log
 # writes ~/Documents/GitHub/Vulpen/notes.log, beside where you started,
-# not ~/Documents/GitHub/Vulpen/src/runtime/examples/zz-demo/notes.log
-src/runtime/examples/zz-demo> view new src/runtime/examples/other
-# hosts ~/Documents/GitHub/Vulpen/src/runtime/examples/other: the same text works from any project
+# not ~/Documents/GitHub/Vulpen/projects/zz-demo/notes.log
+projects/zz-demo> view load src/runtime/examples/wave
+# hosts ~/Documents/GitHub/Vulpen/src/runtime/examples/wave: the same text works from any project
 ```
 
 The other way is a shell's `cd`: paths count from the current project.
 
 ```text
-# If paths counted from the project, as after `cd src/runtime/examples/zz-demo`:
-src/runtime/examples/zz-demo> log save notes.log                   # would write src/runtime/examples/zz-demo/notes.log
-src/runtime/examples/zz-demo> view new ../other                    # would be needed for src/runtime/examples/other;
-src/runtime/examples/zz-demo> view new src/runtime/examples/other  # this would mean src/runtime/examples/zz-demo/src/runtime/examples/other
+# If paths counted from the project, as after `cd projects/zz-demo`:
+projects/zz-demo> log save notes.log                         # would write projects/zz-demo/notes.log
+projects/zz-demo> view load ../../src/runtime/examples/wave  # would be needed for src/runtime/examples/wave;
+projects/zz-demo> view load src/runtime/examples/wave        # this would mean projects/zz-demo/src/runtime/examples/wave
 ```
 
 The first keeps every typed path meaning one thing wherever you are, and matches the prompt; the second keeps a project's files next to it. Lines from a script always count from the script's folder either way.
 
-**The `ide`.** The `ide` app is the CLI's parts in a window, with four panels in a dock: the theme, the font, the keys, the modes part, `inspect` and `library` as in the CLI, and in the dock the editor, the graph, the Perform panel and the terminal. Each panel is a `panel` around a content, and each seam is a `split`'s:
+**The `ide`.** The `ide` app is the CLI's parts in a window, with four panels in a dock: the theme, the font, the keys, the modes part, `inspect`, `library` and `projects` as in the CLI, and in the dock the editor, the graph, the Perform panel and the terminal. Each panel is a `panel` around a content, and each seam is a `split`'s:
 
 ```text
 +-------------------------+--------------------------+
@@ -737,9 +750,9 @@ parts/inspect
 **`node new draw <name>` and `node new dispatch <name>`** write a node's first files into its folder in the current project, from the template in `src/runtime/recipes/library/parts/library/template/`, and add the node: a draw of `vertex_count = 3`, or a dispatch of `invocations = 64`. The class takes the name in CamelCase, and a name may hold the nodes it is inside: `node new draw ui.spinner` writes `ui/spinner/`. The files build at once and do nothing yet; every line the engine offers waits in them, commented. The template's own files end in `.in`, so the library never builds them.
 
 ```text
-src/runtime/examples/zz-demo> node new draw spinner
+projects/zz-demo> node new draw spinner
 wrote Spinner.cpp, Spinner.glsl, Spinner.vert, Spinner.frag in …/zz-demo/spinner, and added node spinner
-src/runtime/examples/zz-demo> node new dispatch fill
+projects/zz-demo> node new dispatch fill
 wrote Fill.cpp, Fill.comp in …/zz-demo/fill, and added node fill
 ```
 
@@ -765,7 +778,7 @@ The engine's placeholder kinds are a closed list (`name`, `node`, `port`, `file`
 
 **`recipe drop <recipe> <name>`** and **`recipe sync <node>`** copy a library recipe into the project and bring the copy up to date (section 11). The library's recipes are its own, so neither works on a view of the library, or on an app beside it.
 
-**`view new <folder>` and `view load <folder>`** host a project in a folder, named for the folder, and make it the current one. `view new` also saves its empty `view.vlp`, and refuses a folder that holds one; `view load` refuses a folder that holds none. In the log, both are a `view add` of the CLI's view, and `view new` a `view save` too.
+`view new` and `view load` are the projects part's (section 12).
 
 - **Where:** `src/runtime/recipes/library/parts/library/Library.cpp`.
 
