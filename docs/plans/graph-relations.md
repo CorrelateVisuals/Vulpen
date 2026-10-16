@@ -1,0 +1,86 @@
+# Graph and relations
+
+A proposal for the lead (A00). The ask, on 2026-10-16, in a note beside the docs (items 4 to 7 of it; the [handoff](../logs/development-20261016T205135Z.md) answers 1 to 3):
+
+- "4. ide nodes visible but not their files"
+- "Nodes in the POC behaved and looked better. We need to get closer to how POC handled the graph of nodes."
+- "5. we also need to be able to load baseclasses and runtime or any other external folders repository; look to POC how it managed to load this vulpen repo. Supported languages: C++, GLSL, Python, CMake, ini, manifest.vlp and shell."
+- "6. nodes should show more information, in line with POC relationships and connections. Altough we need to resolve the problem of not enough space for edges and bottom of internal connectors; make it look beautifuly insightful."
+- "7. we also need the toggle buttons to turn on or off certain connections."
+- "If this is part of ide-port-plan.md prioritize these parts, else do it first."
+
+Items 6 and 7 are rows of the [IDE port](ide-port.md) not yet ticked: E16, the `relations` part, and D20, `relations <kinds>`; F5 waits for E16. Item 5 is what fed E16 in the POC. So they come first, after the [terminal app](terminal-app.md), which is built.
+
+## What the POC did
+
+Read from `Generations/vulpen` at `50df0ac0`, its canvas's goldens and its code.
+
+- **A folder anywhere as a node.** `[node "Base"] kind = src, nest = true, root = ../src/vulkan_base` showed the engine's own sources as a box holding a tile a file and a box a subfolder; `nest root Rework vulpen-rework` aimed one at a sibling checkout. Every file showed, of any language.
+- **Relations, 13 kinds in 5 layers**, each drawn by its own hue and dash: *flow* (a connection; what a mode presents), *structure* (a node inside one; an instance's clones; a source and its header, `implements`; a class and its base's file, `inherits`), *code* (`#include`, Python `import`; the capabilities a node uses; the ABI stamp), *build* (a CMake file naming a file) and *docs* (a Markdown link; an id a doc defines, as `RV00`, cited elsewhere; a path mentioned in prose). The engine read what C++ states; a recipe, `ide-relations`, read the rest through the file port, cached by size and time, so a change redrew in about 2 s.
+- **Toggles.** `relations [all|none|<kind|layer>...|+<word>|-<word>]`, all on at first, and a row of buttons along the canvas's bottom edge: `flow`, `structure`, `code`, `build`, `docs`, then `hidden` and `loose`.
+- **Wires** run in right angles, and one with no port to land on leaves a tile's bottom edge, labeled with what it reaches.
+
+## What this tree has
+
+- **The graph part** (728 lines): a box a node, its name and a row a file; a curve a connection, from the writer's right to the reader's left, along a lane below each column it passes; a box a hosted view; selection, places and a color a kind, in `.vulpen/graph.ini`.
+- **A node that uses a library recipe as it is**, as every node of the cli and the ide does, has no files of its own: its code is the recipe's, in the library (item 4). Its box shows its name alone.
+- **The `relations` part and the `Relation` contract** are empty skeletons, a comment each.
+- **The ports a part needs are there**: the file port lists folders and reads files, a node reads any view by name, and the graph draws curves of any color.
+
+## Decisions
+
+### 1. A folder in the graph (item 5)
+
+- **A, pick. `open <folder>` shows the folder in the graph**, while the ide runs, as `open <file>` shows a file in its editor: the `editor` part gains a second target, as its `window` param picks the editor (a setting, not a mechanism), and the graph shows the folder in place of the current view, a box a folder, nested as nodes nest (RV08), a row a file, its tab `graph - src/baseclasses`; `view switch` shows a view again. Without the ide, `open <folder>` starts the person's editor, as now. Recipes only, about 150 lines.
+  - Pros: no new command or word (V04, V06); a folder is something the ide looks at, not part of a project (V03), so nothing in a manifest names a path outside its view.
+  - Cons: the folder shows only while the graph shows it; the log keeps the param that names it, as it keeps a file opened.
+- **B. A graph command, `graph <folder>`.** Pros: plain. Cons: a command more, beside `open`, that does what `open` does for files.
+- **C. A manifest word, as the POC's `root =`**: a node of a view standing for a folder elsewhere. Pros: a project keeps the folders it watches. Cons: a word whose node runs nothing and whose folder leaves the view (V03, V04); the engine learns a kind of node.
+
+### 2. Which relations, found by whom (item 6)
+
+- **A, pick. The `relations` part finds them through the file port**, for the folder or the view shown, read again only when a file changes, and hands them to the graph as `Relation`s, a pair of paths and a kind; the graph draws each kind in a hue of the theme, by layer. First kinds:
+  - *flow*: connections and a view's window taken, as now;
+  - *structure*: a node inside a node, and a recipe a node uses;
+  - *code*: `#include` in C++ and GLSL, `import` in Python;
+  - *build*: a CMake file naming a file or a folder;
+  - *docs*: a Markdown link to a file, and an id (`RV00`) a doc defines, cited in code or another doc.
+  - Recipes only (V05), about 300 lines: the part, its parsers, and the graph's drawing.
+  - Pros: the graph answers which file needs which, which test or doc names which code, what CMake builds; a parser a format, each small.
+  - Cons: reading a tree of files costs time after each change; the POC's looked again every 120 frames, about 2 s, and walked its engine's 300 files cached by size and time. `mentions`, the POC's noisiest kind, and `inherits` and `implements` wait until someone asks for them (C00).
+- **B. The POC's 13 kinds at once.** Cons: kinds with nothing to say here (capabilities, the ABI stamp, clones), and the most numerous, mentions, drown the rest.
+
+### 3. Turning relations on and off (item 7)
+
+- **A, pick. A param of the graph, `relations`, its layers on, as `flow,structure,code,build,docs`**, and a row of buttons along the graph's bottom edge, a layer each, lit while on, whose press sends `param set … relations …`: so a save keeps the choice and a replay restores it (V08), as the modes part's `mode`. No new command (V06). Recipes only, about 60 lines, with the `list` and `hit` parts the panel uses.
+- **B. A command, `relations [all|none|<layer>...]`**, as the POC's and D20. Cons: a command for what a param already carries.
+
+### 4. What a box shows (items 4 and 6)
+
+- **A, pick.**
+  - **A recipe's files**: a node that uses a library recipe as it is lists the recipe's files, from the library, under a row naming the recipe, and a press opens them, so the cli's and the ide's nodes show their code (item 4). The graph reads the view as it runs, each recipe unfolded: an engine read of any view by name as `Cook::view()` reads the node's own, about 10 lines.
+  - **Ports**: a row a port, those it reads at the left edge and those it writes at the right, so a connection lands on the port it joins, not on the name.
+  - Recipes about 120 lines, engine about 10.
+- **B. Files only, as now.** Cons: item 4 stays.
+
+### 5. Room for curves (item 6)
+
+- **A, pick.** The gap between columns grows with the curves that cross it, a lane each, so none run over another; a curve between nodes inside one box runs inside that box, below its rows, and the box grows to hold it; a relation with no port leaves its box's bottom edge, as the POC's, labeled with what it reaches. Recipes only, about 100 lines.
+- **B. As now**, a lane below each column passed. Cons: the crowding the lead saw.
+
+## Order
+
+| Step | Decisions | What runs after it |
+| --- | --- | --- |
+| 1 | 4 | a box lists a recipe's files and the node's ports; the cli's and the ide's nodes show their code |
+| 2 | 5 | room for curves, and curves inside a box |
+| 3 | 1 | `open <folder>` shows a folder in the graph: `open src/baseclasses` |
+| 4 | 2 | the `relations` part: includes, imports, CMake, links and ids, drawn by layer |
+| 5 | 3 | the layer buttons |
+
+About 750 lines of recipes and 10 of engine, ±50%.
+
+## Not in it
+
+- **Typed paths from the current project.** Items 1 and 2 of the note, `open Triangle.cpp` in the triangle project, are a question of where a typed path counts from, which the [handoff](../logs/development-20261016T205135Z.md) puts to the lead.
+- **Editing the graph by drag**, as drawing a connection between two ports: E13's "drags that edit the graph wait for ports in the model".
