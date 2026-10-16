@@ -1,0 +1,14 @@
+verify first and if found broken fix these issues, else explain how to verify workings.
+
+1. <tab> complete does not complete (all) files
+2.  view load triangle, open Triangle.cpp opens an empty file
+3. with triangle loaded, view switch ide // or cli doesn't work. We need to be able to switch to ide and/or cli.
+4. ide nodes visible but not their files; 
+
+features that do not seem there yet but we need. If this is part of ide-port-plan.md prioritize these parts, else do it first.
+
+Nodes in the POC behaved and looked better. We need to get closer to how POC handled the graph of nodes.
+
+5. we also need to be able to load baseclasses and runtime or any other external folders repository; look to POC how it managed to load this vulpen repo. Supported languages: C++, GLSL, Python, CMake, ini, manifest.vlp and shell.
+6. nodes should show more information, in line with POC relationships and connections. Altough we need to resolve the problem of not enough space for edges and bottom of internal connectors; make it look beautifuly insightful.
+7. we also need the toggle buttons to turn on or off certain connections.
