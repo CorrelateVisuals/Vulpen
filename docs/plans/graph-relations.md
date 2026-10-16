@@ -1,6 +1,6 @@
 # Graph and relations
 
-A proposal for the lead (A00). The ask, on 2026-10-16, in a note beside the docs (items 4 to 7 of it; the [handoff](../logs/development-20261016T205135Z.md) answers 1 to 3):
+A proposal the lead accepted whole on 2026-10-16 (A00); its [order](#order) says which steps are built. The ask, on 2026-10-16, in a note beside the docs (items 4 to 7 of it; the [handoff](../logs/development-20261016T205135Z.md) answers 1 to 3):
 
 - "4. ide nodes visible but not their files"
 - "Nodes in the POC behaved and looked better. We need to get closer to how POC handled the graph of nodes."
@@ -79,6 +79,17 @@ Read from `Generations/vulpen` at `50df0ac0`, its canvas's goldens and its code.
 | 5 | 3 | the layer buttons |
 
 About 750 lines of recipes and 10 of engine, ±50%.
+
+The lead accepted decisions 1 to 5, each with its pick, on 2026-10-16 ("all 20 handoff questions accepted").
+
+- **Step 1, built** (2026-10-16): `frame.unfolded(name)` reads any view as the next frame runs it, as `frame.view()` reads a node's own, and a recipe's own node keeps the recipe's name once unfolded, so the graph sees which recipe a node's code came from. The graph builds its boxes from the view so read: a box a node, its name, then a row a port, a port it reads at the left and one it writes at the right, then a row naming the recipe it uses, then its files, each row of a file or a recipe opening it; and a curve a reader, from port to port, each port marked where its curves land. `view switch ide` shows the `ide` whole, its 16 nodes in its box, each with the code its recipe brings. Calls made while building it:
+  - **A node inside another shows inside its box**, as its folder is inside that node's (RV08), the nodes a recipe brings too: decision 4's "a recipe's files" read with decision 5's "a curve between nodes inside one box runs inside that box … and the box grows to hold it" and decision 1's "nested as nodes nest". So a component's box holds the boxes of its parts, each listing its own files, rather than one list of every file under the component's row. A box holding boxes is framed below its rows, not filled, so the curves inside it show.
+  - **Ports come first, under the name, read and written side by side on one row**, then the recipe, then the files: the plan said a row a port, and side by side halves the rows a box with both needs.
+  - **The recipe's row reads `recipe <name>`, in the muted color, and a press on it opens the recipe's `view.vlp`**, which no box listed before: a recipe's own node lists no `view.vlp` among its files.
+  - **Columns are found at each level**: the boxes inside a box, and those at the top, go a column past every box beside them that they read from, a box reading from what lies inside another as from that one. A connection closing a cycle at a level orders no column, found by a walk from each box in the manifest's order: the `ide`'s panels and their contents read from each other, the content its room and the panel its tabs, which had sent the boxes' columns far apart.
+  - **The engine keeps a recipe's name on its unfolded node**, 4 lines beside the read's 13, which the plan's "about 10" did not count: unfolded, a node had lost which recipe it became.
+  - **A box a recipe brings is part of its user's box**: a press on it selects the user's box, a drag moves that box, and it has no place of its own in the `.ini`. A box inside another is placed from where that box's inner boxes start, and a drag keeps it inside, which grows to hold it.
+  - **Until step 2, a curve runs straight from port to port**, without the lane below each column it passed, which the graph had: step 2 brings lanes back, in the gaps and below the columns.
 
 ## Not in it
 

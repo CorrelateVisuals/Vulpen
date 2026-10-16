@@ -913,16 +913,30 @@ projects/triangle> mode perform   # the triangle, over the whole window
 - **Presenting** makes one connection, `present`, from `<view>:` to the images the modes node's `to` param names, ports joined by commas, from the `ide`'s connections as the lines so far left them, so the next frame shows it; the log keeps it, so a replay presents the same view (V08). `view close` of the view presented lets go of `present` first, so the Perform panel shows nothing, and nothing else is presented in its place.
 - **Where:** `src/runtime/recipes/library/parts/modes/`, `src/runtime/recipes/library/parts/image/`.
 
-**The graph.** The `graph` part lays out the graph of the current view, the one the terminals' lines go to, and its tab names it, as `graph - wave`, or `graph` for the CLI itself, whose own nodes it shows after `view switch`, and the `ide`'s after `view switch ide`. A second press on a view's box goes into that view, as `view switch` does. The `graph-editor` component is it with `curves`, `rects` and `glyphs`, and the `ide` seats one in a panel over the Perform panel.
+**The graph.** The `graph` part lays out the graph of the current view, the one the terminals' lines go to, as it runs, and its tab names it, as `graph - wave`, or `graph` for the CLI itself, whose own nodes it shows after `view switch`, and the `ide`'s after `view switch ide`. A second press on a view's box goes into that view, as `view switch` does. The `graph-editor` component is it with `curves`, `rects` and `glyphs`, and the `ide` seats one in a panel over the Perform panel.
 
 ```text
 > view load wave       # the graph panel shows wave and probe, a curve between
 
-+-----------+     +------------+
-| wave      |~~~~~| probe      |    # the node's name, in the accent color
-| Wave.comp |     | Probe.comp |    # under it its files, as its folder sorts them
-| Wave.cpp  |     | Probe.cpp  |
-+-----------+     +------------+
++--------------+     +--------------+
+| wave         |     | probe        |  # the node's name, in the accent color
+|      values ■~~~~~~■ values       |  # its ports: those it writes at the right,
+| Wave.comp    |     | Probe.comp   |  #   those it reads at the left
+| Wave.cpp     |     | Probe.cpp    |  # then its files, as its folder sorts them
++--------------+     +--------------+
+```
+
+A node inside another shows inside its box, as its folder is inside that node's (RV08), and a node that uses a recipe as it is, as each of the CLI's and the `ide`'s does, shows the recipe's code: a row naming the recipe, its files under it, and the nodes the recipe holds inside it, each with its own. So `view switch ide` shows one box, `ide`, holding a box a part or component it uses, a panel's holding its `bar`, `tabs`, `hit`, `rects` and `glyphs`:
+
+```text
++- ide ---------------------------------------------------------------+
+| +- palette -----+      +- dock -------------------------------+       |
+| |       palette ■~~~~~~| recipe dock                           |       |
+| | recipe palette|      | +- split ---------+  +- rects ------+ |       |
+| | Palette.cpp   |      | ■ area      first ■  ■ palette      | |  …    |
+| | theme.ini     |      | | rects    second ■~~■ rects        | |       |
+| +---------------+      | | recipe split    |  | recipe rects  | |       |
+|                        | | Split.cpp       |  | Rects.frag …  | |       |
 ```
 
 ```ini
@@ -932,8 +946,8 @@ place probe = 0 200     # each box, from the graph's top left at zoom 1
 place wave = -10 -5
 ```
 
-- **The layout follows from the graph** until a box is dragged, since the manifest holds no places (V04): a box a node, with its name and a row a file under it, a column past every node it reads from, and down each column in the manifest's order. A node's C++ and GLSL are its files, not nodes of their own, so the triangle is one box of five rows. A connection is a curve from the middle of its writer's name row on the right to its reader's on the left; one that passes a column runs along a lane of its own below that column's boxes, not behind them. A view the view shown hosts is a box of its own, after the nodes, its name over the file it is hosted from, as `view.vlp`, and a connection that takes its window is a curve from it, so the project shows whole (V01). Boxes past 256 are cut.
-- **A press on a box selects it**, and draws its border wider, in the accent color; `shift` with a press adds a box to the selection or takes it out. A press on a box selected keeps the selection, so a drag moves every box selected, and letting go where it was leaves only that box selected. A press on the ground lets go of the selection; with `shift` held it starts a select box instead, drawn in the accent color from there to the pointer, and letting go adds every box it touches to the selection; it is cut at the graph's edge, so only what shows of a box can be touched. A press on one of a box's files opens it in the editor, as `open <file>` typed would, on letting go, so a box pressed and moved is dragged instead; its name opens none. A view's box opens the manifest it is hosted from. A press in the graph gives it the focus.
+- **The layout follows from the graph** until a box is dragged, since the manifest holds no places (V04): a box a node, with its name, then a row a port, then the recipe it uses, then a row a file, and below them the boxes of the nodes inside it, framed, so the curves between them show. A node's C++ and GLSL are its files, not nodes of their own, so the triangle is one box of five rows. The boxes at the top, and those inside each box, go a column past every box beside them that they read from, a box reading from what lies inside it as from it, and down each column in the manifest's order; a connection that would close a cycle there, as a panel's tabs read back from the content its bar seats, orders no column. A connection is a curve a reader, from the writer's port on the right of its box to the reader's on the left of its own, each port marked where its curves land. A view the view shown hosts is a box of its own, after the nodes, its name over its `window`, where a connection that takes its window starts, and the file it is hosted from, as `view.vlp`, so the project shows whole (V01). Boxes past 256 are cut.
+- **A press on a box selects it**, and draws its border wider, in the accent color; a box a recipe brings is part of its user's box, so a press on it selects that box. `shift` with a press adds a box to the selection or takes it out. A press on a box selected keeps the selection, so a drag moves every box selected, and letting go where it was leaves only that box selected. A press on the ground lets go of the selection; with `shift` held it starts a select box instead, drawn in the accent color from there to the pointer, and letting go adds every box it touches to the selection; it is cut at the graph's edge, so only what shows of a box can be touched. A press on a box's file opens it in the editor, as `open <file>` typed would, on letting go, so a box pressed and moved is dragged instead: a recipe's file from the library, and the recipe's row its `view.vlp`; its name and its ports open none. A view's box opens the manifest it is hosted from. A press in the graph gives it the focus.
 - **The selection is the graph's, through three commands**, so a script or an agent selects as a press does (V06). They act on the view the graph shows, the one lines go to, and refuse any other:
 
   | Command | What it does |
@@ -955,7 +969,7 @@ place wave = -10 -5
 
 - **The graph starts at home**, whenever it shows a view, as `view load` and a switch to another view do: unmoved at zoom 1 while every box shows whole there; otherwise the boxes from their top left, as far in as the graph puts its first box, and as near as lets them all show, never nearer than zoom 1, so text keeps its size where it can. Where even a quarter cannot hold them, they show from their top left at a quarter.
 - **Keys**, while the graph has the focus: `delete` or `backspace` removes what is selected, a line each, `node remove` for a node, which takes the nodes inside it along, and `view close` for a view, and their boxes leave the `.ini`; `escape` lets go of the selection, and with none of the focus, and `h` brings the graph home.
-- **A dragged box stays where it is put.** The first drag places every box where it shows, so moving one moves no other, and a node added later takes its column's place; lanes are left out from then on, as the boxes no longer keep to columns.
+- **A dragged box stays where it is put.** The first drag places every box of the view where it shows, so moving one moves no other, and a node added later takes its column's place. A box inside another is placed from where that box's inner boxes start, and stays inside it, which grows to hold it, and moves with it; the boxes a recipe brings keep their places in their user's box.
 - **A drag on the ground moves the graph, and the wheel zooms it**, about the pointer, which stays over the same place of the graph, from a quarter to four times as near, and the text scales with the boxes; the wheel's turn sideways does nothing yet. GLFW gives no pinch event, so a pinch does nothing. The Perform panel moves alike, through the same shared `PanZoom` (RV09).
 - **A restart shows the boxes where they were left.** Where the boxes are is a look at the graph, not its plumbing, so it stays out of the manifest (V04) and the log (V08), in `.vulpen/graph.ini` beside the view's manifest, which moves with the project (V03). A drag saves as it ends, through the file port (RA04); the build and the live scan skip the folder (section 6), and this repository's `.gitignore` leaves it out. How far the graph moved and how near it is are not kept, since it starts at home. Deleting the file lays the graph out from the graph again; a node the Delete key removes leaves it, and one gone otherwise keeps its place there.
 - **Colors per kind of node**: a line `color <kind> = <role>` draws the border and the name of each box of that kind in a role `theme.ini` names, so the theme keeps every color and the `.ini` picks among them. A node's files make its kind, the first that fits: `draw` (a `.vert` or a `.frag`), `dispatch` (a `.comp`), `code` (C++ or GLSL and no shader), `data` (files and no code) and `group` (no files of its own); a box of a view the view hosts is a `view`. A kind with no line, and a box selected, are drawn as before. The graph writes the lines back with every save, and a kind or a role there is not, or a kind given twice, is a mistake in the file.
@@ -998,10 +1012,12 @@ for (const VP::Child &child : frame.view().children)   // the views its view hos
   tabs.push_back({.label = child.name, .command = "view switch " + child.name});
 ```
 
-Any view it reads by name, `frame.view(name)`, empty for the one vulpen started with, as the changes so far left it, which is what a command addressed to that view reads; the graph part lays out the current view so:
+Any view it reads by name, `frame.view(name)`, empty for the one vulpen started with, as the changes so far left it, which is what a command addressed to that view reads; and `frame.unfolded(name)`, the same view as the next frame runs it, as `frame.view()` reads its own: each node with its folder and files, and each recipe a node of the library uses unfolded, its own node naming the recipe. The graph part lays out the current view so, the nodes of the first being the view's own and the rest those its recipes bring:
 
 ```cpp
-const VP::View *const shown = frame.view(frame.commands().current());
+const std::string shown(frame.commands().current());
+const VP::View *const edited = frame.view(shown);    // what a save writes
+const VP::View *const flat = frame.unfolded(shown);  // what runs, each recipe unfolded
 ```
 
 A command reads a view by the name a line addresses it with, `call.view(name)`, empty for the one vulpen started with, as `:` addresses it, so it acts at once on another view than the one its line addressed. `mode perform` typed in the `ide`'s terminal addresses the project, and reads the `ide`'s own connections so:
