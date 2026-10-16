@@ -1,8 +1,8 @@
 # Recipe map
 
-Every recipe in `src/recipes/`: which recipes it uses, which core ports it uses, and which contracts it reads and writes. Node code has no rows in the [include map](include-map.md), and recipes never include each other (RV00), so that page cannot show how they stack; this page does, for the same reason (A00). The rules are RV05–RV09 in the [requirements](requirements.md) and V11 in the [principles](principles.md). A recipe uses another with a node of its `view.vlp` that names it, as `[node "cli.inspect"] recipe = inspect`. It is kept by hand until every component's and app's `view.vlp` names the recipes it uses; then a gate checks it as `include-map.py` checks the include map.
+Every recipe in `src/runtime/recipes/`, the library's and the apps' beside it: which recipes it uses, which core ports it uses, and which contracts it reads and writes. Node code has no rows in the [include map](include-map.md), and recipes never include each other (RV00), so that page cannot show how they stack; this page does, for the same reason (A00). The rules are RV05–RV09 in the [requirements](requirements.md) and V11 in the [principles](principles.md). A recipe uses another with a node of its `view.vlp` that names it, as `[node "cli.inspect"] recipe = inspect`. It is kept by hand until every component's and app's `view.vlp` names the recipes it uses; then a gate checks it as `include-map.py` checks the include map.
 
-Paths are from `src/recipes/`.
+Paths are from `src/runtime/recipes/library/`.
 
 ## Core ports
 

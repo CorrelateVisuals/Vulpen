@@ -1,6 +1,6 @@
 # Using Vulpen
 
-How each part of Vulpen works today, shown the way you use it. Each section has a session, a manifest or a node's code, with comments that say what happens, where it holds and what comes out. Every session and output here ran on 2026-10-03, on the tree after `9656e19` that makes every node a folder (RV08); the log's time column is left out, and long paths are shortened with `…`. Code marked as a sketch shows a call's shape, not a file in the tree. What is planned but not built yet is in the [IDE port](plans/ide-port.md) and the [CLI examples](plans/cli-examples.md); how nodes, folders and recipes came to be this way is in [nodes and folders](plans/nodes-and-folders.md).
+How each part of Vulpen works today, shown the way you use it. Each section has a session, a manifest or a node's code, with comments that say what happens, where it holds and what comes out. Every session and output here ran on 2026-10-03, on the tree after `9656e19` that makes every node a folder (RV08), with paths as the [folder move](plans/terminal-app.md#folders) of 2026-10-16 left them; the log's time column is left out, and long paths are shortened with `…`. Code marked as a sketch shows a call's shape, not a file in the tree. What is planned but not built yet is in the [IDE port](plans/ide-port.md) and the [CLI examples](plans/cli-examples.md); how nodes, folders and recipes came to be this way is in [nodes and folders](plans/nodes-and-folders.md).
 
 1. [Words](#1-words)
 2. [Running a view](#2-running-a-view)
@@ -23,35 +23,36 @@ How each part of Vulpen works today, shown the way you use it. Each section has 
 
 | Word | What it is | Where |
 | --- | --- | --- |
-| view | a project: a folder with a `view.vlp`, a folder for each node, and the views it hosts. It loads, runs and moves as a whole (V03) | `src/examples/<name>/` |
+| view | a project: a folder with a `view.vlp`, a folder for each node, and the views it hosts. It loads, runs and moves as a whole (V03) | `src/runtime/examples/<name>/` |
 | manifest | a view's `view.vlp`: its nodes and their files, its connections, and the views it hosts (V00) | `<view>/view.vlp` |
 | node | one `[node]` of a manifest and the folder its name names: a C++ class, shaders, or both, and the nodes inside it (RV08) | `<view>/<node>/` |
 | connection | one buffer: one node's port writes it, other nodes' ports read it | the manifest |
-| recipe | a node of the library with the nodes inside it, which a drop copies into a view | `src/recipes/<kind>/<name>/` |
-| library | the recipes views copy from: parts hold code, and `parts/shared/` the code parts share; components and apps only use other recipes (RV06, RV09) | `src/recipes/{parts,components,apps}/` |
+| recipe | a node of the library with the nodes inside it, which a drop copies into a view | `src/runtime/recipes/library/<kind>/<name>/` |
+| library | the recipes views copy from: parts hold code, and `parts/shared/` the code parts share; components only use other recipes (RV06, RV09) | `src/runtime/recipes/library/{parts,components}/` |
+| app | a view beside the library that uses its recipes as they are: the `cli`, and the `ide` (section 12) | `src/runtime/recipes/{cli,ide}/` |
 | child view | a view another view's manifest names, which runs on its own schedule; commands reach it by name | `[view "<name>"]` |
 | command | a line of text that does one thing; every action is one (V06) | the command port |
 | primitive | a command that edits or saves a view; the log keeps exactly these (V08) | the log |
 
 ## 2. Running a view
 
-`run.sh` (or `run.ps1` on Windows) builds the debug preset in parallel and runs `out/build/debug/vulpen` with your arguments; `--release` takes the release preset.
+`run.sh` (or `run.ps1` on Windows) builds the debug preset in parallel and runs `out/build/debug/vulpen` with your arguments; `--release` takes the release preset. `--cli` and `--ide` are the scripts' own and stand for an app's `view.vlp` (section 12), and with no view named the scripts run the app the line `default=--ide` at their top names.
 
 ```bash
-./run.sh src/examples/wave/view.vlp   # the view to run: one view.vlp
-         --log info                   # how much it says: error, warn (the default), info, debug
-         --frames 61                  # stop after 61 frames; 0, the default, runs until quit
-         --fps 0                      # unpaced; the default is 60 frames a second
-#        --first-frame N              # start counting frames at N, so a test reaches years in a moment
-#        --source script.txt          # run a file of commands before the first frame
-#        --size 1280x720              # with no window: the size of images draws render into
+./run.sh src/runtime/examples/wave/view.vlp   # the view to run: one view.vlp
+         --log info                           # how much it says: error, warn (the default), info, debug
+         --frames 61                          # stop after 61 frames; 0, the default, runs until quit
+         --fps 0                              # unpaced; the default is 60 frames a second
+#        --first-frame N                      # start counting frames at N, so a test reaches years in a moment
+#        --source script.txt                  # run a file of commands before the first frame
+#        --size 1280x720                      # with no window: the size of images draws render into
 ```
 
 What it prints:
 
 ```text
 {run} vulpen 9656e19                                                # the commit it was built from (RC07)
-{run} view wave from …/src/examples/wave/view.vlp: no node draws into the window, so it runs headless   # V07
+{run} view wave from …/src/runtime/examples/wave/view.vlp: no node draws into the window, so it runs headless   # V07
 {gpu} Vulkan validation is on
 {gpu} runs on NVIDIA GeForce RTX 5070 Laptop GPU: discrete, Vulkan 1.4.312
 {nod} wave: pipeline from Wave.comp                                # each node's pipeline and operator
@@ -60,12 +61,12 @@ What it prints:
 {nod} probe: new operator Probe
 {mem} wave: values of 4096 bytes on the GPU                        # the connection's buffer
 {mem} probe: probe.samples of 32 bytes read back by the CPU
-{mod} live code: a save under …/src/examples/wave swaps in         # debug builds only (section 6)
+{mod} live code: a save under …/src/runtime/examples/wave swaps in  # debug builds only (section 6)
 {out} probe: frame     60: +0.8282516 +0.88405794 +0.9278144 …     # what a node's C++ logs
 {run} ran 61 frames in 0.01 s
 ```
 
-- **Headless or a window.** A view runs headless unless a node draws into the window; `./run.sh src/examples/triangle/view.vlp` says `a node draws into the window, so it opens one`. A draw whose output a connection takes on renders into an image instead (section 5), so it needs no window: a run with none renders it at the size `--size` gives, and without one records nothing. The window also opens and closes while running, as draws into it come and go (section 8). It is titled after the view, as `triangle - vulpen`, and the desktop knows it as `vulpen`, Wayland's app id and X11's class, which a dock finds it by; its close button sends `quit` (section 7).
+- **Headless or a window.** A view runs headless unless a node draws into the window; `./run.sh src/runtime/examples/triangle/view.vlp` says `a node draws into the window, so it opens one`. A draw whose output a connection takes on renders into an image instead (section 5), so it needs no window: a run with none renders it at the size `--size` gives, and without one records nothing. The window also opens and closes while running, as draws into it come and go (section 8). It is titled after the view, as `triangle - vulpen`, and the desktop knows it as `vulpen`, Wayland's app id and X11's class, which a dock finds it by; its close button sends `quit` (section 7).
 - **Quiet by default.** At `warn` a run that goes as meant prints only the frame around the log; `{!!!}` marks an error and `{ ! }` a warning (C09).
 - **Exit code.** 0, or 1 when a node is in error when the run ends, or the view cannot load.
 - **Where:** `src/runtime/Runtime.cpp` parses the arguments and runs the loop; `src/baseclasses/Log.h` lists what each level and tag shows.
@@ -118,7 +119,7 @@ to   = probe.values         # the node.port that reads it; repeat `to` for more 
 A node is the folder its name names (RV08), and its files are what that folder holds. The triangle, whose C++ moves the corners and whose shaders draw them:
 
 ```text
-src/examples/triangle/
+src/runtime/examples/triangle/
   view.vlp                # [node "triangle"]: operator = Triangle, its four files, vertex_count = 3
   triangle/               # the node's folder
     Triangle.cpp          # the operator: C++ that runs every frame
@@ -323,8 +324,8 @@ to   = image.picture                         # a Texture
 In a debug build, saving any file of a running view swaps the change in, and the view keeps running.
 
 ```text
-$ ./run.sh src/examples/wave/view.vlp --log info
-{mod} live code: a save under …/src/examples/wave swaps in
+$ ./run.sh src/runtime/examples/wave/view.vlp --log info
+{mod} live code: a save under …/src/runtime/examples/wave swaps in
 {out} probe: frame    120: +0.7930336 +0.7200354 +0.637223 …
 # Save wave/Wave.comp in any editor:
 {nod} wave: pipeline from Wave.comp                       # a new pipeline; the buffers stay
@@ -401,14 +402,14 @@ view
 - **A usage is its completion.** Its placeholders say what can come there, so `complete` knows. The last may end in `...`, one argument or more, and stand in brackets, which a line may leave out: `node add ui` adds a group. Such a placeholder completes each word after it too, as `<node>` does for every node `[<node>...]` takes.
 
   ```text
-  > complete node new d       # the word after `node new` that starts with d
+  > complete node new d                       # the word after `node new` that starts with d
   dispatch
   draw
-  > complete param set s      # a <node> comes next: the view's nodes starting with s
+  > complete param set s                      # a <node> comes next: the view's nodes starting with s
   spinner
-  > complete view load src/ex # a <file>: what the folder holds, from where vulpen started
-  src/examples/
-  src/external-libraries/
+  > complete view load src/runtime/examples/  # a <file>: what the folder holds, from where vulpen started
+  src/runtime/examples/triangle/
+  src/runtime/examples/wave/
   ```
 
 - **A `<file>` completes from its folder**, which the path begun names, counted as a typed line's path is (section 12). A name with a blank is left out, since it would split into two words, and a hidden one shows once the name begun starts with `.`, as in a shell. A path that names no folder that can be listed, as a file followed by `/`, is refused, naming why.
@@ -471,7 +472,7 @@ The first eight lines applied, and the saved view now holds `param = every=30`, 
 A script is a file of commands, one a line. The session's log is the primitives it ran, so replaying the log rebuilds the graph and the files saved from it (V08).
 
 ```bash
-./run.sh src/examples/wave/view.vlp --source edits.txt   # before the first frame
+./run.sh src/runtime/examples/wave/view.vlp --source edits.txt   # before the first frame
 ```
 
 The script of section 8 saved this log beside itself, since a relative path in a script names a file beside the script:
@@ -498,7 +499,7 @@ view save
 
   ```text
   # notes.log, saved at the repo's root while a project was hosted
-  view add zz-demo src/examples/zz-demo/view.vlp
+  view add zz-demo src/runtime/examples/zz-demo/view.vlp
   zz-demo: view save
   zz-demo: node add spinner operator=Spinner vertex_count=3
   ```
@@ -525,9 +526,9 @@ view save
 A recipe is a node of the library, with the nodes inside it. A drop copies it into the view as a node under the name you give, and the copy is yours: every edit works, as if you had typed it (V02).
 
 ```text
-src/examples/zz-demo> recipe drop inspect look
-copied inspect into …/src/examples/zz-demo/look, as node look of recipe inspect@abb3239c
-src/examples/zz-demo> info look
+src/runtime/examples/zz-demo> recipe drop inspect look
+copied inspect into …/src/runtime/examples/zz-demo/look, as node look of recipe inspect@abb3239c
+src/runtime/examples/zz-demo> info look
 recipe = inspect@abb3239c          # where it came from, and a fingerprint of what was copied
 operator = Inspect
 file = Inspect.cpp                 # copied into look/, which the live build compiles
@@ -559,43 +560,43 @@ recipe sync d
 - **Refused, too:** a sync the library's version would take a connection from: one from the rest of the view to a node the library let go.
 - **The fingerprint** hashes what was copied, as FNV-1a over 64 bits folded to 32, so it is the same on every machine (C01).
 
-In the library, a recipe uses others as they are, which keeps one copy of each part's code (V11). The CLI app is three parts used that way:
+In the library, and in the apps beside it, a recipe uses others as they are, which keeps one copy of each part's code (V11). The CLI app is three parts used that way:
 
 ```ini
-# src/recipes/apps/cli/view.vlp
-[node "cli"]                 # the recipe's own node: apps/cli/
+# src/runtime/recipes/cli/view.vlp
+[node "cli"]                 # the app's own node: cli/
 
 [node "cli.command-line"]
 recipe = command-line        # no fingerprint: the library's own part, unfolded at load
 ```
 
 - **A recipe is one node named like its folder**, and the nodes inside it; a node that uses it becomes that node, under its own name, and takes `param` and `log` only. Uses never form a cycle (RV06).
-- **Only the library uses recipes so.** A view holds its own copies (V03), so a view's node that names a recipe without a fingerprint is refused, naming the drop that copies it.
-- **Where:** `src/recipes/parts/library/Library.cpp` (drop and sync); `src/runtime/Manifest.cpp` (`Manifest::flatten` unfolds a recipe the library uses).
+- **Only the library and its apps use recipes so.** A view holds its own copies (V03), so a view's node that names a recipe without a fingerprint is refused, naming the drop that copies it.
+- **Where:** `src/runtime/recipes/library/parts/library/Library.cpp` (drop and sync); `src/runtime/Manifest.cpp` (`Manifest::flatten` unfolds a recipe the library uses).
 
 ## 12. The CLI
 
 The `cli` app is three library parts used together: `command-line` (a line in, an answer out), `inspect` (`ls`, `info`) and `library` (recipes, nodes and views). It runs headless on the terminal.
 
 ```text
-$ ./run.sh src/recipes/apps/cli/view.vlp
-> view new src/examples/zz-demo          # hosts an empty project and saves its view.vlp
-src/examples/zz-demo> node new draw spinner
-wrote Spinner.cpp, Spinner.glsl, Spinner.vert, Spinner.frag in …/src/examples/zz-demo/spinner, and added node spinner
-src/examples/zz-demo> ls                 # this line went to zz-demo: the prompt says where you are
+$ ./run.sh --cli
+> view new src/runtime/examples/zz-demo  # hosts an empty project and saves its view.vlp
+src/runtime/examples/zz-demo> node new draw spinner
+wrote Spinner.cpp, Spinner.glsl, Spinner.vert, Spinner.frag in …/src/runtime/examples/zz-demo/spinner, and added node spinner
+src/runtime/examples/zz-demo> ls         # this line went to zz-demo: the prompt says where you are
 spinner/                                 # a node is a folder, its files under it
   Spinner.cpp
   Spinner.frag
   Spinner.glsl
   Spinner.vert
-src/examples/zz-demo> : ls               # `:` sends a line to the CLI itself
-zz-demo/         view, from …/src/examples/zz-demo/view.vlp
+src/runtime/examples/zz-demo> : ls       # `:` sends a line to the CLI itself
+zz-demo/         view, from …/src/runtime/examples/zz-demo/view.vlp
 cli/
   command-line/  recipe command-line     # inside cli, using a library recipe as it is
   inspect/       recipe inspect
   library/       recipe library
-src/examples/zz-demo> view save
-src/examples/zz-demo> view close zz-demo
+src/runtime/examples/zz-demo> view save
+src/runtime/examples/zz-demo> view close zz-demo
 > ls                                     # no project now: lines go to the CLI itself
 cli/
 …
@@ -612,22 +613,22 @@ cli/
 **Decision 2 of the 2026-10-03 handoff: where a path you type points.** A relative path in a typed line counts from where you started vulpen, which is also what the prompt's path counts from:
 
 ```text
-$ cd ~/Documents/GitHub/Vulpen && ./run.sh src/recipes/apps/cli/view.vlp
-> view new src/examples/zz-demo
-src/examples/zz-demo> log save notes.log
+$ cd ~/Documents/GitHub/Vulpen && ./run.sh --cli
+> view new src/runtime/examples/zz-demo
+src/runtime/examples/zz-demo> log save notes.log
 # writes ~/Documents/GitHub/Vulpen/notes.log, beside where you started,
-# not ~/Documents/GitHub/Vulpen/src/examples/zz-demo/notes.log
-src/examples/zz-demo> view new src/examples/other
-# hosts ~/Documents/GitHub/Vulpen/src/examples/other: the same text works from any project
+# not ~/Documents/GitHub/Vulpen/src/runtime/examples/zz-demo/notes.log
+src/runtime/examples/zz-demo> view new src/runtime/examples/other
+# hosts ~/Documents/GitHub/Vulpen/src/runtime/examples/other: the same text works from any project
 ```
 
 The other way is a shell's `cd`: paths count from the current project.
 
 ```text
-# If paths counted from the project, as after `cd src/examples/zz-demo`:
-src/examples/zz-demo> log save notes.log           # would write src/examples/zz-demo/notes.log
-src/examples/zz-demo> view new ../other            # would be needed for src/examples/other;
-src/examples/zz-demo> view new src/examples/other  # this would mean src/examples/zz-demo/src/examples/other
+# If paths counted from the project, as after `cd src/runtime/examples/zz-demo`:
+src/runtime/examples/zz-demo> log save notes.log                   # would write src/runtime/examples/zz-demo/notes.log
+src/runtime/examples/zz-demo> view new ../other                    # would be needed for src/runtime/examples/other;
+src/runtime/examples/zz-demo> view new src/runtime/examples/other  # this would mean src/runtime/examples/zz-demo/src/runtime/examples/other
 ```
 
 The first keeps every typed path meaning one thing wherever you are, and matches the prompt; the second keeps a project's files next to it. Lines from a script always count from the script's folder either way.
@@ -647,24 +648,24 @@ The first keeps every typed path meaning one thing wherever you are, and matches
 +----------------------------------------------------+
 ```
 
-`control` with `=` or `+` makes all of it larger, `control` with `-` smaller, and `control+0` puts it back (section 14). A session, from the terminal: `view load src/examples/triangle` hosts the triangle, the graph shows its node, and the Perform panel shows its window under a tab of its own; a press on its box opens `triangle/Triangle.cpp` in the editor, and after an edit `control+s` writes it, which the live build swaps in, so the Perform panel shows the change a moment later (section 6). `f1` gives the triangle the whole window, and `f1` or `escape` gives it back. `escape` in edit mode lets go of what is selected, then of the focus, and then sends `quit`, which, as the window's close button, ends the run unless a file has changes (section 7).
+`control` with `=` or `+` makes all of it larger, `control` with `-` smaller, and `control+0` puts it back (section 14). A session, from the terminal: `view load src/runtime/examples/triangle` hosts the triangle, the graph shows its node, and the Perform panel shows its window under a tab of its own; a press on its box opens `triangle/Triangle.cpp` in the editor, and after an edit `control+s` writes it, which the live build swaps in, so the Perform panel shows the change a moment later (section 6). `f1` gives the triangle the whole window, and `f1` or `escape` gives it back. `escape` in edit mode lets go of what is selected, then of the focus, and then sends `quit`, which, as the window's close button, ends the run unless a file has changes (section 7).
 
 **The terminal in a window.** The terminal is the same `command-line` part with `param = on=window`: it reads the keyboard instead of standard input, and shows above the line typed what lines answer and the log, the lines typed in the accent color, what they answer and what nodes write (`{out}`) in the text color, the rest of the log muted, errors in red and warnings in amber, so a refused line names its cause there, a frame later. With views running side by side, the log keeps to the view the terminal's lines go to: a line about a node of another view stays out as it comes, on the console as in these rows, so one project's output never drowns another's. The lines about that view, the views it hosts and the `ide`'s own parts show, and so do every view's errors and warnings, which never hide (A02). The terminal vulpen was started from takes lines too, as the CLI's does: they go where the window's lines go, and what they answer prints there, while the log shows in both. The end of its input, as a launcher that gives none or a script piped in has, ends no run; the window does.
 
 ```text
-$ ./run.sh src/recipes/apps/ide/view.vlp
+$ ./run.sh --ide      # the default, so ./run.sh alone does the same
 ```
 
 - **Keys:** typing inserts at the caret, which Left, Right, Home and End move; Backspace and Delete erase, Enter sends the line, and Up and Down step through the lines sent. Escape closes the completions, with none open lets go of the selection, and with none of the focus.
 - **Selecting:** a drag over the rows above the line selects their text, a double click a word, and a third press the row, and `control+c` copies it; `control+v` types what the clipboard holds at the caret, as a shell takes a paste: each line break sends the line typed so far. A selection stays on its text as new rows push it up, and goes with its rows once the scrollback drops them, or `clear` does.
-- **Tab** completes as a shell does: the word at the caret takes what every candidate shares, a word only one candidate fits is finished with a blank, and several are printed among the rows, as a shell lists them: the line as typed, then the candidates in columns, down then across, as many columns as the rows hold. A placeholder such as `<name>` is listed but never typed in. Tab sends `complete`, which takes `""` for a word not begun. A folder is finished with no blank, so Tab again lists what it holds, each name from after the path's last `/`: `view load src/exa` and Tab gives `src/examples/`, and Tab again lists `triangle/` and `wave/`. What Tab lists is text, as any row is: a drag selects it, and a press picks nothing.
+- **Tab** completes as a shell does: the word at the caret takes what every candidate shares, a word only one candidate fits is finished with a blank, and several are printed among the rows, as a shell lists them: the line as typed, then the candidates in columns, down then across, as many columns as the rows hold. A placeholder such as `<name>` is listed but never typed in. Tab sends `complete`, which takes `""` for a word not begun. A folder is finished with no blank, so Tab again lists what it holds, each name from after the path's last `/`: `view load src/runtime/exa` and Tab gives `src/runtime/examples/`, and Tab again lists `triangle/` and `wave/`. What Tab lists is text, as any row is: a drag selects it, and a press picks nothing.
 - **The seam** above the terminal lights up under the pointer, and a drag moves it, the terminal following. Letting go sends one `param set ide.dock.split ratio 0.416`, so the log keeps one line a drag, and a replay or a save puts the seam back.
 - **The tab** over the terminal names it and the view its lines go to, the one presented (section 14): `terminal`, and `terminal - demo` after `view new demo`. It is the command-line's, from its `title` param, and has no command, so a press on it sends nothing, and no close mark, as the graph's has none: a view closes from its Perform tab, so no two marks close the same view.
 - **Scrolling:** the wheel scrolls the rows above the line, 3 rows a step, keeping a step's fraction, so a touchpad's small turns add up; a drag on the bar at the right edge does too, and a press beside its thumb brings the thumb there first. While the newest rows show, new ones scroll into view; scrolled back, the rows shown stay, until a line sent shows the newest again.
 - **Across:** a row wider than the terminal is cut at its right edge, and the wheel turned sideways, as a touchpad turns it, or with `shift` held, scrolls the rows across, 3 columns a step, as does a drag on the bar along their bottom edge, just above the rule, which shows while a column is out of view. The line typed does not scroll with them: it scrolls on its own, to keep the caret in view.
 - **`clear`** empties the scrollback, which keeps the last 1,000 rows.
 
-- **Where:** `src/recipes/apps/cli/view.vlp`, `src/recipes/apps/ide/view.vlp`, `src/recipes/components/terminal/view.vlp`, `src/recipes/components/dock/view.vlp`, `src/recipes/components/panel/view.vlp`; `src/recipes/parts/command-line/CommandLine.cpp`.
+- **Where:** `src/runtime/recipes/cli/view.vlp`, `src/runtime/recipes/ide/view.vlp`, `src/runtime/recipes/library/components/terminal/view.vlp`, `src/runtime/recipes/library/components/dock/view.vlp`, `src/runtime/recipes/library/components/panel/view.vlp`; `src/runtime/recipes/library/parts/command-line/CommandLine.cpp`.
 
 ## 13. Child views
 
@@ -720,25 +721,24 @@ to   = show.picture          # repeat to for more readers
 
 The `library` part works on recipe and view folders through the file port. It runs in the CLI.
 
-**`recipe list`** lists the library's recipes as `kind/name`:
+**`recipe list`** lists the library's recipes as `kind/name`; the apps are beside the library, not in it, so it lists neither:
 
 ```text
 > recipe list
-apps/cli
-apps/ide
 components/dock
+components/find-bar
 …
 parts/command-line
 parts/inspect
 …
 ```
 
-**`node new draw <name>` and `node new dispatch <name>`** write a node's first files into its folder in the current project, from the template in `src/recipes/parts/library/template/`, and add the node: a draw of `vertex_count = 3`, or a dispatch of `invocations = 64`. The class takes the name in CamelCase, and a name may hold the nodes it is inside: `node new draw ui.spinner` writes `ui/spinner/`. The files build at once and do nothing yet; every line the engine offers waits in them, commented. The template's own files end in `.in`, so the library never builds them.
+**`node new draw <name>` and `node new dispatch <name>`** write a node's first files into its folder in the current project, from the template in `src/runtime/recipes/library/parts/library/template/`, and add the node: a draw of `vertex_count = 3`, or a dispatch of `invocations = 64`. The class takes the name in CamelCase, and a name may hold the nodes it is inside: `node new draw ui.spinner` writes `ui/spinner/`. The files build at once and do nothing yet; every line the engine offers waits in them, commented. The template's own files end in `.in`, so the library never builds them.
 
 ```text
-src/examples/zz-demo> node new draw spinner
+src/runtime/examples/zz-demo> node new draw spinner
 wrote Spinner.cpp, Spinner.glsl, Spinner.vert, Spinner.frag in …/zz-demo/spinner, and added node spinner
-src/examples/zz-demo> node new dispatch fill
+src/runtime/examples/zz-demo> node new dispatch fill
 wrote Fill.cpp, Fill.comp in …/zz-demo/fill, and added node fill
 ```
 
@@ -762,11 +762,11 @@ node new dispatch <name>      adds a dispatch node, and writes its first files �
 
 The engine's placeholder kinds are a closed list (`name`, `node`, `port`, `file`, …) that completion reads; a `kind` placeholder would add a library-only word to the engine (V05). As two commands, nothing in the engine changes.
 
-**`recipe drop <recipe> <name>`** and **`recipe sync <node>`** copy a library recipe into the project and bring the copy up to date (section 11). The library's recipes are its own, so neither works on a view of the library.
+**`recipe drop <recipe> <name>`** and **`recipe sync <node>`** copy a library recipe into the project and bring the copy up to date (section 11). The library's recipes are its own, so neither works on a view of the library, or on an app beside it.
 
 **`view new <folder>` and `view load <folder>`** host a project in a folder, named for the folder, and make it the current one. `view new` also saves its empty `view.vlp`, and refuses a folder that holds one; `view load` refuses a folder that holds none. In the log, both are a `view add` of the CLI's view, and `view new` a `view save` too.
 
-- **Where:** `src/recipes/parts/library/Library.cpp`.
+- **Where:** `src/runtime/recipes/library/parts/library/Library.cpp`.
 
 **Text on screen.** Four parts draw what other parts write as Rects and Labels, and `list` lays out Items as they do:
 
@@ -796,7 +796,7 @@ frame.write(_rects, 1)[0] = {.offset = {24, 24}, .extent = {592, 88},
 - **Its `scale`** sizes its cells, the font's times it, as the graph's zoom does; 0, as a Label written without one has, draws at the font's size. `glyphs` samples the atlas smoothly, which at the font's size changes no pixel, since each cell lies on whole pixels.
 - **A theme** gives each role red, green and blue from 0 to 1, linear, with alpha after when it is not opaque. A key that is no role, a role left out or a color that is no such numbers stops the palette, naming the line (`theme.ini:5: pannel is no role; the roles are background, panel, border, text, accent, error, warning, muted, keyword, type, string, number, comment, directive`). `muted` is for text that matters less, as the terminal's log lines, and the last six for code, as the editor shows it.
 - **The font** is the file its `face` param names, printable ASCII baked a cell a glyph, the range `contracts/Font.h` names, so the parts that take typed text keep to it; the library's is Roboto Mono. Another face is a file put in the font node's folder and named, as `param set font face RobotoMono-Bold.ttf` does, and a font node bakes again after the edit. A face named with a folder is refused, so the font moves with its view (V03), and so is a font that is not monospace.
-- **Zoom.** `zoom in` draws the text a step larger, a tenth more, up to 4 times the `height` param; `zoom out` a step smaller, down to half of it; and `zoom reset` at the `height` again. Every part lays text out in cells, so all of them grow with the font, and in the `ide` that is the whole window but its seams. The zoom is a look at the text, not the view, so it stays out of the manifest (V04) and the log (V08), in `.vulpen/font.ini` in the font node's folder, which the font reads again once it changes and a restart reads; the `ide`'s font is the library's part, so its zoom is kept in `src/recipes/parts/font/.vulpen/`. A mistake in the file is named, the font draws at its `height`, and a zoom is refused rather than writing over it (`.vulpen/font.ini:1: zoom = 9 is no zoom = z from 0.5 to 4`).
+- **Zoom.** `zoom in` draws the text a step larger, a tenth more, up to 4 times the `height` param; `zoom out` a step smaller, down to half of it; and `zoom reset` at the `height` again. Every part lays text out in cells, so all of them grow with the font, and in the `ide` that is the whole window but its seams. The zoom is a look at the text, not the view, so it stays out of the manifest (V04) and the log (V08), in `.vulpen/font.ini` in the font node's folder, which the font reads again once it changes and a restart reads; the `ide`'s font is the library's part, so its zoom is kept in `src/runtime/recipes/library/parts/font/.vulpen/`. A mistake in the file is named, the font draws at its `height`, and a zoom is refused rather than writing over it (`.vulpen/font.ini:1: zoom = 9 is no zoom = z from 0.5 to 4`).
 - **One font a run.** Its zoom commands have one owner (B5), so a second font node is left out, naming them (``command `zoom in` registers twice``), as a second text part is; two faces or heights at once wait until something needs them (C00).
 - **Draws stack in graph order**, so `rects` listed before `glyphs` puts text over its panel. The fail-loud test's `text` case wires all four to the fixture's `sign`.
 
@@ -840,7 +840,7 @@ f1              = mode toggle
 - **Escape** is no chord: the part in focus takes it, letting go of its selection, or of its completions, and with none of the focus. With no node in focus, modes takes it: in perform mode it sends `mode edit`, and in edit mode `quit`. So `escape` steps back one thing at a time: perform mode, the selection, the focus, the run.
 - **A part that takes keys** reads `typed`, not the input port, and acts only when the name in it is its own; it still reads the pointer and its buttons from the input port. Given no room it takes none, as it draws none, so a terminal whose panel is closed runs no line typed unseen; the keys go nowhere until a press gives a part that shows the focus.
 - **In the order they came**: a focus line takes effect as the keys part next hands keys on, so every part reading them in one frame finds the same node in focus. A key after a press, a chord or `escape` waits for the next frame, since each may move the focus, and so does a chord after keys, so its line runs once the part in focus took them. A script that types, presses and types again in one frame puts each key where a person's would go.
-- **Where:** `src/recipes/parts/keys/`.
+- **Where:** `src/runtime/recipes/library/parts/keys/`.
 
 **The editor.** The `text` part holds the files open and shows one. The `text-area` component is it with `rects` and `glyphs`, and the `ide` seats one in a panel in the dock's top row, a tab a file open:
 
@@ -858,7 +858,7 @@ f1              = mode toggle
 - **Files** are read once, as they open, so what was typed is never read over; a change on disk to a file open does not show. `write` saves through the file port (RA04), and a file not open is never written.
 - **The font draws ASCII**, so a character past it shows as a blank cell a byte, `—` as three. The caret steps over it whole and no edit splits it, so the rest of a file stays as it was.
 - **One editor a run**: its commands have one owner (B5), so a second text part is left out, as a second command-line is.
-- **Where:** `src/recipes/parts/text/`.
+- **Where:** `src/runtime/recipes/library/parts/text/`.
 
 **Modes and the Perform panel.** The `modes` part chooses what reaches the window, and shows a view the `ide` hosts without it drawing over the `ide` (section 13):
 
@@ -870,8 +870,8 @@ f1              = mode toggle
 | `mode toggle` | switches to the other mode; `f1` sends it, so one key goes there and back, while a script names the mode it wants |
 
 ```text
-> view load src/examples/triangle           # the triangle, in the Perform panel, letterboxed
-src/examples/triangle> mode perform         # the triangle, over the whole window
+> view load src/runtime/examples/triangle    # the triangle, in the Perform panel, letterboxed
+src/runtime/examples/triangle> mode perform  # the triangle, over the whole window
 ```
 
 - **The Perform panel** sits beside the editor in the dock's top row. Its tabs name the views the `ide` hosts, the one presented marked; a press on one presents it, and a press on its close mark sends `view close` for it, so nothing is presented in its place. Its image shows the view's window letterboxed, at the window's size, so a view draws as on its own; in perform mode it matches the view's own window pixel for pixel. A drag moves the window in the panel and the wheel zooms it about the pointer, as in the graph, cut at the panel's edge; the image part does so only with `param = moves=yes`, which the `ide` gives the panel and not the one that fills the window in perform mode. A press in the panel gives it the focus, and `h` then brings the window home, letterboxed as at first; `escape` lets go of the focus. Neither is kept: a restart, and another view presented, show the window letterboxed again.
@@ -880,12 +880,12 @@ src/examples/triangle> mode perform         # the triangle, over the whole windo
 - **Perform mode needs something presented.** `mode perform`, and `f1` with it, is refused while nothing is (`nothing is presented to perform; present <name> shows a view this view hosts`), rather than giving the window to nothing; a view hosted that the modes part has not presented yet is presented first, as the frame would, so `f1` just after `view load` finds it. Perform mode gives way to edit mode once the view presented goes, as `view close` takes it, and once the log shows an error, as a refused line's or that of `quit` refused while a file has changes, so the terminal shows why: perform mode hides the log.
 - **The mode is a param** of the modes node, `param set ide.modes mode perform`, which `mode` sends, so a save keeps it and a replay restores it; each switch rebuilds the `ide`. Perform mode leaves the panels no room, so it takes the focus from the part that had it, and edit mode gives it back.
 - **present** makes one connection, `present`, from `<view>:` to the images the modes node's `to` param names, ports joined by commas. It checks the view is hosted and connects at once, from the `ide`'s connections as the lines so far left them, whichever view the line addressed, so the next frame shows it. `view close` of the view presented lets go of `present` first, so the Perform panel shows nothing, and nothing else is presented in its place.
-- **Where:** `src/recipes/parts/modes/`, `src/recipes/parts/image/`.
+- **Where:** `src/runtime/recipes/library/parts/modes/`, `src/runtime/recipes/library/parts/image/`.
 
 **The graph.** The `graph` part lays out the graph of the view presented, else of the view the `ide` hosted most recently, the one the terminal's lines go to, and its tab names it, as `graph - wave`; with no view hosted it shows nothing. The `graph-editor` component is it with `curves`, `rects` and `glyphs`, and the `ide` seats one in a panel over the Perform panel.
 
 ```text
-> view load src/examples/wave       # the graph panel shows wave and probe, a curve between
+> view load src/runtime/examples/wave       # the graph panel shows wave and probe, a curve between
 
 +-----------+     +------------+
 | wave      |~~~~~| probe      |    # the node's name, in the accent color
@@ -895,7 +895,7 @@ src/examples/triangle> mode perform         # the triangle, over the whole windo
 ```
 
 ```ini
-# src/examples/wave/.vulpen/graph.ini, as the graph writes it once a box is dragged
+# src/runtime/examples/wave/.vulpen/graph.ini, as the graph writes it once a box is dragged
 color dispatch = number # written by a person: a kind of node's boxes in a theme role
 place probe = 0 200     # each box, from the graph's top left at zoom 1
 place wave = -10 -5
@@ -912,13 +912,13 @@ place wave = -10 -5
   | `delete` | removes the nodes selected and every node inside them, deepest first, and closes the views selected with `view close`, as is the same for a node deleted; a connection one of them writes is let go, and one they read is made again with the readers that stay. One command, so the log keeps one group (V08). Their folders stay, as with `node remove`, and their boxes leave the `.ini` |
 
   ```text
-  src/examples/wave> select probe
-  src/examples/wave> info         # with no node: each selected, under its header
+  src/runtime/examples/wave> select probe
+  src/runtime/examples/wave> info    # with no node: each selected, under its header
   [node "probe"]
   operator = Probe
   …
   reads values from wave.values
-  src/examples/wave> delete       # probe goes, and values with it, which only probe read
+  src/runtime/examples/wave> delete  # probe goes, and values with it, which only probe read
   ```
 
   A view selected shows under its own header, `[view "inner"]`, with the file it is hosted from whole, `file = …/inner/view.vlp`, and each connection that takes its window, `writes its window as stage`.
@@ -937,7 +937,7 @@ place wave = -10 -5
 
 - **Only what lies in its area is drawn**: a box cut at its edge, a row of text cut at its edge too, so it shows until it goes out of view, and a curve cut at its edge, which the graph hands `curves` as its ground, so a curve to a box dragged out of view runs to the edge. Its ground is a line a pixel wide every 24 pixels at zoom 1 and a stronger one every tenth, which the graph's own shaders draw under the rest, over the whole area at any zoom; zoomed out, the lesser lines fade, so it never crowds.
 - **Given no room it draws and takes nothing**, as every part does.
-- **Where:** `src/recipes/parts/graph/`, `src/recipes/parts/curves/`, `src/recipes/components/graph-editor/`.
+- **Where:** `src/runtime/recipes/library/parts/graph/`, `src/runtime/recipes/library/parts/curves/`, `src/runtime/recipes/library/components/graph-editor/`.
 
 ## 15. What a node's C++ can reach
 
@@ -1119,7 +1119,7 @@ void bind(VP::Bind &node) override {
 
 - **The executable exports its symbols**, so a dev build's module calls the one engine there; a release build links the modules in. On Windows nothing links a dev module against the executable yet, so there a module that calls the engine builds only in a release build.
 - **What a node's C++ cannot reach:** another node's code (RV00), since nodes share headers in `contracts/` and never a `.cpp`, and the OS, whose calls live in the platform files (RA01).
-- **Where:** `src/runtime/Operator.h`; the template in `src/recipes/parts/library/template/`.
+- **Where:** `src/runtime/Operator.h`; the template in `src/runtime/recipes/library/parts/library/template/`.
 
 ## 16. When something is wrong
 

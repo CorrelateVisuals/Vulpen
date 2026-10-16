@@ -8,7 +8,7 @@ A proposal for the lead (A00). The ask, on 2026-10-16: "./run.sh src/recipes/app
 
 Asked whether the cli alone is then fully capable, the lead answered the same day: "we would need tab complete and history in the os terminal", which answers decision 7; and, after first allowing one project at a time, chose that the window show the current view ("revert 1. to your previous suggestion"), which is now part of decision 1. Then the lead added flags to start with, a new folder layout, and `projects/`, "the folder where we work from"; its two questions are answered under [folders](#folders).
 
-**Decided on 2026-10-16**, on the lead's word "record decisions": 1A, "as long as we can keep working with the ide as we do currently with loading one view next to the other, just shifting the logic to cli"; 2A; 3 changed, the ide keeping its editor, which `open` reaches while the ide runs, through a setting of the cli's, not a command of the ide's ("just a param or setting flip … just the source we target"); 4A, named `view switch`; 5C; 6A, 7A, 8A, 9A and 10A. Only the [smaller calls](#smaller-calls) wait on the lead. Nothing here is built yet.
+**Decided on 2026-10-16**, on the lead's word "record decisions": 1A, "as long as we can keep working with the ide as we do currently with loading one view next to the other, just shifting the logic to cli"; 2A; 3 changed, the ide keeping its editor, which `open` reaches while the ide runs, through a setting of the cli's, not a command of the ide's ("just a param or setting flip … just the source we target"); 4A, named `view switch`; 5C; 6A, 7A, 8A, 9A and 10A. Only the [smaller calls](#smaller-calls) wait on the lead. Step 1 of the [order](#order) is built, and nothing after it yet.
 
 ## The idea
 
@@ -257,7 +257,7 @@ Today the graph's `delete` removes the nodes it selects, the nodes inside them a
 
 ### 10. What `./run.sh --project1` runs
 
-**Decided: A** (2026-10-16): the project alone, as the view vulpen starts with, as `./run.sh src/examples/wave/view.vlp` runs a view now: no commands typed, its window, or headless (V07); with `--cli` or `--ide` before it, the tool with the project loaded. Not chosen: B, the ide with the project loaded.
+**Decided: A** (2026-10-16): the project alone, as the view vulpen starts with, as `./run.sh src/runtime/examples/wave/view.vlp` runs a view now: no commands typed, its window, or headless (V07); with `--cli` or `--ide` before it, the tool with the project loaded. Not chosen: B, the ide with the project loaded.
 
 ## Smaller calls
 
@@ -288,6 +288,12 @@ Each step is a commit that runs, checked against the principles and requirements
 | 7 | 5 | `node remove` takes a node whole; the graph's Delete key sends it, and `delete` is gone |
 | 8 | 1 | the engine half of 1A, as a step of its own (A05): a view presents a view beside it, the window's owner, a view draws from the frame after it is hosted, a node reads any view; in the cli alone, `view switch` now switches the window; the ide is still the view vulpen starts with |
 | 9 | 1, 6 | the ide under the cli: it loses `inspect`, `library`, `editor` and `projects`, which are the cli's, and the terminal it read; `./run.sh --ide` starts the cli hosting it, and the graph shows the cli and the ide |
+
+- **Step 1, built** (2026-10-16), as planned: `git mv` moved the folders, so their history follows; `Manifest.cpp` and `nodes.cmake` know an app as `<recipes>/<name>/view.vlp` beside `<recipes>/library/`; and `run.sh` and `run.ps1` take `--cli` and `--ide`, with `default=--ide` at their top. Three calls made while building it wait on the lead:
+  - **All of `src/runtime/recipes/`, the library and the apps beside it, builds as the one view named `library`**, so the apps use the library's recipes as they are (V11). Were each app a view of its own, every part they share would build once per app, and `nodes.cmake` would read each app's manifest.
+  - **`recipe list` no longer lists the apps, and `recipe drop` cannot copy one**: they left the library, which holds the recipes views copy from.
+  - **`./run.sh --cli some/view.vlp` hands vulpen two views, which it refuses** until step 9 brings decision 6, rather than the script choosing which one runs.
+- **Found while building step 1:** the cli cannot host the ide yet. Both build as `library`, and the engine hosts one view of each build-tree name, so `view load src/runtime/recipes/ide` is refused, as it was before the move. Step 9 needs it: two views from the same recipes folder share one build tree, so `Views::host` refuses a second view of a name only when it comes from another folder, about 3 lines, and its message, which says the app is "in a folder named library", names the build tree instead.
 
 The ide's test, `ide.py`, follows each step: step 1 moves its paths, step 4 opens its file through the cli's `open`, and step 9 starts it as the cli with the ide.
 

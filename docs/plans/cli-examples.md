@@ -2,7 +2,7 @@
 
 Two views built from an empty folder with the CLI that the [IDE port](ide-port.md) proposes. For each: what a person types, which files they write, and what the engine does with them. The commands, the templates and the engine additions are proposals of the rows each section names. Since 2026-10-03 every node is a folder (RV08), and a drop copies a recipe as a node the view owns ([nodes and folders](nodes-and-folders.md)); both examples are laid out so.
 
-- Example 1's code is the code `src/examples/triangle/` runs today, laid out on the [template](#a-nodes-file-shows-what-it-can-reach). Its C++ compiles against today's `runtime/Operator.h`. The template's shaders compile as written and with every line of their menu uncommented.
+- Example 1's code is the code `src/runtime/examples/triangle/` runs today, laid out on the [template](#a-nodes-file-shows-what-it-can-reach). Its C++ compiles against today's `runtime/Operator.h`. The template's shaders compile as written and with every line of their menu uncommented.
 - Example 2's shaders and C++ compile with the build's flags against the engine additions shown [below](#what-the-engine-adds). This was checked on 2026-09-30 with glslang 15.1 and g++ 13.
 
 ## Where the engine stops
@@ -13,7 +13,7 @@ A node reaches the engine through three headers and a folder layout, and nothing
 | --- | --- | --- |
 | C++ | [`runtime/Operator.h`](../../src/runtime/Operator.h): `Operator` with three hooks, `bind`, `cook` and `command`. `Bind` hands out `Value<T>`, `Upload<T>`, `Readback<T>` and params by name. `Cook` writes and reads them each frame and reaches the general ports. `Registry` and `VP_OPERATORS` register a class. A part that reads the graph also includes `runtime/View.h` (B8). | one class per operator, in an unnamed namespace, and one `VP_OPERATORS` entry per folder, started from the [template](#a-nodes-file-shows-what-it-can-reach) |
 | GLSL | [`baseclasses/GpuLayout.glsl`](../../src/baseclasses/GpuLayout.glsl): buffers as device addresses. The pass block lives at set 1, binding 0. | the pass block's fields, and the shaders |
-| Build | [`runtime/cmake/nodes.cmake`](../../src/runtime/cmake/nodes.cmake) compiles each node's folder: shaders to SPIR-V, and C++ to a module (debug) or into `vulpen` (release). It builds the views in `src/examples/`. | files in `<view>/<node>/` |
+| Build | [`runtime/cmake/nodes.cmake`](../../src/runtime/cmake/nodes.cmake) compiles each node's folder: shaders to SPIR-V, and C++ to a module (debug) or into `vulpen` (release). It builds the views in `src/runtime/examples/`. | files in `<view>/<node>/` |
 | Load | `runtime/Schedule` reflects the SPIR-V, runs `bind` and checks every name (A02). It makes the buffers, blocks and pipelines, and places the barriers. | nothing |
 | Graph | the command port: the primitive edits, the log and save | commands, or a `view.vlp` written by hand |
 | Structure | the include-map gate: a row for each engine file, and [one rule](#node-code-has-no-rows-in-the-include-map) for all node code | nothing |
@@ -55,7 +55,7 @@ The engine already has placeholders for most of what the examples need:
 | `CommandPort`, `Command` and `CommandLog`, all empty | `runtime/Commands.h` | the command port, the primitive edits and the log | B1–B4 | 1, 2 |
 | `Terminal`, not a port yet | `baseclasses/Platform.h` | the terminal port: lines in, text out | B9 | 1, 2 |
 | `FilePort`, empty | `runtime/Operator.h` | read, watch and save, for parts | B7 | 1, 2 |
-| `CommandLine`, an empty `Operator` | `recipes/parts/command-line/` | the command-line part | E12 | 1, 2 |
+| `CommandLine`, an empty `Operator` | `recipes/library/parts/command-line/` | the command-line part | E12 | 1, 2 |
 | `Image`, empty | `baseclasses/Resources.h` | images the schedule owns | A5 | 2 |
 | the set 0 layout, with no arrays yet | `baseclasses/Pipelines.h` | `textures[]`, `samplers[]` and `image2D[]` | A5 | 2 |
 | `InputPort`, empty | `runtime/Operator.h` | keys, text and pointer | B6 | neither |
@@ -64,29 +64,29 @@ Hosted views (C3) and the `inspect` and `library` parts have no stub yet. Everyt
 
 ## Example 1: a triangle
 
-A window with one triangle, whose corners and tint C++ writes every frame. Suppose `src/examples/triangle/` did not exist yet.
+A window with one triangle, whose corners and tint C++ writes every frame. Suppose `src/runtime/examples/triangle/` did not exist yet.
 
 It needs phase 1 of the [order](ide-port.md#order), steps 1 to 11, and `node new` (D15). The triangle's own code needs nothing new.
 
 ### The session
 
 ```text
-$ ./run.sh src/recipes/apps/cli/view.vlp
-> view new src/examples/triangle
-src/examples/triangle> node new draw triangle
-wrote Triangle.cpp, Triangle.glsl, Triangle.vert, Triangle.frag in …/src/examples/triangle/triangle, and added node triangle
-src/examples/triangle>
+$ ./run.sh --cli
+> view new src/runtime/examples/triangle
+src/runtime/examples/triangle> node new draw triangle
+wrote Triangle.cpp, Triangle.glsl, Triangle.vert, Triangle.frag in …/src/runtime/examples/triangle/triangle, and added node triangle
+src/runtime/examples/triangle>
 ```
 
-The `cli` app runs headless, with a prompt on the terminal. `view new` hosts an empty view and saves its `view.vlp`. From then on typed lines go to it, and the prompt shows its folder, as a shell shows the one it is in; the prompt shows only where a person types, so a piped script's output stays clean. `node new draw triangle` writes the template's four files into the node's folder, `src/examples/triangle/triangle/`, named for the node: `Triangle.cpp`, `Triangle.glsl`, `Triangle.vert` and `Triangle.frag`. It adds the node as a draw of 3 vertices whose operator is `Triangle`. The files build at once, and do nothing yet.
+The `cli` app runs headless, with a prompt on the terminal. `view new` hosts an empty view and saves its `view.vlp`. From then on typed lines go to it, and the prompt shows its folder, as a shell shows the one it is in; the prompt shows only where a person types, so a piped script's output stays clean. `node new draw triangle` writes the template's four files into the node's folder, `src/runtime/examples/triangle/triangle/`, named for the node: `Triangle.cpp`, `Triangle.glsl`, `Triangle.vert` and `Triangle.frag`. It adds the node as a draw of 3 vertices whose operator is `Triangle`. The files build at once, and do nothing yet.
 
 Next, the person opens them in any editor, uncomments the lines the triangle uses and writes the rest, as [below](#the-files). Each save builds and swaps in, with no row to add to the include map. The loader names what the node still lacks:
 
 ```text
 triangle/view.vlp node triangle: the operator reads param speed, which the node does not set
-src/examples/triangle> param set triangle speed 0.01
-src/examples/triangle> info triangle
-src/examples/triangle> view save
+src/runtime/examples/triangle> param set triangle speed 0.01
+src/runtime/examples/triangle> info triangle
+src/runtime/examples/triangle> view save
 ```
 
 - `node new` added the node with the manifest's own words (B2), and the schedule reruns without a restart. The loader finds a mistake at once and names it (A02). The node stays out until `param set` fixes it.
@@ -260,7 +260,7 @@ The copy in the tree also carries comments a person wrote. The writer keeps them
 ### The log
 
 ```text
-view add triangle src/examples/triangle/view.vlp
+view add triangle src/runtime/examples/triangle/view.vlp
 triangle: view save
 triangle: node add triangle operator=Triangle vertex_count=3
 triangle: param set triangle speed 0.01
@@ -295,10 +295,10 @@ It needs nothing else from phases 2 to 4, so it could run straight after phase 1
 ### Publish the triangle
 
 ```text
-src/examples/triangle> recipe publish triangle
+src/runtime/examples/triangle> recipe publish triangle
 ```
 
-This copies the node's folder, `src/examples/triangle/triangle/`, to `src/recipes/parts/triangle/`, and writes the part's `view.vlp` from the node: a recipe is one node named like its folder. A person adds the comment at the top:
+This copies the node's folder, `src/runtime/examples/triangle/triangle/`, to `src/runtime/recipes/library/parts/triangle/`, and writes the part's `view.vlp` from the node: a recipe is one node named like its folder. A person adds the comment at the top:
 
 ```ini
 # The triangle part: one draw whose corners and tint come from C++.
@@ -320,16 +320,16 @@ The part runs its own node, so it can be dropped by itself: `recipe drop triangl
 ### The session
 
 ```text
-src/examples/triangle> view new src/examples/cube-screen
-src/examples/cube-screen> recipe drop triangle screen
-src/examples/cube-screen> node new draw cubes
-src/examples/cube-screen> node set cubes vertex_count=36 instance_count=offsets
-src/examples/cube-screen> param set cubes speed 0.02
-src/examples/cube-screen> node add layout invocations=64
-src/examples/cube-screen> param set layout spacing 0.6
-src/examples/cube-screen> connect offsets layout.offsets cubes.offsets
-src/examples/cube-screen> connect picture cubes.color screen.picture
-src/examples/cube-screen> view save
+src/runtime/examples/triangle> view new src/runtime/examples/cube-screen
+src/runtime/examples/cube-screen> recipe drop triangle screen
+src/runtime/examples/cube-screen> node new draw cubes
+src/runtime/examples/cube-screen> node set cubes vertex_count=36 instance_count=offsets
+src/runtime/examples/cube-screen> param set cubes speed 0.02
+src/runtime/examples/cube-screen> node add layout invocations=64
+src/runtime/examples/cube-screen> param set layout spacing 0.6
+src/runtime/examples/cube-screen> connect offsets layout.offsets cubes.offsets
+src/runtime/examples/cube-screen> connect picture cubes.color screen.picture
+src/runtime/examples/cube-screen> view save
 ```
 
 - **The drop.** `recipe drop triangle screen` copies the part into the view as the node `screen`, in `screen/` (V03, C2). The triangle runs at once, as in example 1.
@@ -379,7 +379,7 @@ to   = screen.picture
 The view's folder, a folder per node:
 
 ```text
-src/examples/cube-screen/
+src/runtime/examples/cube-screen/
   view.vlp
   screen/  the drop's copy of the triangle, owned by this view and edited here to show a picture
     Triangle.cpp  Triangle.glsl  Triangle.vert  Triangle.frag

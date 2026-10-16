@@ -90,16 +90,16 @@ Two traps. libstdc++ puts the file clock's epoch in the year 2174, so a scan tha
 
 ## Proof of concept
 
-An engine in `src/baseclasses/` and `src/runtime/` that computes headless and draws into a window, and two views. The first, [`src/examples/wave/`](../../src/examples/wave/view.vlp), runs headless with two recipes that each hold an operator and a shader:
+An engine in `src/baseclasses/` and `src/runtime/` that computes headless and draws into a window, and two views. The first, [`src/runtime/examples/wave/`](../../src/runtime/examples/wave/view.vlp), runs headless with two recipes that each hold an operator and a shader:
 
 - `wave` keeps a phase on the CPU and turns it into 1,024 values on the GPU. The values glide towards their target, so they live in the buffer across frames.
 - `probe` samples eight of the values on the GPU, reads them back and prints them once a second.
 
 ```bash
-./run.sh src/examples/wave/view.vlp --log info    # then save any file under src/examples/wave/
+./run.sh src/runtime/examples/wave/view.vlp --log info    # then save any file under src/runtime/examples/wave/
 ```
 
-A second view, [`src/examples/triangle/`](../../src/examples/triangle/view.vlp), opens a window and draws. Its one recipe's operator writes a triangle's corners into a buffer and its tint into a `vec4` every frame, and its vertex and fragment shaders only draw them. It swaps like `wave`, on NVIDIA, RADV and llvmpipe, without validation errors, and it runs clean through a swapchain remade every 20 frames (forced in a test build).
+A second view, [`src/runtime/examples/triangle/`](../../src/runtime/examples/triangle/view.vlp), opens a window and draws. Its one recipe's operator writes a triangle's corners into a buffer and its tint into a `vec4` every frame, and its vertex and fragment shaders only draw them. It swaps like `wave`, on NVIDIA, RADV and llvmpipe, without validation errors, and it runs clean through a swapchain remade every 20 frames (forced in a test build).
 
 Measured on this machine (RTX 5070 Laptop, g++ 13, Make, Debug), from the save to the swap, over three sessions:
 
@@ -153,7 +153,7 @@ These change structure, so they wait for the project lead (A00):
 
 ## Open
 
-- **RV05.** The example's connection carries plain floats through buffer types in `baseclasses/GpuLayout.glsl`; a struct a connection carries belongs in `recipes/contracts/`.
+- **RV05.** The example's connection carries plain floats through buffer types in `baseclasses/GpuLayout.glsl`; a struct a connection carries belongs in `recipes/library/contracts/`.
 - **D5.** An operator reads a struct buffer back as its size only; reading its members by reflection is the next step towards operator ends of a connection.
 - **V08 in a dev session.** A command log pins the graph, and the commit pins release code, but a session with code swaps runs code no commit holds. Logging each swap with a hash of what it loaded would let a replay refuse to run on different code.
 - **Commands (V06).** A swap is not a command: nothing registers commands in this tree yet.
