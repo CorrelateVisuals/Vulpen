@@ -32,7 +32,7 @@ A recipe is a node of the library, named like its folder, with the nodes inside 
 | `node add <name> [<word=value>...]` | adds a node; with no words, a group. A usage's last placeholder in brackets may be left out |
 | `node remove <node>` | refused while a connection names it or a node is inside it; its folder stays |
 | `recipe drop <recipe> <name>`, `recipe sync <node>` | above |
-| `child add <name> <file>`, `child remove <name>` | edits of the view a line addresses; `child remove` reaches the view that hosts the child, so a project closes from inside. Since 2026-10-15, on the lead's word, `view close <name>`, which lets go of the connections that take the view's window first |
+| `child add <name> <file>`, `child remove <name>` | edits of the view a line addresses; `child remove` reaches the view that hosts the child, so a project closes from inside. Since 2026-10-15, on the lead's word, `view close <name>`, which lets go of the connections that take the view's window first; since 2026-10-16, `view add <name> <file>` |
 | `deploy add`, `deploy remove` | gone |
 
 ## What was built

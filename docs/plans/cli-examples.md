@@ -260,14 +260,14 @@ The copy in the tree also carries comments a person wrote. The writer keeps them
 ### The log
 
 ```text
-child add triangle src/examples/triangle/view.vlp
+view add triangle src/examples/triangle/view.vlp
 triangle: view save
 triangle: node add triangle operator=Triangle vertex_count=3
 triangle: param set triangle speed 0.01
 triangle: view save
 ```
 
-The first two lines are one group: what `view new` expanded to. `child add` of a `view.vlp` not written yet hosts an empty view, which `view save` then writes, so the log replays from an empty folder. Every line is a primitive and names the view it edits, so `source` replays the log headless, with none of the commands that sent its lines (V08). A `<file>` argument is written from the log's own folder, where `source` resolves it, so a log moves with the files it names; this log was saved at the repo's root. The file keeps no groups: `source` makes each line a group of its own, so undo after a replay steps back one command at a time. `node new` wrote files, which are no command, so its line is the `node add` it sent; a replay finds the files in the tree.
+The first two lines are one group: what `view new` expanded to. `view add` of a `view.vlp` not written yet hosts an empty view, which `view save` then writes, so the log replays from an empty folder. Every line is a primitive and names the view it edits, so `source` replays the log headless, with none of the commands that sent its lines (V08). A `<file>` argument is written from the log's own folder, where `source` resolves it, so a log moves with the files it names; this log was saved at the repo's root. The file keeps no groups: `source` makes each line a group of its own, so undo after a replay steps back one command at a time. `node new` wrote files, which are no command, so its line is the `node add` it sent; a replay finds the files in the tree.
 
 ### What the engine does with it
 

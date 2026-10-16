@@ -397,7 +397,7 @@ view
   save                           writes the view over its manifest, keeping the comments in it
 ```
 
-- **Who registers them.** The engine registers the edits, the log, save, `child list`, `image clear`, `input` and `quit`; every other command is a node's: `help`, `complete` and `clear` are the command-line part's, `ls` and `info` the inspect part's, `recipe …`, `node new …` and `view new`/`view load` the library part's, `focus` the keys part's, `open`, `write`, `close`, `close force` and `find` the text part's, `present`, `mode edit`, `mode perform` and `mode toggle` the modes part's, `zoom in`, `zoom out` and `zoom reset` the font part's, and `select`, `selected` and `delete` the graph part's; the `ide` has these last five parts and the CLI has not (V05).
+- **Who registers them.** The engine registers the edits, the log, save, `view list`, `image clear`, `input` and `quit`; every other command is a node's: `help`, `complete` and `clear` are the command-line part's, `ls` and `info` the inspect part's, `recipe …`, `node new …` and `view new`/`view load` the library part's, `focus` the keys part's, `open`, `write`, `close`, `close force` and `find` the text part's, `present`, `mode edit`, `mode perform` and `mode toggle` the modes part's, `zoom in`, `zoom out` and `zoom reset` the font part's, and `select`, `selected` and `delete` the graph part's; the `ide` has these last five parts and the CLI has not (V05).
 - **A usage is its completion.** Its placeholders say what can come there, so `complete` knows. The last may end in `...`, one argument or more, and stand in brackets, which a line may leave out: `node add ui` adds a group. Such a placeholder completes each word after it too, as `<node>` does for every node `[<node>...]` takes.
 
   ```text
@@ -462,7 +462,7 @@ The first eight lines applied, and the saved view now holds `param = every=30`, 
   {!!!} spare.txt:1 node wave: param spare: nothing reads it
   ```
 
-- **Other edits:** `param unset <node> <key>` removes a param, and `child add` and `view close` change the views a view hosts (section 13).
+- **Other edits:** `param unset <node> <key>` removes a param, and `view add` and `view close` change the views a view hosts (section 13).
 
 - **Where:** `src/runtime/Edits.cpp`; `src/runtime/Views.cpp` keeps the edited view until the rebuild.
 
@@ -498,7 +498,7 @@ view save
 
   ```text
   # notes.log, saved at the repo's root while a project was hosted
-  child add zz-demo src/examples/zz-demo/view.vlp
+  view add zz-demo src/examples/zz-demo/view.vlp
   zz-demo: view save
   zz-demo: node add spinner operator=Spinner vertex_count=3
   ```
@@ -682,13 +682,13 @@ file = ../wave/view.vlp      # left out, w/view.vlp beside this manifest
 
 ```text
 $ ./run.sh host/view.vlp --source host/lines.txt --frames 61 --log info
-# lines.txt: w: param set wave amplitude 0.5, then child list
-w …/wave/view.vlp                          # child list: the hosted views, in the order hosted
+# lines.txt: w: param set wave amplitude 0.5, then view list
+w …/wave/view.vlp                          # view list: the views this view hosts, in the order hosted
 {run} child w: hosted from …/wave/view.vlp
 {out} probe: frame     60: +0.4141257 +0.442029 …   # half the wave of section 2
 ```
 
-- **Hosting follows the manifest.** Loading a view hosts the views it names; `child add` and `view close` are edits of the view a line addresses, which `view save` writes, and the log keeps. A child's own `[view]` sections host views in turn, and removing a child takes them along.
+- **Hosting follows the manifest.** Loading a view hosts the views it names; `view add` and `view close` are edits of the view a line addresses, which `view save` writes, and the log keeps. A child's own `[view]` sections host views in turn, and removing a child takes them along.
 - **`view close <name>` reaches the view that hosts it** from wherever the line goes, so `view close zz-demo` typed in zz-demo closes it. It lets go first of every connection that takes the view's window (below), in the same edit, so the log keeps one line, and nothing takes the view's place: the `ide`'s Perform panel shows nothing until another view is presented. Its files stay.
 - **Each frame** cooks the host, then the hosted views in the order hosted, and runs all their passes. The window opens while a node of any view draws.
 - **A view whose `view.vlp` does not exist yet** starts empty, and its `view save` writes it, folder included: so a log can rebuild a project from nothing.
@@ -765,7 +765,7 @@ The engine's placeholder kinds are a closed list (`name`, `node`, `port`, `file`
 
 **`recipe drop <recipe> <name>`** and **`recipe sync <node>`** copy a library recipe into the project and bring the copy up to date (section 11). The library's recipes are its own, so neither works on a view of the library.
 
-**`view new <folder>` and `view load <folder>`** host a project in a folder, named for the folder, and make it the current one. `view new` also saves its empty `view.vlp`, and refuses a folder that holds one; `view load` refuses a folder that holds none. In the log, both are a `child add` of the CLI's view, and `view new` a `view save` too.
+**`view new <folder>` and `view load <folder>`** host a project in a folder, named for the folder, and make it the current one. `view new` also saves its empty `view.vlp`, and refuses a folder that holds one; `view load` refuses a folder that holds none. In the log, both are a `view add` of the CLI's view, and `view new` a `view save` too.
 
 - **Where:** `src/recipes/parts/library/Library.cpp`.
 
