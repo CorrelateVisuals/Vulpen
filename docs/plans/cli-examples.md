@@ -2,7 +2,7 @@
 
 Two views built from an empty folder with the CLI that the [IDE port](ide-port.md) proposes. For each: what a person types, which files they write, and what the engine does with them. The commands, the templates and the engine additions are proposals of the rows each section names. Since 2026-10-03 every node is a folder (RV08), and a drop copies a recipe as a node the view owns ([nodes and folders](nodes-and-folders.md)); both examples are laid out so.
 
-- Example 1's code is the code `src/runtime/examples/triangle/` runs today, laid out on the [template](#a-nodes-file-shows-what-it-can-reach). Its C++ compiles against today's `runtime/Operator.h`. The template's shaders compile as written and with every line of their menu uncommented.
+- Example 1's code is the code `projects/triangle/` runs today, laid out on the [template](#a-nodes-file-shows-what-it-can-reach). Its C++ compiles against today's `runtime/Operator.h`. The template's shaders compile as written and with every line of their menu uncommented.
 - Example 2's shaders and C++ compile with the build's flags against the engine additions shown [below](#what-the-engine-adds). This was checked on 2026-09-30 with glslang 15.1 and g++ 13.
 
 ## Where the engine stops
@@ -13,7 +13,7 @@ A node reaches the engine through three headers and a folder layout, and nothing
 | --- | --- | --- |
 | C++ | [`runtime/Operator.h`](../../src/runtime/Operator.h): `Operator` with three hooks, `bind`, `cook` and `command`. `Bind` hands out `Value<T>`, `Upload<T>`, `Readback<T>` and params by name. `Cook` writes and reads them each frame and reaches the general ports. `Registry` and `VP_OPERATORS` register a class. A part that reads the graph also includes `runtime/View.h` (B8). | one class per operator, in an unnamed namespace, and one `VP_OPERATORS` entry per folder, started from the [template](#a-nodes-file-shows-what-it-can-reach) |
 | GLSL | [`baseclasses/GpuLayout.glsl`](../../src/baseclasses/GpuLayout.glsl): buffers as device addresses. The pass block lives at set 1, binding 0. | the pass block's fields, and the shaders |
-| Build | [`runtime/cmake/nodes.cmake`](../../src/runtime/cmake/nodes.cmake) compiles each node's folder: shaders to SPIR-V, and C++ to a module (debug) or into `vulpen` (release). It builds the views in `src/runtime/examples/`. | files in `<view>/<node>/` |
+| Build | [`runtime/cmake/nodes.cmake`](../../src/runtime/cmake/nodes.cmake) compiles each node's folder: shaders to SPIR-V, and C++ to a module (debug) or into `vulpen` (release). It builds the views in `projects/`. | files in `<view>/<node>/` |
 | Load | `runtime/Schedule` reflects the SPIR-V, runs `bind` and checks every name (A02). It makes the buffers, blocks and pipelines, and places the barriers. | nothing |
 | Graph | the command port: the primitive edits, the log and save | commands, or a `view.vlp` written by hand |
 | Structure | the include-map gate: a row for each engine file, and [one rule](#node-code-has-no-rows-in-the-include-map) for all node code | nothing |
@@ -64,7 +64,7 @@ Hosted views (C3) and the `inspect` and `library` parts have no stub yet. Everyt
 
 ## Example 1: a triangle
 
-A window with one triangle, whose corners and tint C++ writes every frame. Suppose `src/runtime/examples/triangle/` did not exist yet.
+A window with one triangle, whose corners and tint C++ writes every frame. Suppose `projects/triangle/` did not exist yet.
 
 It needs phase 1 of the [order](ide-port.md#order), steps 1 to 11, and `node new` (D15). The triangle's own code needs nothing new.
 
@@ -72,21 +72,21 @@ It needs phase 1 of the [order](ide-port.md#order), steps 1 to 11, and `node new
 
 ```text
 $ ./run.sh --cli
-> view new src/runtime/examples/triangle
-src/runtime/examples/triangle> node new draw triangle
-wrote Triangle.cpp, Triangle.glsl, Triangle.vert, Triangle.frag in …/src/runtime/examples/triangle/triangle, and added node triangle
-src/runtime/examples/triangle>
+> view new projects/triangle
+projects/triangle> node new draw triangle
+wrote Triangle.cpp, Triangle.glsl, Triangle.vert, Triangle.frag in …/projects/triangle/triangle, and added node triangle
+projects/triangle>
 ```
 
-The `cli` app runs headless, with a prompt on the terminal. `view new` hosts an empty view and saves its `view.vlp`. From then on typed lines go to it, and the prompt shows its folder, as a shell shows the one it is in; the prompt shows only where a person types, so a piped script's output stays clean. `node new draw triangle` writes the template's four files into the node's folder, `src/runtime/examples/triangle/triangle/`, named for the node: `Triangle.cpp`, `Triangle.glsl`, `Triangle.vert` and `Triangle.frag`. It adds the node as a draw of 3 vertices whose operator is `Triangle`. The files build at once, and do nothing yet.
+The `cli` app runs headless, with a prompt on the terminal. `view new` hosts an empty view and saves its `view.vlp`. From then on typed lines go to it, and the prompt shows its folder, as a shell shows the one it is in; the prompt shows only where a person types, so a piped script's output stays clean. `node new draw triangle` writes the template's four files into the node's folder, `projects/triangle/triangle/`, named for the node: `Triangle.cpp`, `Triangle.glsl`, `Triangle.vert` and `Triangle.frag`. It adds the node as a draw of 3 vertices whose operator is `Triangle`. The files build at once, and do nothing yet.
 
 Next, the person opens them in any editor, uncomments the lines the triangle uses and writes the rest, as [below](#the-files). Each save builds and swaps in, with no row to add to the include map. The loader names what the node still lacks:
 
 ```text
 triangle/view.vlp node triangle: the operator reads param speed, which the node does not set
-src/runtime/examples/triangle> param set triangle speed 0.01
-src/runtime/examples/triangle> info triangle
-src/runtime/examples/triangle> view save
+projects/triangle> param set triangle speed 0.01
+projects/triangle> info triangle
+projects/triangle> view save
 ```
 
 - `node new` added the node with the manifest's own words (B2), and the schedule reruns without a restart. The loader finds a mistake at once and names it (A02). The node stays out until `param set` fixes it.
@@ -260,7 +260,7 @@ The copy in the tree also carries comments a person wrote. The writer keeps them
 ### The log
 
 ```text
-view add triangle src/runtime/examples/triangle/view.vlp
+view add triangle projects/triangle/view.vlp
 triangle: view save
 triangle: node add triangle operator=Triangle vertex_count=3
 triangle: param set triangle speed 0.01
@@ -295,10 +295,10 @@ It needs nothing else from phases 2 to 4, so it could run straight after phase 1
 ### Publish the triangle
 
 ```text
-src/runtime/examples/triangle> recipe publish triangle
+projects/triangle> recipe publish triangle
 ```
 
-This copies the node's folder, `src/runtime/examples/triangle/triangle/`, to `src/runtime/recipes/library/parts/triangle/`, and writes the part's `view.vlp` from the node: a recipe is one node named like its folder. A person adds the comment at the top:
+This copies the node's folder, `projects/triangle/triangle/`, to `src/runtime/recipes/library/parts/triangle/`, and writes the part's `view.vlp` from the node: a recipe is one node named like its folder. A person adds the comment at the top:
 
 ```ini
 # The triangle part: one draw whose corners and tint come from C++.
@@ -320,16 +320,16 @@ The part runs its own node, so it can be dropped by itself: `recipe drop triangl
 ### The session
 
 ```text
-src/runtime/examples/triangle> view new src/runtime/examples/cube-screen
-src/runtime/examples/cube-screen> recipe drop triangle screen
-src/runtime/examples/cube-screen> node new draw cubes
-src/runtime/examples/cube-screen> node set cubes vertex_count=36 instance_count=offsets
-src/runtime/examples/cube-screen> param set cubes speed 0.02
-src/runtime/examples/cube-screen> node add layout invocations=64
-src/runtime/examples/cube-screen> param set layout spacing 0.6
-src/runtime/examples/cube-screen> connect offsets layout.offsets cubes.offsets
-src/runtime/examples/cube-screen> connect picture cubes.color screen.picture
-src/runtime/examples/cube-screen> view save
+projects/triangle> view new projects/cube-screen
+projects/cube-screen> recipe drop triangle screen
+projects/cube-screen> node new draw cubes
+projects/cube-screen> node set cubes vertex_count=36 instance_count=offsets
+projects/cube-screen> param set cubes speed 0.02
+projects/cube-screen> node add layout invocations=64
+projects/cube-screen> param set layout spacing 0.6
+projects/cube-screen> connect offsets layout.offsets cubes.offsets
+projects/cube-screen> connect picture cubes.color screen.picture
+projects/cube-screen> view save
 ```
 
 - **The drop.** `recipe drop triangle screen` copies the part into the view as the node `screen`, in `screen/` (V03, C2). The triangle runs at once, as in example 1.
@@ -379,7 +379,7 @@ to   = screen.picture
 The view's folder, a folder per node:
 
 ```text
-src/runtime/examples/cube-screen/
+projects/cube-screen/
   view.vlp
   screen/  the drop's copy of the triangle, owned by this view and edited here to show a picture
     Triangle.cpp  Triangle.glsl  Triangle.vert  Triangle.frag

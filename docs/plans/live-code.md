@@ -90,16 +90,16 @@ Two traps. libstdc++ puts the file clock's epoch in the year 2174, so a scan tha
 
 ## Proof of concept
 
-An engine in `src/baseclasses/` and `src/runtime/` that computes headless and draws into a window, and two views. The first, [`src/runtime/examples/wave/`](../../src/runtime/examples/wave/view.vlp), runs headless with two recipes that each hold an operator and a shader:
+An engine in `src/baseclasses/` and `src/runtime/` that computes headless and draws into a window, and two views. The first, [`projects/wave/`](../../projects/wave/view.vlp), runs headless with two recipes that each hold an operator and a shader:
 
 - `wave` keeps a phase on the CPU and turns it into 1,024 values on the GPU. The values glide towards their target, so they live in the buffer across frames.
 - `probe` samples eight of the values on the GPU, reads them back and prints them once a second.
 
 ```bash
-./run.sh src/runtime/examples/wave/view.vlp --log info    # then save any file under src/runtime/examples/wave/
+./run.sh --wave --log info    # then save any file under projects/wave/
 ```
 
-A second view, [`src/runtime/examples/triangle/`](../../src/runtime/examples/triangle/view.vlp), opens a window and draws. Its one recipe's operator writes a triangle's corners into a buffer and its tint into a `vec4` every frame, and its vertex and fragment shaders only draw them. It swaps like `wave`, on NVIDIA, RADV and llvmpipe, without validation errors, and it runs clean through a swapchain remade every 20 frames (forced in a test build).
+A second view, [`projects/triangle/`](../../projects/triangle/view.vlp), opens a window and draws. Its one recipe's operator writes a triangle's corners into a buffer and its tint into a `vec4` every frame, and its vertex and fragment shaders only draw them. It swaps like `wave`, on NVIDIA, RADV and llvmpipe, without validation errors, and it runs clean through a swapchain remade every 20 frames (forced in a test build).
 
 Measured on this machine (RTX 5070 Laptop, g++ 13, Make, Debug), from the save to the swap, over three sessions:
 

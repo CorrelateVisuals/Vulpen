@@ -8,7 +8,7 @@ A proposal for the lead (A00). The ask, on 2026-10-16: "./run.sh src/recipes/app
 
 Asked whether the cli alone is then fully capable, the lead answered the same day: "we would need tab complete and history in the os terminal", which answers decision 7; and, after first allowing one project at a time, chose that the window show the current view ("revert 1. to your previous suggestion"), which is now part of decision 1. Then the lead added flags to start with, a new folder layout, and `projects/`, "the folder where we work from"; its two questions are answered under [folders](#folders).
 
-**Decided on 2026-10-16**, on the lead's word "record decisions": 1A, "as long as we can keep working with the ide as we do currently with loading one view next to the other, just shifting the logic to cli"; 2A; 3 changed, the ide keeping its editor, which `open` reaches while the ide runs, through a setting of the cli's, not a command of the ide's ("just a param or setting flip … just the source we target"); 4A, named `view switch`; 5C; 6A, 7A, 8A, 9A and 10A. The lead accepted the [smaller calls](#smaller-calls), and those made while building, on 2026-10-16: "all 22 open questions accepted". Steps 1 to 7 of the [order](#order) are built, and nothing after them yet.
+**Decided on 2026-10-16**, on the lead's word "record decisions": 1A, "as long as we can keep working with the ide as we do currently with loading one view next to the other, just shifting the logic to cli"; 2A; 3 changed, the ide keeping its editor, which `open` reaches while the ide runs, through a setting of the cli's, not a command of the ide's ("just a param or setting flip … just the source we target"); 4A, named `view switch`; 5C; 6A, 7A, 8A, 9A and 10A. The lead accepted the [smaller calls](#smaller-calls), and those made while building, on 2026-10-16: "all 22 open questions accepted", and later the calls of steps 3 to 7 and of the examples' move: "1-30 all accepted". Steps 1 to 7 of the [order](#order) are built, and nothing after them yet.
 
 ## The idea
 
@@ -20,7 +20,7 @@ Asked whether the cli alone is then fully capable, the lead answered the same da
 cli           the view vulpen starts with: ./run.sh --cli
 ├── ide       the window, hosted by the cli: ./run.sh --ide, the default (decisions 1 and 6)
 ├── project1  a project: view new project1, in projects/project1/
-└── wave      another, beside it: view load src/runtime/examples/wave
+└── wave      another, beside it: view load wave
 ```
 
 In C08's terms, the model is the views the engine runs, with their files; the controller is the command port with the cli's commands; and the terminal, the graph, the Perform panel and the editor are views onto the model. `open` opens a file in the person's own editor, VS Code unless set otherwise, or, while the ide runs, in the ide's editor (decisions 2 and 3).
@@ -42,15 +42,15 @@ src/baseclasses/                    the GPU layer: no views, no commands
 src/baseclasses/examples/triangle/  a triangle from the baseclasses alone (new)
 src/external-libraries/
 src/runtime/                        the runtime: views, commands, ports
-src/runtime/examples/               views the runtime runs, as wave and triangle (from src/examples/)
 src/runtime/recipes/cli/            the cli, all of Vulpen by itself (from src/recipes/apps/cli/)
 src/runtime/recipes/ide/            the ide, which the cli hosts (from src/recipes/apps/ide/)
 src/runtime/recipes/library/        the recipes views copy from (from src/recipes/)
     components/  contracts/  parts/
-projects/                           the projects: where the work is (new)
+projects/                           the projects: where the work is, the example projects
+                                    wave and triangle among them (new)
 ```
 
-Each folder holds what builds on the one above it, so the tree shows how includes flow (A06): the baseclasses know nothing of the runtime, and the runtime nothing of its recipes, examples or projects.
+Each folder holds what builds on the one above it, so the tree shows how includes flow (A06): the baseclasses know nothing of the runtime, and the runtime nothing of its recipes or projects.
 
 - **The cli hosting the ide, in this layout: yes.** Hosting goes by a view's name and file, not by where its folder is: the cli hosts the ide with `view add ide <file>`, from any folder. The ide's folder belongs beside the cli's, not inside it, since the cli is whole without it (V03). One thing the move needs: the runtime knows an app today by its place in the library, `recipes/apps/<name>/`, and only that place lets an app's nodes use the library's recipes as they are (V11). With the apps beside the library, the runtime learns their new place: about 10 lines in `Manifest.cpp` and `nodes.cmake`.
 - **Components and parts are not the same** (RV06): a part holds code, one job's C++ and shaders, and uses no other recipe; a component holds no code, only a `view.vlp` that composes parts and other components. Both stay (decision 8).
@@ -59,7 +59,7 @@ Each folder holds what builds on the one above it, so the tree shows how include
 
 ## Projects
 
-`projects/`, at the top of the repository, is where the work is: the cli and the ide make new views there, and a view from elsewhere is copied in. The build compiles each view in it, as it compiles the examples. Git ignores it, but for a README that keeps the folder, so each person's work stays theirs, and a project can be a git repository of its own inside it (decision 9).
+`projects/`, at the top of the repository, is where the work is: the cli and the ide make new views there, and a view from elsewhere is copied in. The build compiles each view in it. Git ignores it, but for the example projects, `wave` and `triangle`, and a `.gitkeep` that keeps the folder, so each person's work stays theirs, and a project can be a git repository of its own inside it (decision 9).
 
 ```text
 $ ./run.sh                                 # --ide, the default
@@ -69,10 +69,8 @@ projects/project1> view save as project2   # a copy, with the edits since the la
                                            # project1 stays as it was saved
 projects/project2> view rename test_project
                                            # its folder becomes projects/test_project/
-projects/test_project> view load src/runtime/examples/wave
-                                           # a view from elsewhere, by its path
-src/runtime/examples/wave> view save as wave2
-                                           # copied into projects/wave2/
+projects/test_project> view load wave      # the example project, by its name
+projects/wave> view save as wave2          # copied into projects/wave2/
 $ ./run.sh --test_project                  # the project alone
 ```
 
@@ -120,9 +118,8 @@ projects/box> open                         # VS Code opens projects/box; a save 
                                            # live, and the window, open since the first draw,
                                            # shows it
 projects/box> view save
-projects/box> view load src/runtime/examples/triangle
-                                           # another view, now current: the window shows it
-src/runtime/examples/triangle> view switch box
+projects/box> view load triangle           # another view, now current: the window shows it
+projects/triangle> view switch box
                                            # the window shows box again
 projects/box> view switch                  # the cli itself
 > ls                                       # the cli's parts, and box/ and triangle/, its views
@@ -255,9 +252,11 @@ Today the graph's `delete` removes the nodes it selects, the nodes inside them a
 
 **Decided: A** (2026-10-16): `projects/` is ignored by git, but for a README that keeps the folder; a project worth sharing becomes an example in `src/runtime/examples/`, or recipes in the library. Not chosen: B, tracked.
 
+**Revised** (2026-10-16), on the lead's word: "regarding wave (and triangle) how about moving them to projects? As the example projects that are there? removing the examples folder entirely." The example projects `wave` and `triangle` live in `projects/`, which git tracks through a line each in `.gitignore`, and a `.gitkeep` keeps the folder in place of the README ("replace this with .gitkeep, no readme"); `src/runtime/examples/` is gone. A project worth sharing becomes another example there, or recipes in the library.
+
 ### 10. What `./run.sh --project1` runs
 
-**Decided: A** (2026-10-16): the project alone, as the view vulpen starts with, as `./run.sh src/runtime/examples/wave/view.vlp` runs a view now: no commands typed, its window, or headless (V07); with `--cli` or `--ide` before it, the tool with the project loaded. Not chosen: B, the ide with the project loaded.
+**Decided: A** (2026-10-16): the project alone, as the view vulpen starts with, as `./run.sh projects/wave/view.vlp` runs a view now: no commands typed, its window, or headless (V07); with `--cli` or `--ide` before it, the tool with the project loaded. Not chosen: B, the ide with the project loaded.
 
 ## Smaller calls
 
@@ -295,7 +294,7 @@ Each step is a commit that runs, checked against the principles and requirements
   - **`./run.sh --cli some/view.vlp` hands vulpen two views, which it refuses** until step 9 brings decision 6, rather than the script choosing which one runs.
 - **Step 2, built** (2026-10-16): the baseclasses are a CMake object library, which vulpen and the triangle link; an archive would leave out the objects vulpen never calls, which a live build's modules may. The triangle, `src/baseclasses/examples/triangle/`, is a `main.cpp` of 65 lines and two shaders of 8 and 9, 82 lines in all, drawn with `Window`, `Engine`, `Shader` and `Pipeline`, and `Log`, which the engine writes to; its `main()` is 10 lines. It builds into `out/build/<preset>/baseclasses/examples/triangle/`, its shaders beside it. An include of the runtime in the baseclasses already fails the include map's gate; a call into it now also fails the triangle's link. The shaders compile through `vulpen_spirv`, which `nodes.cmake`'s compile and check of a node's shader became, so both build their SPIR-V one way (C06). Three calls, which the lead accepted:
   - **No test runs the triangle**: it builds with every build, which catches an engine change that breaks it, and it needs a window, which tests run without. Run by hand under XWayland, it drew with no validation error, and its close button ended it.
-  - **The triangle keeps still**: no frame block, no pass block, no C++ writing to the GPU, since `src/runtime/examples/triangle/` shows those through the runtime (C00).
+  - **The triangle keeps still**: no frame block, no pass block, no C++ writing to the GPU, since the triangle project shows those through the runtime (C00).
   - **`vulpen_spirv` lives in the top-level `CMakeLists.txt`**, beside the baseclasses, not in `nodes.cmake`, which is the runtime's build: the triangle uses it without the runtime's.
 - **Step 3, built** (2026-10-16): the `projects` part, which the cli and the ide use, holds `view new` and `view load`, from `library`, and `view save as` and `view rename`. A `<view>` placeholder keeps a word without a `/` as typed, a project's name, and resolves one with a `/`, a path; it completes as a `<file>` does. The file port copies a file or a folder whole, renames one, and saves a view's manifest at another file. The build compiles `projects/`, which git ignores but for its README, and refuses two views of one name, naming both folders; `./run.sh --<name>` and `.\run.ps1 --<name>` run a project alone. fail-loud checks that a copy takes the view's edits, the view keeps its own as last saved, and a rename saves first. Calls made while building it:
   - **A project named like another view the build compiles, as `wave`, fails the build**, naming both folders, until it is renamed: the build tree holds one view of each name, and the cli, which sees no example, cannot refuse the name first.
@@ -304,7 +303,7 @@ Each step is a commit that runs, checked against the principles and requirements
   - **The file port also copies**, a file or a folder, into a temp beside the target and then renamed, so a killed run leaves the whole copy or none (RA04); the plan named only the rename and the save, and a copy through read and save would go file by file.
   - **The scripts list vulpen's six options**, so they come before a project of the same name; a `--<word>` that is neither goes to vulpen, which names it.
   - **The build compiles projects only in `projects/`**: the part's `folder` param moves where the cli makes them, not what the build compiles.
-  - **The gates read `src/` only**, so a project's code is held to neither the include map nor the code rules, as each person's projects are their own.
+  - **The gates read `src/` only**, so a project's code is held to neither the include map nor the code rules, as each person's projects are their own. The move of the examples flipped it: the gates read `projects/` too.
   - **The `folder` param is `../../../../../../projects`**, from the part's own folder, as the plan said (RP02).
 - **Step 4, built** (2026-10-16): `open [<file>]` is the new `editor` part's, which the cli and the ide use. With no editor in a window running, it starts the program its `program` param names, `code`, on a file or a folder, and with none on the folder of the view the line goes to; a program the PATH lacks is refused, naming it. While the view its `window` param names runs, it sets that editor's `file` param instead, refusing a folder or a file it cannot read. The `text` part no longer registers `open`: it opens and shows what its `file` param names. Engine, about 76 lines with comments, where the plan said about 40: a process port, which `Call` reaches, over `Shell::start` in the platform files, and `Bind::sets`. Checked by hand: in the cli, `open` starts a stand-in program and names a missing one; in the ide, open, close, open again and write, a folder refused, and `open` alone opening the view's manifest. Calls made while building it:
   - **`Bind::sets` says whether a node sets a param**, so the `text` part's `file` and the `editor` part's `window` may go unset, since a param has no empty value; a param a node sets that its operator never asks about stays a mistake (A02). The plan said decision 3 needed no engine change; this is about 6 lines.
@@ -330,6 +329,9 @@ Each step is a commit that runs, checked against the principles and requirements
   - **`view switch` completes no names**: its usage takes `<name>`, as `view close`'s does.
 - **Step 7, built** (2026-10-16): `node remove` takes a node whole: the nodes inside it, the connections they write, and them from the connections they read, which stay with the readers that stay; one line, which a replay expands alike (V08). The graph's Delete key sends `node remove` for each node it selects, a node inside another selected going with that one, and `view close` for each view, and its `delete` is gone. Engine, 4 lines net, where the plan said about 30; the graph, 33 fewer, where it said about 40 fewer. Checked by hand on a copy of the wave example: a group with a node inside it went whole, a writer took its connection along, and a connection with two readers kept the one that stayed. One call made while building it:
   - **The Delete key's lines are a group each**, sent from the graph's frame, where its `delete` was one command and one group, so an undo, once built, steps back one removal at a time. Pick: keep.
+- **The examples moved into `projects/`** (2026-10-16), at the lead's word under [decision 9](#9-projects-and-git), between steps 7 and 8: `wave` and `triangle` with their `.vulpen/` looks, the build globbing `projects/*` alone, the tests, the statistics and the views' own run lines (`./run.sh --wave`). Calls made, which the lead accepted:
+  - **The example projects are tracked in `projects/`**, through `.gitignore` exceptions, so trying things in them moves the wave golden until `git checkout projects/wave` puts them back.
+  - **The gates read `projects/` too**, a person's own projects included: a project's mistake fails the build as one in `src/` does, since a release build links its code into vulpen. A project's file is named from the repository's top, `../projects/…` in the include map.
 - **Found while building step 1:** the cli cannot host the ide yet. Both build as `library`, and the engine hosts one view of each build-tree name, so `view load src/runtime/recipes/ide` is refused, as it was before the move. Step 9 needs it: two views from the same recipes folder share one build tree, so `Views::host` refuses a second view of a name only when it comes from another folder, about 3 lines, and its message, which says the app is "in a folder named library", names the build tree instead.
 
 The ide's test, `ide.py`, follows each step: step 1 moves its paths, step 4 opens its file through the cli's `open`, and step 9 starts it as the cli with the ide.

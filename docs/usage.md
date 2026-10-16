@@ -23,7 +23,7 @@ How each part of Vulpen works today, shown the way you use it. Each section has 
 
 | Word | What it is | Where |
 | --- | --- | --- |
-| view | a project: a folder with a `view.vlp`, a folder for each node, and the views it hosts. It loads, runs and moves as a whole (V03) | `projects/<name>/`, `src/runtime/examples/<name>/` |
+| view | a project: a folder with a `view.vlp`, a folder for each node, and the views it hosts. It loads, runs and moves as a whole (V03) | `projects/<name>/`, as the example projects `wave` and `triangle` |
 | manifest | a view's `view.vlp`: its nodes and their files, its connections, and the views it hosts (V00) | `<view>/view.vlp` |
 | node | one `[node]` of a manifest and the folder its name names: a C++ class, shaders, or both, and the nodes inside it (RV08) | `<view>/<node>/` |
 | connection | one buffer: one node's port writes it, other nodes' ports read it | the manifest |
@@ -39,20 +39,20 @@ How each part of Vulpen works today, shown the way you use it. Each section has 
 `run.sh` (or `run.ps1` on Windows) builds the debug preset in parallel and runs `out/build/debug/vulpen` with your arguments; `--release` takes the release preset. `--cli` and `--ide` are the scripts' own and stand for an app's `view.vlp` (section 12), and with no view named the scripts run the app the line `default=--ide` at their top names. `--<name>` stands for a project's, `projects/<name>/view.vlp`, which then runs alone (section 12); vulpen's options come first, so a project named like one, as `log`, runs by its path.
 
 ```bash
-./run.sh src/runtime/examples/wave/view.vlp   # the view to run: one view.vlp
-         --log info                           # how much it says: error, warn (the default), info, debug
-         --frames 61                          # stop after 61 frames; 0, the default, runs until quit
-         --fps 0                              # unpaced; the default is 60 frames a second
-#        --first-frame N                      # start counting frames at N, so a test reaches years in a moment
-#        --source script.txt                  # run a file of commands before the first frame
-#        --size 1280x720                      # with no window: the size of images draws render into
+./run.sh projects/wave/view.vlp   # the view to run: one view.vlp, or --wave for a project
+         --log info               # how much it says: error, warn (the default), info, debug
+         --frames 61              # stop after 61 frames; 0, the default, runs until quit
+         --fps 0                  # unpaced; the default is 60 frames a second
+#        --first-frame N          # start counting frames at N, so a test reaches years in a moment
+#        --source script.txt      # run a file of commands before the first frame
+#        --size 1280x720          # with no window: the size of images draws render into
 ```
 
 What it prints:
 
 ```text
 {run} vulpen 9656e19                                                # the commit it was built from (RC07)
-{run} view wave from …/src/runtime/examples/wave/view.vlp: no node draws into the window, so it runs headless   # V07
+{run} view wave from …/projects/wave/view.vlp: no node draws into the window, so it runs headless   # V07
 {gpu} Vulkan validation is on
 {gpu} runs on NVIDIA GeForce RTX 5070 Laptop GPU: discrete, Vulkan 1.4.312
 {nod} wave: pipeline from Wave.comp                                # each node's pipeline and operator
@@ -61,12 +61,12 @@ What it prints:
 {nod} probe: new operator Probe
 {mem} wave: values of 4096 bytes on the GPU                        # the connection's buffer
 {mem} probe: probe.samples of 32 bytes read back by the CPU
-{mod} live code: a save under …/src/runtime/examples/wave swaps in  # debug builds only (section 6)
+{mod} live code: a save under …/projects/wave swaps in              # debug builds only (section 6)
 {out} probe: frame     60: +0.8282516 +0.88405794 +0.9278144 …     # what a node's C++ logs
 {run} ran 61 frames in 0.01 s
 ```
 
-- **Headless or a window.** A view runs headless unless a node draws into the window; `./run.sh src/runtime/examples/triangle/view.vlp` says `a node draws into the window, so it opens one`. A draw whose output a connection takes on renders into an image instead (section 5), so it needs no window: a run with none renders it at the size `--size` gives, and without one records nothing. The window also opens and closes while running, as draws into it come and go (section 8). It is titled after the view, as `triangle - vulpen`, and the desktop knows it as `vulpen`, Wayland's app id and X11's class, which a dock finds it by; its close button sends `quit` (section 7).
+- **Headless or a window.** A view runs headless unless a node draws into the window; `./run.sh --triangle` says `a node draws into the window, so it opens one`. A draw whose output a connection takes on renders into an image instead (section 5), so it needs no window: a run with none renders it at the size `--size` gives, and without one records nothing. The window also opens and closes while running, as draws into it come and go (section 8). It is titled after the view, as `triangle - vulpen`, and the desktop knows it as `vulpen`, Wayland's app id and X11's class, which a dock finds it by; its close button sends `quit` (section 7).
 - **Quiet by default.** At `warn` a run that goes as meant prints only the frame around the log; `{!!!}` marks an error and `{ ! }` a warning (C09).
 - **Exit code.** 0, or 1 when a node is in error when the run ends, or the view cannot load.
 - **The baseclasses alone.** `out/build/debug/baseclasses/examples/triangle/triangle` draws a triangle with the GPU layer and nothing above it: a window, the engine, two shaders and their pipeline, in one `main.cpp` in `src/baseclasses/examples/triangle/`, whose loop waits for each frame before it runs the next, as the runtime's does. The baseclasses build as a library of their own, which vulpen links too, so they never need the runtime (RA00).
@@ -120,7 +120,7 @@ to   = probe.values         # the node.port that reads it; repeat `to` for more 
 A node is the folder its name names (RV08), and its files are what that folder holds. The triangle, whose C++ moves the corners and whose shaders draw them:
 
 ```text
-src/runtime/examples/triangle/
+projects/triangle/
   view.vlp                # [node "triangle"]: operator = Triangle, its four files, vertex_count = 3
   triangle/               # the node's folder
     Triangle.cpp          # the operator: C++ that runs every frame
@@ -325,8 +325,8 @@ to   = image.picture                         # a Texture
 In a debug build, saving any file of a running view swaps the change in, and the view keeps running.
 
 ```text
-$ ./run.sh src/runtime/examples/wave/view.vlp --log info
-{mod} live code: a save under …/src/runtime/examples/wave swaps in
+$ ./run.sh --wave --log info
+{mod} live code: a save under …/projects/wave swaps in
 {out} probe: frame    120: +0.7930336 +0.7200354 +0.637223 …
 # Save wave/Wave.comp in any editor:
 {nod} wave: pipeline from Wave.comp                       # a new pipeline; the buffers stay
@@ -411,9 +411,9 @@ view
   draw
   > complete param set s                      # a <node> comes next: the view's nodes starting with s
   spinner
-  > complete view load src/runtime/examples/  # a <file>: what the folder holds, from where vulpen started
-  src/runtime/examples/triangle/
-  src/runtime/examples/wave/
+  > complete view load projects/              # a <file>: what the folder holds, from where vulpen started
+  projects/triangle/
+  projects/wave/
   ```
 
 - **A `<file>` completes from its folder**, which the path begun names, counted as a typed line's path is (section 12). A name with a blank is left out, since it would split into two words, and a hidden one shows once the name begun starts with `.`, as in a shell. A path that names no folder that can be listed, as a file followed by `/`, is refused, naming why.
@@ -477,7 +477,7 @@ The first eight lines applied, and the saved view now holds `param = every=30`, 
 A script is a file of commands, one a line. The session's log is the primitives it ran, so replaying the log rebuilds the graph and the files saved from it (V08).
 
 ```bash
-./run.sh src/runtime/examples/wave/view.vlp --source edits.txt   # before the first frame
+./run.sh --wave --source edits.txt   # before the first frame
 ```
 
 The script of section 8 saved this log beside itself, since a relative path in a script names a file beside the script:
@@ -619,14 +619,16 @@ cli/
 
 **`open [<file>]`** starts the person's editor on a file or a folder, and with none on the folder of the project lines go to, which VS Code opens as a workspace. The `editor` part owns it: its `program` param names the editor, `code` unless set otherwise, as `: param set cli.editor program vim` for a session or that line in the CLI's manifest; a program the PATH lacks is refused, naming it. Its `window` param names an editor in a window as `<view>:<node>`, which takes each file instead while that view runs: the CLI's names the `ide`'s, `ide:ide.editor.text`, for when the CLI hosts the `ide`, and the `ide`'s own `opener` node names its editor, `:ide.editor.text`. The program starts through the shell, in the background, so nothing waits for it; the graph's press on a file and the editor's tabs send `open` too.
 
-**Projects** are views of their own (V03) in `projects/` at the top of the repository, which git ignores but for its README, so each person's stay theirs. The `projects` part keeps them:
+**Projects** are views of their own (V03) in `projects/` at the top of the repository, which git ignores but for the example projects, so each person's stay theirs, and a project can be a git repository of its own. The `projects` part keeps them:
 
 - **A name or a path.** `view new <view>` and `view load <view>` take a project's name, a word without a `/`, which means `projects/<name>/`, or a folder's path, from where vulpen started. A name is letters, digits, `_` and `-`, so it also addresses the view, as `zz-demo: ls`, and runs it, as `./run.sh --zz-demo`. `view new` saves the new view's empty `view.vlp`, and refuses a folder that holds one; `view load` refuses a folder that holds none. In the log, both are a `view add` of the CLI's view, and `view new` a `view save` too.
-- **`view save as <name>`** copies the view's folder into `projects/<name>/`, whole or not at all, its look in `.vulpen/` too, and writes the manifest there as the edits left it; then it closes the view and hosts the copy, which lines go to from then on. So the view's own files stay as last saved, and a view from elsewhere, as an example, comes into `projects/`. It refuses a view that hosts views from its folder, since their copies would share their names.
+- **`view save as <name>`** copies the view's folder into `projects/<name>/`, whole or not at all, its look in `.vulpen/` too, and writes the manifest there as the edits left it; then it closes the view and hosts the copy, which lines go to from then on. So the view's own files stay as last saved, and a view from elsewhere comes into `projects/`. It refuses a view that hosts views from its folder, since their copies would share their names.
 - **`view rename <name>`** saves the view, renames its folder where it is, and hosts it under the new name. Nothing inside a project names it: the build names its contracts and modules from the folder.
 - **Both work on a view the CLI hosts**, not on the CLI itself, nor on a view a project hosts, which goes with that project. A name a hosted view has already, or a folder in its place, is refused.
 - **`./run.sh --<name>`** runs a project alone, as the view vulpen starts with: no command line, its window or none.
-- **The build compiles every project**, as it does the examples, and a project made while vulpen runs at the next live build. It holds one view of each name, so a project named like another view it compiles, as `wave`, `triangle` or `library`, fails the build, naming both folders: `view rename` it.
+- **The build compiles every project**, and a project made while vulpen runs at the next live build. It holds one view of each name, so a project named `library`, as the recipes build, fails the build, naming both folders: `view rename` it.
+- **The gates read every project** as they read `src/`, the include map's node rule and the code rules among them, since a release build links its code into vulpen.
+- **The example projects**, `wave`, which computes headless, and `triangle`, which draws in a window, are everyone's: git tracks them, `./run.sh --wave` and `./run.sh --triangle` run them, and the tests use them, so trying things in them moves the tests until `git checkout projects/wave` puts them back. A project worth sharing becomes another, with a line for it in `.gitignore`, or recipes in the library.
 - **Elsewhere:** the folder is the `projects` part's `folder` param, from the part's own folder (RP02); working elsewhere is `param = folder=…` on `cli.projects` in the CLI's manifest, and the build compiles projects only in `projects/`.
 - **Where:** `src/runtime/recipes/library/parts/projects/Projects.cpp`; the file port's `copy`, `rename` and `save` of a view at another file in `src/runtime/Ports.cpp`.
 
@@ -638,17 +640,17 @@ $ cd ~/Documents/GitHub/Vulpen && ./run.sh --cli
 projects/zz-demo> log save notes.log
 # writes ~/Documents/GitHub/Vulpen/notes.log, beside where you started,
 # not ~/Documents/GitHub/Vulpen/projects/zz-demo/notes.log
-projects/zz-demo> view load src/runtime/examples/wave
-# hosts ~/Documents/GitHub/Vulpen/src/runtime/examples/wave: the same text works from any project
+projects/zz-demo> view load projects/wave
+# hosts ~/Documents/GitHub/Vulpen/projects/wave: the same text works from any project
 ```
 
 The other way is a shell's `cd`: paths count from the current project.
 
 ```text
 # If paths counted from the project, as after `cd projects/zz-demo`:
-projects/zz-demo> log save notes.log                         # would write projects/zz-demo/notes.log
-projects/zz-demo> view load ../../src/runtime/examples/wave  # would be needed for src/runtime/examples/wave;
-projects/zz-demo> view load src/runtime/examples/wave        # this would mean projects/zz-demo/src/runtime/examples/wave
+projects/zz-demo> log save notes.log         # would write projects/zz-demo/notes.log
+projects/zz-demo> view load ../wave          # would be needed for projects/wave;
+projects/zz-demo> view load projects/wave    # this would mean projects/zz-demo/projects/wave
 ```
 
 The first keeps every typed path meaning one thing wherever you are, and matches the prompt; the second keeps a project's files next to it. Lines from a script always count from the script's folder either way.
@@ -668,7 +670,7 @@ The first keeps every typed path meaning one thing wherever you are, and matches
 +----------------------------------------------------+
 ```
 
-`control` with `=` or `+` makes all of it larger, `control` with `-` smaller, and `control+0` puts it back (section 14). A session, from the terminal: `view load src/runtime/examples/triangle` hosts the triangle, the graph shows its node, and the Perform panel shows its window under a tab of its own; a press on its box opens `triangle/Triangle.cpp` in the editor, and after an edit `control+s` writes it, which the live build swaps in, so the Perform panel shows the change a moment later (section 6). `f1` gives the triangle the whole window, and `f1` or `escape` gives it back. `escape` in edit mode lets go of what is selected, then of the focus, and then sends `quit`, which, as the window's close button, ends the run unless a file has changes (section 7).
+`control` with `=` or `+` makes all of it larger, `control` with `-` smaller, and `control+0` puts it back (section 14). A session, from the terminal: `view load triangle` hosts the triangle, the graph shows its node, and the Perform panel shows its window under a tab of its own; a press on its box opens `triangle/Triangle.cpp` in the editor, and after an edit `control+s` writes it, which the live build swaps in, so the Perform panel shows the change a moment later (section 6). `f1` gives the triangle the whole window, and `f1` or `escape` gives it back. `escape` in edit mode lets go of what is selected, then of the focus, and then sends `quit`, which, as the window's close button, ends the run unless a file has changes (section 7).
 
 **The terminal in a window.** The terminal is the same `command-line` part with `param = on=window`: it reads the keyboard instead of standard input, and shows above the line typed what lines answer and the log, the lines typed in the accent color, what they answer and what nodes write (`{out}`) in the text color, the rest of the log muted, errors in red and warnings in amber, so a refused line names its cause there, a frame later. With views running side by side, the log keeps to the view the terminal's lines go to: a line about a node of another view stays out as it comes, on the console as in these rows, so one project's output never drowns another's. The lines about that view, the views it hosts and the `ide`'s own parts show, and so do every view's errors and warnings, which never hide (A02). The terminal vulpen was started from takes lines too, as the CLI's does: they go where the window's lines go, and what they answer prints there, while the log shows in both. The end of its input, as a launcher that gives none or a script piped in has, ends no run; the window does.
 
@@ -678,7 +680,7 @@ $ ./run.sh --ide      # the default, so ./run.sh alone does the same
 
 - **Keys:** typing inserts at the caret, which Left, Right, Home and End move; Backspace and Delete erase, Enter sends the line, and Up and Down step through the lines sent. Escape closes the completions, with none open lets go of the selection, and with none of the focus.
 - **Selecting:** a drag over the rows above the line selects their text, a double click a word, and a third press the row, and `control+c` copies it; `control+v` types what the clipboard holds at the caret, as a shell takes a paste: each line break sends the line typed so far. A selection stays on its text as new rows push it up, and goes with its rows once the scrollback drops them, or `clear` does.
-- **Tab** completes as a shell does: the word at the caret takes what every candidate shares, a word only one candidate fits is finished with a blank, and several are printed among the rows, as a shell lists them: the line as typed, then the candidates in columns, down then across, as many columns as the rows hold. A placeholder such as `<name>` is listed but never typed in. Tab sends `complete`, which takes `""` for a word not begun. A folder is finished with no blank, so Tab again lists what it holds, each name from after the path's last `/`: `view load src/runtime/exa` and Tab gives `src/runtime/examples/`, and Tab again lists `triangle/` and `wave/`. What Tab lists is text, as any row is: a drag selects it, and a press picks nothing.
+- **Tab** completes as a shell does: the word at the caret takes what every candidate shares, a word only one candidate fits is finished with a blank, and several are printed among the rows, as a shell lists them: the line as typed, then the candidates in columns, down then across, as many columns as the rows hold. A placeholder such as `<name>` is listed but never typed in. Tab sends `complete`, which takes `""` for a word not begun. A folder is finished with no blank, so Tab again lists what it holds, each name from after the path's last `/`: `view load proj` and Tab gives `projects/`, and Tab again lists `triangle/` and `wave/`. What Tab lists is text, as any row is: a drag selects it, and a press picks nothing.
 - **The seam** above the terminal lights up under the pointer, and a drag moves it, the terminal following. Letting go sends one `param set ide.dock.split ratio 0.416`, so the log keeps one line a drag, and a replay or a save puts the seam back.
 - **The tab** over the terminal names it and the current view: `terminal`, and `terminal - demo` after `view new demo`. It is the command-line's, from its `title` param, and has no command, so a press on it sends nothing, and no close mark, as the graph's has none: a view closes from its Perform tab, so no two marks close the same view.
 - **Scrolling:** the wheel scrolls the rows above the line, 3 rows a step, keeping a step's fraction, so a touchpad's small turns add up; a drag on the bar at the right edge does too, and a press beside its thumb brings the thumb there first. While the newest rows show, new ones scroll into view; scrolled back, the rows shown stay, until a line sent shows the newest again.
@@ -889,8 +891,8 @@ f1              = mode toggle
 | `mode toggle` | switches to the other mode; `f1` sends it, so one key goes there and back, while a script names the mode it wants |
 
 ```text
-> view load src/runtime/examples/triangle    # the triangle, in the Perform panel, letterboxed
-src/runtime/examples/triangle> mode perform  # the triangle, over the whole window
+> view load triangle              # the triangle, in the Perform panel, letterboxed
+projects/triangle> mode perform   # the triangle, over the whole window
 ```
 
 - **The Perform panel** sits beside the editor in the dock's top row. Its tabs name the views the `ide` hosts, the one presented marked; a press on one sends `view switch` for it, and a press on its close mark sends `view close` for it, so nothing is presented in its place. Its image shows the view's window letterboxed, at the window's size, so a view draws as on its own; in perform mode it matches the view's own window pixel for pixel. A drag moves the window in the panel and the wheel zooms it about the pointer, as in the graph, cut at the panel's edge; the image part does so only with `param = moves=yes`, which the `ide` gives the panel and not the one that fills the window in perform mode. A press in the panel gives it the focus, and `h` then brings the window home, letterboxed as at first; `escape` lets go of the focus. Neither is kept: a restart, and another view presented, show the window letterboxed again.
@@ -904,7 +906,7 @@ src/runtime/examples/triangle> mode perform  # the triangle, over the whole wind
 **The graph.** The `graph` part lays out the graph of the current view, the one the terminals' lines go to, and its tab names it, as `graph - wave`, or `graph` for the `ide` itself, whose own nodes it shows after `view switch`, as the CLI's will once the CLI hosts the `ide`. A second press on a view's box goes into that view, as `view switch` does. The `graph-editor` component is it with `curves`, `rects` and `glyphs`, and the `ide` seats one in a panel over the Perform panel.
 
 ```text
-> view load src/runtime/examples/wave       # the graph panel shows wave and probe, a curve between
+> view load wave       # the graph panel shows wave and probe, a curve between
 
 +-----------+     +------------+
 | wave      |~~~~~| probe      |    # the node's name, in the accent color
@@ -914,7 +916,7 @@ src/runtime/examples/triangle> mode perform  # the triangle, over the whole wind
 ```
 
 ```ini
-# src/runtime/examples/wave/.vulpen/graph.ini, as the graph writes it once a box is dragged
+# projects/wave/.vulpen/graph.ini, as the graph writes it once a box is dragged
 color dispatch = number # written by a person: a kind of node's boxes in a theme role
 place probe = 0 200     # each box, from the graph's top left at zoom 1
 place wave = -10 -5
@@ -930,13 +932,13 @@ place wave = -10 -5
   | `selected` | lists the nodes and views selected, a line each |
 
   ```text
-  src/runtime/examples/wave> select probe
-  src/runtime/examples/wave> info    # with no node: each selected, under its header
+  projects/wave> select probe
+  projects/wave> info              # with no node: each selected, under its header
   [node "probe"]
   operator = Probe
   …
   reads values from wave.values
-  src/runtime/examples/wave> node remove probe  # values goes with it, which only probe read
+  projects/wave> node remove probe  # values goes with it, which only probe read
   ```
 
   A view selected shows under its own header, `[view "inner"]`, with the file it is hosted from whole, `file = …/inner/view.vlp`, and each connection that takes its window, `writes its window as stage`.
