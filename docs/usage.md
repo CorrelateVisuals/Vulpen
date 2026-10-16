@@ -377,7 +377,7 @@ node
   new
     dispatch <name>              adds a dispatch node, and writes its first files from the template into its …
     draw <name>                  adds a draw node, and writes its first files from the template into its folder: …
-  remove <node>                  removes a node that no connection names and no node is inside; its folder stays
+  remove <node>                  removes a node with the nodes inside it, the connections they write, and them …
   set <node> <word=value>...     gives a node the words named, clearing those given empty; param and image words …
 open [<file>]                    opens a file in the editor in a window while one runs, else a file or a folder …
 param
@@ -402,7 +402,7 @@ view
   switch [<name>]                makes a hosted view the current one, where the lines typed go and which every …
 ```
 
-- **Who registers them.** The engine registers the edits, the log, save, `view list`, `view switch`, `image clear`, `input` and `quit`; every other command is a node's: `help`, `complete` and `clear` are the command-line part's, `ls` and `info` the inspect part's, `recipe …` and `node new …` the library part's, `view new`, `view load`, `view save as` and `view rename` the projects part's, `open` the editor part's, `focus` the keys part's, `write`, `close`, `close force` and `find` the text part's, `mode edit`, `mode perform` and `mode toggle` the modes part's, `zoom in`, `zoom out` and `zoom reset` the font part's, and `select`, `selected` and `delete` the graph part's; the `ide` has these last five parts and the CLI has not (V05).
+- **Who registers them.** The engine registers the edits, the log, save, `view list`, `view switch`, `image clear`, `input` and `quit`; every other command is a node's: `help`, `complete` and `clear` are the command-line part's, `ls` and `info` the inspect part's, `recipe …` and `node new …` the library part's, `view new`, `view load`, `view save as` and `view rename` the projects part's, `open` the editor part's, `focus` the keys part's, `write`, `close`, `close force` and `find` the text part's, `mode edit`, `mode perform` and `mode toggle` the modes part's, `zoom in`, `zoom out` and `zoom reset` the font part's, and `select` and `selected` the graph part's; the `ide` has these last five parts and the CLI has not (V05).
 - **A usage is its completion.** Its placeholders say what can come there, so `complete` knows. The last may end in `...`, one argument or more, and stand in brackets, which a line may leave out: `node add ui` adds a group. Such a placeholder completes each word after it too, as `<node>` does for every node `[<node>...]` takes.
 
   ```text
@@ -443,16 +443,17 @@ param set probe every 30                                  # a param of a node
 node set probe log=info                                   # the words named; empty clears one
 view save                                                 # section 10
 log save session.log                                      # section 9
-node remove wave                                          # refused: values still names it
+node remove nothing                                       # refused: there is none
 ```
 
 ```text
-{!!!} …/edits.txt:9: node wave is connected through values; disconnect it first
+{!!!} …/edits.txt:9: no node is named nothing
 ```
 
 The first eight lines applied, and the saved view now holds `param = every=30`, the probe's files listed as they were; line 9 stopped the script, and the run with it.
 
 - **What happens.** An edit that breaks the view's shape is refused at once, naming why, and changes nothing: a name used twice, a port in two connections, a connection that would close a cycle, a node inside no node, a file named by a command. A node whose shaders or C++ disagree is left out at the rebuild, naming its line; the rest runs.
+- **`node remove` takes a node whole**: the nodes inside it, the connections it or they write, and them from the connections they read, which stay with the readers that stay. It is one line, which a replay expands alike (V08), so a dropped recipe goes as it came.
 - **Files stay.** No edit writes or deletes a file: `node remove` leaves the folder, and `node add` takes the files its folder holds.
 - **The window follows.** An edit that adds the first draw into the window opens it before the rebuild, and one that removes the last closes it; connecting a draw's output takes its draw out of the window, and connecting a hosted view's window takes its draws out of it:
 
@@ -927,7 +928,6 @@ place wave = -10 -5
   | --- | --- |
   | `select [<node>...]` | selects those nodes, or views the view hosts, in place of those selected; with none, none |
   | `selected` | lists the nodes and views selected, a line each |
-  | `delete` | removes the nodes selected and every node inside them, deepest first, and closes the views selected with `view close`, as is the same for a node deleted; a connection one of them writes is let go, and one they read is made again with the readers that stay. One command, so the log keeps one group (V08). Their folders stay, as with `node remove`, and their boxes leave the `.ini` |
 
   ```text
   src/runtime/examples/wave> select probe
@@ -936,16 +936,16 @@ place wave = -10 -5
   operator = Probe
   …
   reads values from wave.values
-  src/runtime/examples/wave> delete  # probe goes, and values with it, which only probe read
+  src/runtime/examples/wave> node remove probe  # values goes with it, which only probe read
   ```
 
   A view selected shows under its own header, `[view "inner"]`, with the file it is hosted from whole, `file = …/inner/view.vlp`, and each connection that takes its window, `writes its window as stage`.
 
 - **The graph starts at home**, whenever it shows a view, as `view load` and a switch to another view do: unmoved at zoom 1 while every box shows whole there; otherwise the boxes from their top left, as far in as the graph puts its first box, and as near as lets them all show, never nearer than zoom 1, so text keeps its size where it can. Where even a quarter cannot hold them, they show from their top left at a quarter.
-- **Keys**, while the graph has the focus: `delete` or `backspace` sends `delete`, `escape` lets go of the selection, and with none of the focus, and `h` brings the graph home.
+- **Keys**, while the graph has the focus: `delete` or `backspace` removes what is selected, a line each, `node remove` for a node, which takes the nodes inside it along, and `view close` for a view, and their boxes leave the `.ini`; `escape` lets go of the selection, and with none of the focus, and `h` brings the graph home.
 - **A dragged box stays where it is put.** The first drag places every box where it shows, so moving one moves no other, and a node added later takes its column's place; lanes are left out from then on, as the boxes no longer keep to columns.
 - **A drag on the ground moves the graph, and the wheel zooms it**, about the pointer, which stays over the same place of the graph, from a quarter to four times as near, and the text scales with the boxes; the wheel's turn sideways does nothing yet. GLFW gives no pinch event, so a pinch does nothing. The Perform panel moves alike, through the same shared `PanZoom` (RV09).
-- **A restart shows the boxes where they were left.** Where the boxes are is a look at the graph, not its plumbing, so it stays out of the manifest (V04) and the log (V08), in `.vulpen/graph.ini` beside the view's manifest, which moves with the project (V03). A drag saves as it ends, through the file port (RA04); the build and the live scan skip the folder (section 6), and this repository's `.gitignore` leaves it out. How far the graph moved and how near it is are not kept, since it starts at home. Deleting the file lays the graph out from the graph again; a node `delete` removes leaves it, and one gone otherwise keeps its place there.
+- **A restart shows the boxes where they were left.** Where the boxes are is a look at the graph, not its plumbing, so it stays out of the manifest (V04) and the log (V08), in `.vulpen/graph.ini` beside the view's manifest, which moves with the project (V03). A drag saves as it ends, through the file port (RA04); the build and the live scan skip the folder (section 6), and this repository's `.gitignore` leaves it out. How far the graph moved and how near it is are not kept, since it starts at home. Deleting the file lays the graph out from the graph again; a node the Delete key removes leaves it, and one gone otherwise keeps its place there.
 - **Colors per kind of node**: a line `color <kind> = <role>` draws the border and the name of each box of that kind in a role `theme.ini` names, so the theme keeps every color and the `.ini` picks among them. A node's files make its kind, the first that fits: `draw` (a `.vert` or a `.frag`), `dispatch` (a `.comp`), `code` (C++ or GLSL and no shader), `data` (files and no code) and `group` (no files of its own); a box of a view the view hosts is a `view`. A kind with no line, and a box selected, are drawn as before. The graph writes the lines back with every save, and a kind or a role there is not, or a kind given twice, is a mistake in the file.
 - **A mistake in the file** is named, and the graph lays the view out from the graph alone and never writes over it, so nothing typed there is lost:
 
