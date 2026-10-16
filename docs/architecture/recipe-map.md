@@ -53,7 +53,7 @@ Parts hold all of the library's code but the shared code, and use no other recip
 | `hit` | `Hit` | input, commands | Rect, Item | — (the hovered Item once a tooltip reads it) |
 | `keys` | `Keys` | input, files, commands, graph | — | Typed: the keys and text no chord takes, and the node in focus |
 | `text` | `Text` | input, files, commands | Font, Rect, Typed | Label, Rect, Item (a tab a file open) |
-| `command-line` | `CommandLine` | input, commands (the log too), terminal | Font, Rect, Typed | Label, Item (its completions, and its tab), Rect |
+| `command-line` | `CommandLine` | input, commands (the log too), terminal | Font, Rect, Typed | Label, Item (its tab), Rect |
 | `command-items` | `CommandItems` | commands | Item | Item |
 | `graph` | `Graph`, shaders | input, files, commands, graph | Rect, Font, Typed, Palette (Relation once relations land) | Rect: its boxes; Label, Curve, Item (its tab); draws its ground, lines that move and zoom with it |
 | `relations` | `Relations` | files | — | Relation |
@@ -71,7 +71,7 @@ Parts hold all of the library's code but the shared code, and use no other recip
 | `tooltip` | list, rects, glyphs |
 | `text-area` | text, rects, glyphs |
 | `find-bar` | command-line, rects, glyphs |
-| `terminal` | command-line, list, hit, rects, glyphs |
+| `terminal` | command-line, rects, glyphs |
 | `graph-editor` | graph, relations, rects, glyphs, curves |
 
 ## Apps
