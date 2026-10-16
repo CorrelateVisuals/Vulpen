@@ -12,6 +12,7 @@ The core (`baseclasses/`, `runtime/`) knows no recipe. These are the ports the r
 | --- | --- | --- |
 | input | keys, pointer and clipboard | `InputPort` |
 | files | read, watch, save, copy and rename (RA04) | `FilePort` |
+| processes | start a program and leave it running, as a person's editor | `ProcessPort` |
 | commands | send text, read the log and keep it to some views' lines, list the registered commands (RV04) | `CommandPort` |
 | graph | read the view; writes stay commands (V06) | `runtime/View.h`, once [D1](migration-and-implementation.md#open-decisions) is settled |
 | connections | the contracts on its connections | [D5](migration-and-implementation.md#open-decisions) |
@@ -61,6 +62,7 @@ Parts hold all of the library's code but the shared code, and use no other recip
 | `inspect` | `Inspect` | commands, graph | — | — |
 | `library` | `Library` | files, commands | — | — |
 | `projects` | `Projects` | files, commands | — | — |
+| `editor` | `Editor` | files, commands, processes | — | the `file` param of the editor its `window` param names |
 
 ## Components
 
@@ -79,5 +81,5 @@ Parts hold all of the library's code but the shared code, and use no other recip
 
 | App | Uses |
 | --- | --- |
-| `cli` | command-line, inspect, library, projects |
-| `ide` | palette, font, viewport, keys, modes, image, inspect, library, projects; dock, panel ×4, text-area, find-bar, terminal, graph-editor, menu ×2, tooltip |
+| `cli` | command-line, inspect, library, projects, editor |
+| `ide` | palette, font, viewport, keys, modes, image, inspect, library, projects, editor; dock, panel ×4, text-area, find-bar, terminal, graph-editor, menu ×2, tooltip |

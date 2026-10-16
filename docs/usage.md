@@ -351,12 +351,12 @@ Every action is a command: a line of text through one port (V06). A command regi
 
 ```text
 clear                            clears the terminal
-complete <value>...              lists the words that may come next, the last word given being the start of one, or …
+complete <value>...              lists the words that may come next, the last word given being the start of one, …
 connect <name> <port> <port>...  joins the port that writes a buffer to the ports that read it
 disconnect <connection>          removes a connection
 help                             lists every command, under the words it shares, and what each does
 image clear <port>               drops the pixels of an image a node's C++ fills, named by that port or one that …
-info [<node>]                    shows a node's words, or a hosted view's, and the connections it writes and reads; …
+info [<node>]                    shows a node's words, or a hosted view's, and the connections it writes and …
 input
   button
     down <value> [<value>]       presses a pointer button: left, right or middle; a count after it, as 2, makes it …
@@ -365,7 +365,7 @@ input
     off                          takes focus from the window
     on                           gives the window focus
   key
-    down <value>                 presses a key, named by the character it prints, or as space, enter or f1, for the …
+    down <value>                 presses a key, named by the character it prints, or as space, enter or f1, for …
     up <value>                   lets a key go
   pointer <value> <value>        moves the pointer to x and y, in pixels from the window's top left
   text <value>...                types the words, joined by single blanks
@@ -379,6 +379,7 @@ node
     draw <name>                  adds a draw node, and writes its first files from the template into its folder: …
   remove <node>                  removes a node that no connection names and no node is inside; its folder stays
   set <node> <word=value>...     gives a node the words named, clearing those given empty; param and image words …
+open [<file>]                    opens a file in the editor in a window while one runs, else a file or a folder in …
 param
   set <node> <key> <value>       sets a param of a node
   unset <node> <key>             removes a param of a node
@@ -400,7 +401,7 @@ view
     as <name>                    copies the view, its edits too, into a new project and works on the copy; the …
 ```
 
-- **Who registers them.** The engine registers the edits, the log, save, `view list`, `image clear`, `input` and `quit`; every other command is a node's: `help`, `complete` and `clear` are the command-line part's, `ls` and `info` the inspect part's, `recipe …` and `node new …` the library part's, `view new`, `view load`, `view save as` and `view rename` the projects part's, `focus` the keys part's, `open`, `write`, `close`, `close force` and `find` the text part's, `present`, `mode edit`, `mode perform` and `mode toggle` the modes part's, `zoom in`, `zoom out` and `zoom reset` the font part's, and `select`, `selected` and `delete` the graph part's; the `ide` has these last five parts and the CLI has not (V05).
+- **Who registers them.** The engine registers the edits, the log, save, `view list`, `image clear`, `input` and `quit`; every other command is a node's: `help`, `complete` and `clear` are the command-line part's, `ls` and `info` the inspect part's, `recipe …` and `node new …` the library part's, `view new`, `view load`, `view save as` and `view rename` the projects part's, `open` the editor part's, `focus` the keys part's, `write`, `close`, `close force` and `find` the text part's, `present`, `mode edit`, `mode perform` and `mode toggle` the modes part's, `zoom in`, `zoom out` and `zoom reset` the font part's, and `select`, `selected` and `delete` the graph part's; the `ide` has these last five parts and the CLI has not (V05).
 - **A usage is its completion.** Its placeholders say what can come there, so `complete` knows. The last may end in `...`, one argument or more, and stand in brackets, which a line may leave out: `node add ui` adds a group. Such a placeholder completes each word after it too, as `<node>` does for every node `[<node>...]` takes.
 
   ```text
@@ -612,6 +613,8 @@ cli/
 - **Lines go to the newest project** of those the CLI hosts itself: `view new`, `view load`, `view save as` and `view rename` host a project and make it the one lines go to; `view close` falls back to the one before, or the CLI. A view a project hosts in turn is reached by its name. The CLI sends `zz-demo: ls` for your `ls`, so every log line names its view. The log keeps to that project too: another project's node lines stay off the console, its errors and warnings excepted. In the `ide`, the view presented comes first (section 14).
 - **`name: …`** sends one line to another hosted project, and **`: …`** to the CLI itself.
 - **A new node builds at once.** In a debug build, the live build compiles `spinner/` a moment after `node new` wrote it, and swaps it in; until then the node is left out, naming the module it waits for (section 16).
+
+**`open [<file>]`** starts the person's editor on a file or a folder, and with none on the folder of the project lines go to, which VS Code opens as a workspace. The `editor` part owns it: its `program` param names the editor, `code` unless set otherwise, as `: param set cli.editor program vim` for a session or that line in the CLI's manifest; a program the PATH lacks is refused, naming it. Its `window` param names an editor in a window as `<view>:<node>`, which takes each file instead while that view runs: the CLI's names the `ide`'s, `ide:ide.editor.text`, for when the CLI hosts the `ide`, and the `ide`'s own `opener` node names its editor, `:ide.editor.text`. The program starts through the shell, in the background, so nothing waits for it; the graph's press on a file and the editor's tabs send `open` too.
 
 **Projects** are views of their own (V03) in `projects/` at the top of the repository, which git ignores but for its README, so each person's stay theirs. The `projects` part keeps them:
 
@@ -856,11 +859,11 @@ f1              = mode toggle
 - **In the order they came**: a focus line takes effect as the keys part next hands keys on, so every part reading them in one frame finds the same node in focus. A key after a press, a chord or `escape` waits for the next frame, since each may move the focus, and so does a chord after keys, so its line runs once the part in focus took them. A script that types, presses and types again in one frame puts each key where a person's would go.
 - **Where:** `src/runtime/recipes/library/parts/keys/`.
 
-**The editor.** The `text` part holds the files open and shows one. The `text-area` component is it with `rects` and `glyphs`, and the `ide` seats one in a panel in the dock's top row, a tab a file open:
+**The editor.** The `text` part holds the files open and shows one. The `text-area` component is it with `rects` and `glyphs`, and the `ide` seats one in a panel in the dock's top row, a tab a file open. Its `file` param names the file it shows: a change opens it as a tab and shows it, or shows it if it is open. `open` sets it (section 12), so the log keeps each file opened, a replay opens it again, and a save of the `ide` keeps the last one; the file opens as the editor next binds, the frame after, so a script's line after `open` that needs the file, as `find`, waits a frame. Closing the file the param names unsets it, so `open` of it again is a change.
 
 | Command | What it does |
 | --- | --- |
-| `open <file>` | opens a file as a tab and shows it, or shows it if it is open |
+| `open [<file>]` | the editor part's: names the file in the editor's `file` param; with none, the `view.vlp` of the view the line goes to. A folder, or a file it cannot read, is refused, naming `: param unset ide.opener window`, which sends each `open` to the person's editor |
 | `write` | saves the file shown; `control+s` sends it |
 | `close [<file>]` | closes a file the editor holds, or with none the file shown, unless it has changes; the close mark on a file's tab sends it with the file |
 | `close force [<file>]` | the same, dropping its changes, as `quit force` ends the run however `quit` was refused |
