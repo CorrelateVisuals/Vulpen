@@ -2,7 +2,7 @@
 
 A proposal for the lead (A00), asked on 2026-10-15: "We have to better think out UX for how multiple views and nested views and the perform and edit modes work and the present panel tabs." The same day the lead set it aside: "skip for now". Each question gives the situation, what each option means, its pros and cons, whether the engine or only recipes change, and a pick.
 
-**Built on 2026-10-16**, on the lead's word: "implement views-and-modes.md, pick A everywhere." Under each question, **Built** says how, and names each call made while building it, all of which the lead accepted on 2026-10-16. "Now" describes the tree before.
+**Built on 2026-10-16**, on the lead's word: "implement views-and-modes.md, pick A everywhere." Under each question, **Built** says how, and names each call made while building it, all of which the lead accepted on 2026-10-16. "Now" describes the tree before. Since step 6 of the [terminal app](terminal-app.md#order), the same day, every face follows the current view, which `view switch` moves, in place of the view presented, and `present` and the shared `Presented` are gone.
 
 ## Now
 

@@ -33,7 +33,6 @@ The core (`baseclasses/`, `runtime/`) knows no recipe. These are the ports the r
 | `PanZoom` | how far what an area shows moved and how near it is: a drag moves it, the wheel zooms it about the pointer, and `h` brings it home | `graph`, `image` |
 | `Ini` | how an `.ini` reads: a row a line, `#` and what follows a comment, a row's key and value either side of its first `=`, and the numbers a value holds | `palette`, `keys`, `font`, `graph` |
 | `Labels` | the Labels and Characters a part writes for `glyphs`, filled in turn, what the buffers lack cut | `command-line`, `list`, `graph`, `text` |
-| `Presented` | the view presented: the one a view hosts whose window a connection of that view takes, which a part that works on one view of many follows, else the one hosted most recently | `command-line`, `graph` |
 
 ## Parts
 

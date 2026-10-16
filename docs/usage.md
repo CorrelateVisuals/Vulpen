@@ -359,7 +359,7 @@ image clear <port>               drops the pixels of an image a node's C++ fills
 info [<node>]                    shows a node's words, or a hosted view's, and the connections it writes and …
 input
   button
-    down <value> [<value>]       presses a pointer button: left, right or middle; a count after it, as 2, makes it …
+    down <value> [<value>]       presses a pointer button: left, right or middle; a count after it, as 2, makes …
     up <value>                   lets a pointer button go
   focus
     off                          takes focus from the window
@@ -379,7 +379,7 @@ node
     draw <name>                  adds a draw node, and writes its first files from the template into its folder: …
   remove <node>                  removes a node that no connection names and no node is inside; its folder stays
   set <node> <word=value>...     gives a node the words named, clearing those given empty; param and image words …
-open [<file>]                    opens a file in the editor in a window while one runs, else a file or a folder in …
+open [<file>]                    opens a file in the editor in a window while one runs, else a file or a folder …
 param
   set <node> <key> <value>       sets a param of a node
   unset <node> <key>             removes a param of a node
@@ -395,13 +395,14 @@ view
   close <name>                   stops hosting a view, letting go of the connections that take its window; its …
   list                           lists the views this view hosts, with their files, in the order hosted
   load <view>                    hosts the view of a project by name, or of a folder by path
-  new <view>                     hosts a new, empty view, a project's by name or a folder's by path, and saves its …
+  new <view>                     hosts a new, empty view, a project's by name or a folder's by path, and saves …
   rename <name>                  saves the view, renames its folder where it is, and hosts it under the new name
   save                           writes the view over its manifest, keeping the comments in it
     as <name>                    copies the view, its edits too, into a new project and works on the copy; the …
+  switch [<name>]                makes a hosted view the current one, where the lines typed go and which every …
 ```
 
-- **Who registers them.** The engine registers the edits, the log, save, `view list`, `image clear`, `input` and `quit`; every other command is a node's: `help`, `complete` and `clear` are the command-line part's, `ls` and `info` the inspect part's, `recipe …` and `node new …` the library part's, `view new`, `view load`, `view save as` and `view rename` the projects part's, `open` the editor part's, `focus` the keys part's, `write`, `close`, `close force` and `find` the text part's, `present`, `mode edit`, `mode perform` and `mode toggle` the modes part's, `zoom in`, `zoom out` and `zoom reset` the font part's, and `select`, `selected` and `delete` the graph part's; the `ide` has these last five parts and the CLI has not (V05).
+- **Who registers them.** The engine registers the edits, the log, save, `view list`, `view switch`, `image clear`, `input` and `quit`; every other command is a node's: `help`, `complete` and `clear` are the command-line part's, `ls` and `info` the inspect part's, `recipe …` and `node new …` the library part's, `view new`, `view load`, `view save as` and `view rename` the projects part's, `open` the editor part's, `focus` the keys part's, `write`, `close`, `close force` and `find` the text part's, `mode edit`, `mode perform` and `mode toggle` the modes part's, `zoom in`, `zoom out` and `zoom reset` the font part's, and `select`, `selected` and `delete` the graph part's; the `ide` has these last five parts and the CLI has not (V05).
 - **A usage is its completion.** Its placeholders say what can come there, so `complete` knows. The last may end in `...`, one argument or more, and stand in brackets, which a line may leave out: `node add ui` adds a group. Such a placeholder completes each word after it too, as `<node>` does for every node `[<node>...]` takes.
 
   ```text
@@ -611,7 +612,7 @@ cli/
 - **A run in the background** (`./run.sh … &`) reads nothing from the terminal until it is brought to the foreground, since a read would stop it; what is typed meanwhile is the shell's.
 - **Keys edit the line**, as in the `ide`'s terminal: Tab completes, up and down recall the lines sent, left, right, home and end move the caret, and backspace and delete erase. control+c ends the run, as its signal did, unless a node holds work, as `quit` does, and so does control+d on an empty line, as the end of input does. The terminal takes each key as it comes, with no echo, from the first frame until the run ends, which gives it back as it found it; a run killed outright (`kill -9`) cannot, and `reset` then does. Each line the log prints takes the line's place, and the line comes back the frame after. A script piped in reads lines as before, and Windows' console types nothing yet.
 - **`ls` shows the view as folders**, as its nodes are (RV08): each node a folder under the node it is inside, its files under it, and beside it the recipe it uses, or was dropped from as `recipe probe@3f2a9c1e`; each view it hosts is a folder too, beside it the file it is hosted from. A node's connections are `info <node>`'s.
-- **Lines go to the newest project** of those the CLI hosts itself: `view new`, `view load`, `view save as` and `view rename` host a project and make it the one lines go to; `view close` falls back to the one before, or the CLI. A view a project hosts in turn is reached by its name. The CLI sends `zz-demo: ls` for your `ls`, so every log line names its view. The log keeps to that project too: another project's node lines stay off the console, its errors and warnings excepted. In the `ide`, the view presented comes first (section 14).
+- **Lines go to the current view**, which the command port keeps for every face: `view switch <name>` moves it to a hosted view, a view a project hosts too, and `view switch` alone to the CLI itself; `view new`, `view load`, `view save as` and `view rename` move it to the project they host. Once the current view is no longer hosted, as after `view close` of it or of the project holding it, it is the nearest view that held it, or the CLI. The CLI sends `zz-demo: ls` for your `ls`, so every log line names its view; a line from a script, or one a node sends, that names no view still goes to the CLI itself, so a log replays the same from any current view (V08). `view switch` changes no view, so the log keeps none of it. The log keeps to the current view too: another project's node lines stay off the console, its errors and warnings excepted.
 - **`name: …`** sends one line to another hosted project, and **`: …`** to the CLI itself.
 - **A new node builds at once.** In a debug build, the live build compiles `spinner/` a moment after `node new` wrote it, and swaps it in; until then the node is left out, naming the module it waits for (section 16).
 
@@ -678,7 +679,7 @@ $ ./run.sh --ide      # the default, so ./run.sh alone does the same
 - **Selecting:** a drag over the rows above the line selects their text, a double click a word, and a third press the row, and `control+c` copies it; `control+v` types what the clipboard holds at the caret, as a shell takes a paste: each line break sends the line typed so far. A selection stays on its text as new rows push it up, and goes with its rows once the scrollback drops them, or `clear` does.
 - **Tab** completes as a shell does: the word at the caret takes what every candidate shares, a word only one candidate fits is finished with a blank, and several are printed among the rows, as a shell lists them: the line as typed, then the candidates in columns, down then across, as many columns as the rows hold. A placeholder such as `<name>` is listed but never typed in. Tab sends `complete`, which takes `""` for a word not begun. A folder is finished with no blank, so Tab again lists what it holds, each name from after the path's last `/`: `view load src/runtime/exa` and Tab gives `src/runtime/examples/`, and Tab again lists `triangle/` and `wave/`. What Tab lists is text, as any row is: a drag selects it, and a press picks nothing.
 - **The seam** above the terminal lights up under the pointer, and a drag moves it, the terminal following. Letting go sends one `param set ide.dock.split ratio 0.416`, so the log keeps one line a drag, and a replay or a save puts the seam back.
-- **The tab** over the terminal names it and the view its lines go to, the one presented (section 14): `terminal`, and `terminal - demo` after `view new demo`. It is the command-line's, from its `title` param, and has no command, so a press on it sends nothing, and no close mark, as the graph's has none: a view closes from its Perform tab, so no two marks close the same view.
+- **The tab** over the terminal names it and the current view: `terminal`, and `terminal - demo` after `view new demo`. It is the command-line's, from its `title` param, and has no command, so a press on it sends nothing, and no close mark, as the graph's has none: a view closes from its Perform tab, so no two marks close the same view.
 - **Scrolling:** the wheel scrolls the rows above the line, 3 rows a step, keeping a step's fraction, so a touchpad's small turns add up; a drag on the bar at the right edge does too, and a press beside its thumb brings the thumb there first. While the newest rows show, new ones scroll into view; scrolled back, the rows shown stay, until a line sent shows the newest again.
 - **Across:** a row wider than the terminal is cut at its right edge, and the wheel turned sideways, as a touchpad turns it, or with `shift` held, scrolls the rows across, 3 columns a step, as does a drag on the bar along their bottom edge, just above the rule, which shows while a column is out of view. The line typed does not scroll with them: it scrolls on its own, to keep the caret in view.
 - **`clear`** empties the scrollback, which keeps the last 1,000 rows.
@@ -882,9 +883,8 @@ f1              = mode toggle
 
 | Command | What it does |
 | --- | --- |
-| `present <name>` | connects the window of a view the `ide` hosts to the Perform panel's image and the one that fills the window, in place of the one presented before |
 | `mode edit` | gives the window to the dock; what is presented shows in the Perform panel. `escape` in perform mode sends it |
-| `mode perform` | gives the window to what is presented, and the dock no room, so the dock draws and takes nothing; refused while nothing is presented, naming `present` |
+| `mode perform` | gives the window to what is presented, and the dock no room, so the dock draws and takes nothing; refused while nothing is presented, naming `view switch` |
 | `mode toggle` | switches to the other mode; `f1` sends it, so one key goes there and back, while a script names the mode it wants |
 
 ```text
@@ -892,15 +892,15 @@ f1              = mode toggle
 src/runtime/examples/triangle> mode perform  # the triangle, over the whole window
 ```
 
-- **The Perform panel** sits beside the editor in the dock's top row. Its tabs name the views the `ide` hosts, the one presented marked; a press on one presents it, and a press on its close mark sends `view close` for it, so nothing is presented in its place. Its image shows the view's window letterboxed, at the window's size, so a view draws as on its own; in perform mode it matches the view's own window pixel for pixel. A drag moves the window in the panel and the wheel zooms it about the pointer, as in the graph, cut at the panel's edge; the image part does so only with `param = moves=yes`, which the `ide` gives the panel and not the one that fills the window in perform mode. A press in the panel gives it the focus, and `h` then brings the window home, letterboxed as at first; `escape` lets go of the focus. Neither is kept: a restart, and another view presented, show the window letterboxed again.
-- **Each view the `ide` hosts is presented as it comes**, in a tab of its own, so the views loaded before keep theirs. A view not presented draws nowhere and keeps running (section 13), so no project ever draws over the `ide`. `view load` of a view hosted already is refused, naming it and the file it is hosted from (`a view named wave is hosted already, from …/wave/view.vlp`), so a press on its tab shows it.
-- **The terminal, the graph and the Perform panel follow one view**: the one presented, so a press on a Perform tab, or `present b` typed, switches all three, and the terminal's and the graph's tabs name it (`terminal - b`, `graph - b`). With none presented, as after `view close` of it, the terminal and the graph follow the view hosted most recently, and the Perform panel shows nothing until the next `present`. Each reads the `ide`'s connections for the one that takes a hosted view's window, through the shared `Presented` (RV09), so neither knows the modes part (V05); as the frame began, so a line in the same frame as a `present` still goes to the view shown before it. Only the views the `ide` hosts itself are presented: a view a project hosts shows through its project, as the project composes its window (V03).
-- **Perform mode needs something presented.** `mode perform`, and `f1` with it, is refused while nothing is (`nothing is presented to perform; present <name> shows a view this view hosts`), rather than giving the window to nothing; a view hosted that the modes part has not presented yet is presented first, as the frame would, so `f1` just after `view load` finds it. Perform mode gives way to edit mode once the view presented goes, as `view close` takes it, and once the log shows an error, as a refused line's or that of `quit` refused while a file has changes, so the terminal shows why: perform mode hides the log.
+- **The Perform panel** sits beside the editor in the dock's top row. Its tabs name the views the `ide` hosts, the one presented marked; a press on one sends `view switch` for it, and a press on its close mark sends `view close` for it, so nothing is presented in its place. Its image shows the view's window letterboxed, at the window's size, so a view draws as on its own; in perform mode it matches the view's own window pixel for pixel. A drag moves the window in the panel and the wheel zooms it about the pointer, as in the graph, cut at the panel's edge; the image part does so only with `param = moves=yes`, which the `ide` gives the panel and not the one that fills the window in perform mode. A press in the panel gives it the focus, and `h` then brings the window home, letterboxed as at first; `escape` lets go of the focus. Neither is kept: a restart, and another view presented, show the window letterboxed again.
+- **The Perform panel presents the current view** while it is a project, a view the `ide` hosts, each in a tab of its own, so the views loaded before keep theirs; a view a project hosts shows through its project, as the project composes its window (V03). While the current view is the `ide` itself, the panel keeps the one it presents, and when the `ide` starts, it presents the project hosted last. A view not presented draws nowhere and keeps running (section 13), so no project ever draws over the `ide`. `view load` of a view hosted already is refused, naming it and the file it is hosted from (`a view named wave is hosted already, from …/wave/view.vlp`), so a press on its tab shows it.
+- **The terminals, the graph and the Perform panel follow one view**, the current one, so a press on a Perform tab, or `view switch b` typed, switches all of them, and the terminal's and the graph's tabs name it (`terminal - b`, `graph - b`). Once the project presented closes, the panel shows nothing.
+- **Perform mode needs something presented.** `mode perform`, and `f1` with it, is refused while nothing is (`nothing is presented to perform; view switch <name> shows a view this view hosts`), rather than giving the window to nothing; the current view's project is presented first, as the frame would, so `f1` just after `view load` finds it. Perform mode gives way to edit mode once the view presented goes, as `view close` takes it, and once the log shows an error, as a refused line's or that of `quit` refused while a file has changes, so the terminal shows why: perform mode hides the log.
 - **The mode is a param** of the modes node, `param set ide.modes mode perform`, which `mode` sends, so a save keeps it and a replay restores it; each switch rebuilds the `ide`. Perform mode leaves the panels no room, so it takes the focus from the part that had it, and edit mode gives it back.
-- **present** makes one connection, `present`, from `<view>:` to the images the modes node's `to` param names, ports joined by commas. It checks the view is hosted and connects at once, from the `ide`'s connections as the lines so far left them, whichever view the line addressed, so the next frame shows it. `view close` of the view presented lets go of `present` first, so the Perform panel shows nothing, and nothing else is presented in its place.
+- **Presenting** makes one connection, `present`, from `<view>:` to the images the modes node's `to` param names, ports joined by commas, from the `ide`'s connections as the lines so far left them, so the next frame shows it; the log keeps it, so a replay presents the same view (V08). `view close` of the view presented lets go of `present` first, so the Perform panel shows nothing, and nothing else is presented in its place.
 - **Where:** `src/runtime/recipes/library/parts/modes/`, `src/runtime/recipes/library/parts/image/`.
 
-**The graph.** The `graph` part lays out the graph of the view presented, else of the view the `ide` hosted most recently, the one the terminal's lines go to, and its tab names it, as `graph - wave`; with no view hosted it shows nothing. The `graph-editor` component is it with `curves`, `rects` and `glyphs`, and the `ide` seats one in a panel over the Perform panel.
+**The graph.** The `graph` part lays out the graph of the current view, the one the terminals' lines go to, and its tab names it, as `graph - wave`, or `graph` for the `ide` itself, whose own nodes it shows after `view switch`, as the CLI's will once the CLI hosts the `ide`. A second press on a view's box goes into that view, as `view switch` does. The `graph-editor` component is it with `curves`, `rects` and `glyphs`, and the `ide` seats one in a panel over the Perform panel.
 
 ```text
 > view load src/runtime/examples/wave       # the graph panel shows wave and probe, a curve between
@@ -983,17 +983,16 @@ A command name is one command: a second node registering it is refused, as the d
 
 ```cpp
 for (const VP::Child &child : frame.view().children)   // the views its view hosts
-  tabs.push_back({.label = child.name, .command = "present " + child.name});
+  tabs.push_back({.label = child.name, .command = "view switch " + child.name});
 ```
 
-A view its view hosts it reads by name, `frame.hosted(name)`, as the changes so far left it, which is what a command addressed to that view reads; the graph part lays out the newest so:
+Any view it reads by name, `frame.view(name)`, empty for the one vulpen started with, as the changes so far left it, which is what a command addressed to that view reads; the graph part lays out the current view so:
 
 ```cpp
-const std::vector<VP::Child> &children = frame.view().children;
-const VP::View *const shown = children.empty() ? nullptr : frame.hosted(children.back().name);
+const VP::View *const shown = frame.view(frame.commands().current());
 ```
 
-A command reads a view by the name a line addresses it with, `call.view(name)`, empty for the one vulpen started with, as `:` addresses it, so it acts at once on another view than the one its line addressed. `present` typed in the `ide`'s terminal addresses the project, and reads the `ide`'s own connections so:
+A command reads a view by the name a line addresses it with, `call.view(name)`, empty for the one vulpen started with, as `:` addresses it, so it acts at once on another view than the one its line addressed. `mode perform` typed in the `ide`'s terminal addresses the project, and reads the `ide`'s own connections so:
 
 ```cpp
 const VP::View &own = *call.view("");   // the ide's, as the lines so far left it
