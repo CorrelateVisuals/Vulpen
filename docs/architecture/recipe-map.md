@@ -57,7 +57,7 @@ Parts hold all of the library's code but the shared code, and use no other recip
 | `command-items` | `CommandItems` | commands | Item | Item |
 | `graph` | `Graph`, shaders | input, files, commands, graph | Rect, Font, Typed, Palette (Relation once relations land) | Rect: its boxes; Label, Curve, Item (its tab); draws its ground, lines that move and zoom with it |
 | `relations` | `Relations` | files | — | Relation |
-| `modes` | `Modes` | commands, graph | Rect, Typed (the keys no part in focus takes) | Rect: two, the dock's room and what is presented; Item (a tab a hosted view); the connection that presents a view |
+| `modes` | `Modes` | commands (the log too), graph | Rect, Typed (the keys no part in focus takes) | Rect: two, the dock's room and what is presented; Item (a tab a hosted view); the connection that presents a view |
 | `inspect` | `Inspect` | commands, graph | — | — |
 | `library` | `Library` | files, commands | — | — |
 
