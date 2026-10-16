@@ -1,172 +1,207 @@
 # Terminal app
 
-A proposal for the lead (A00), asked on 2026-10-16: "./run.sh src/recipes/apps/ide/view.vlp works well, but we should also have a terminal only app, that allows us enough options to build our own ide from scratch, nothing more nothing less. Command driven where we can make nodes and edit files and present them so that we can expand the language from the language this is fractal vulpen. And here it is the question what is engine and what is not." Nothing here is built. Each decision says what it means, its pros and cons, whether the engine or only recipes change, and a pick. Reply like "1A 2A 3A …".
+A proposal for the lead (A00). The ask, on 2026-10-16: "./run.sh src/recipes/apps/ide/view.vlp works well, but we should also have a terminal only app, that allows us enough options to build our own ide from scratch, nothing more nothing less. … And here it is the question what is engine and what is not." Its first answer (editing by rows, a `<text>` word, `recipe publish`, raw keys) came back the same day with three remarks, and this version replaces it:
 
-## The aim
+- **a)** "no text file (c++, glsl, pythong, etc) editing needed, just open in external text editor that can be configured. For us default visual studio code. Keep things minimal."
+- **b)** "we need to not look further as todays cli vs ide. But we need cli to become useful outside of ide too, standalone. I think it has to do with abstraction level and who does what." "So the CLI is the master and has a child view IDE that uses the CLI but adds the interface ontop with additional functionality and quality of life imrpovements. But the basic usage of commands should be inside of the cli app." "This is an opportunity to shrink LOC and increase reusability as well as define the proper boundries."
+- **c)** "the cli view and cli view with child ide view should be visible in the node graph. So that we can see their nodes in addition to being able to navigate it's structure with the terminal. Now the projects we make like triangle inside of the ide (or our cli) should be it's own view, seperated from the cli and ide."
 
-A person or an agent, typing only commands at a terminal, makes a project, adds nodes, writes their C++ and GLSL, sees them run, and turns what works into library recipes that the next project uses, so the language grows from itself (V01, V02, V11). Every step is a command (V06), so a script or an agent runs the same session, and it runs headless until a node draws (V07). That is enough to build the `ide` from scratch, since the `ide` is only recipes (V05): parts of C++ and GLSL, and components and apps that compose them (RV06). The terminal app's own parts are library recipes too, so it edits them from inside itself, and a save swaps into the app as it runs (live code).
+Nothing here is built. Each decision says what it means, its pros and cons, whether the engine or only recipes change, and a pick. Reply like "1A 2A 3A …".
 
-"Nothing more, nothing less" is held to one session, the loop below: the terminal app has what the loop needs, and nothing the loop does not (C00).
+## The idea
 
-## The loop
+- **The cli is the app.** It is the view vulpen starts with, and it holds every command a person needs. It runs alone at a terminal, headless until a project draws (V07), on any machine Vulpen builds for (C10).
+- **The ide is a view the cli hosts.** It adds the window: the graph, the Perform panel, a terminal in the window, keys, modes and zoom. It changes views only through commands, as every front end does (V06), so closing it costs no action, and a GUI of one's own, or this ide changed to taste, can take its place.
+- **A project is a view of its own**, which the cli hosts beside the ide, never inside the ide or among the cli's nodes (V03). The cli keeps it, with a window or without; the ide shows it.
 
-A sketch of the session the terminal app must run, from an empty folder to a component in the library. The lines marked new are proposed below; the rest runs today.
+```text
+cli           the view vulpen starts with: ./run.sh src/recipes/apps/cli/view.vlp
+├── ide       the window, hosted by the cli (decisions 1 and 6)
+├── triangle  a project: view load src/examples/triangle
+└── wave      another, beside it
+```
+
+In C08's terms, the model is the views the engine runs, with their files; the controller is the command port with the cli's commands; and the terminal, the graph and the Perform panel are views onto the model. Text files are written in the person's own editor, which `open` starts, VS Code unless set otherwise; Vulpen keeps no editor (decisions 2 and 3).
+
+## Who does what
+
+| | What it holds | Its commands |
+| --- | --- | --- |
+| engine | the views and their files, the GPU, the window, and the general ports: commands, input, files, the terminal, graph reads, and a new one that starts a program | `quit`, `source`, `log save`, `input …`, the edits (`node add`, `node set`, `node remove`, `connect`, `disconnect`, `param set`, `param unset`, `view add`, `view close`), `view save`, `view list`, `image clear`, and `view go` (new) |
+| cli | `command-line` on the terminal, `inspect`, `library`, and `editor` (new) | `help`, `complete`, `clear`, `ls`, `info`, `delete` (from the graph), `recipe list`, `recipe drop`, `recipe sync`, `node new`, `view new`, `view load`, and `open` (new) |
+| ide | `palette`, `font`, `keys`, `viewport`, `modes`, the dock and its panels, `graph`, the Perform panel, and a terminal in the window | `mode`, `zoom`, `focus`, `select`, `selected` |
+| project | its own nodes and their files | those its nodes register, if any |
+
+**The ide registers only commands about what the window shows; every command that reads or changes a view or a file is the cli's or the engine's.** So the cli alone does everything the ide does, and a GUI that replaces the ide only has to show and send lines (V05, V06). A run of the cli registers 39 commands (37 now); the ide adds 9 (16 now), so a run with both has 48 (53 now): `present`, `write`, `close`, `close force`, `find` and `quit force` go, `open` and `delete` move into the cli, and `view go` is new. Once built, this rule could join V06.
+
+## Today's cli and ide, function by function
+
+Only what one of the two has today, as the lead asked (b): nothing both lack is added.
+
+| Function | Today | After |
+| --- | --- | --- |
+| projects: new, load, save, close | both | the cli |
+| nodes, recipes, connections, params | both | the cli and the engine |
+| read a view: `ls`, `info` | both | the cli |
+| write C++, GLSL, Python | the ide's editor: `open`, `write`, `close`, `find` | the person's editor, which `open` starts (2, 3) |
+| remove nodes with the nodes inside them | the ide: select, then `delete` | the cli: `delete <node>…`; the graph's Delete key sends `delete` (5) |
+| switch projects | the ide: a Perform tab, `present` | the engine: `view go <name>`, which a Perform tab sends (4) |
+| see the cli's and the ide's own nodes | the terminal: `: ls` | the terminal and the graph, after `view go` (4) |
+| see a project run | both: the window | both |
+| Tab, history, a caret | the ide's terminal | the OS terminal too, last (7) |
+| selection, focus, modes, zoom, panels | the ide | the ide |
+
+## A session
 
 ```text
 $ ./run.sh src/recipes/apps/cli/view.vlp
-> view new src/examples/box                        # a project
-src/examples/box> node new draw box                # its first files, from the template
-src/examples/box> open box/Box.frag                # the editor, on the terminal (new)
-src/examples/box> row show                         # its rows, numbered (new)
-src/examples/box> row set 14   color = vec4(1.0, 0.5, 0.0, 1.0);   # one row as typed, blanks kept (new)
-src/examples/box> write                            # saved: the live build swaps it in, and
-                                                   # the window, open since the first draw, shows it
+> view new src/examples/box                # a project beside the cli, now the current view
+src/examples/box> node new draw box        # its first files, from the template
+src/examples/box> open                     # VS Code opens src/examples/box; a save there swaps
+                                           # in live, and the window, open since the first
+                                           # draw, shows it
 src/examples/box> view save
-src/examples/box> recipe publish part box          # src/recipes/parts/box/ (new)
-src/examples/box> view new src/examples/pair
-src/examples/pair> node add pair                   # the component's own node, a group
-src/examples/pair> recipe drop box pair.left       # the part reused, as copies
-src/examples/pair> recipe drop box pair.right
-src/examples/pair> recipe publish component pair   # src/recipes/components/pair/: uses box twice (new)
+src/examples/box> view go                  # the cli itself
+> ls                                       # the cli's parts, and box/, a view it hosts
+> view load src/recipes/apps/ide           # the window, which presents box
+src/recipes/apps/ide> ls                   # the ide's own nodes, as the graph shows them now
+src/recipes/apps/ide> view go box          # the prompt, both terminals' tabs, the graph and
+                                           # the Perform panel follow
+src/examples/box> view close ide           # the window is box's again; box and the cli run on
 ```
 
-An app is published the same way, and `./run.sh src/recipes/apps/<name>/view.vlp` runs it, as the `ide` runs now.
+With the ide from the start: `./run.sh src/recipes/apps/cli/view.vlp src/recipes/apps/ide/view.vlp` (decision 6). Its window, without the editor:
 
-## What the CLI has, and what the loop lacks
+```text
++--------------------------+--------------------------+
+| graph - box              | box                      |
+|  the current view        |  the Perform panel       |
++--------------------------+--------------------------+
+| terminal - box                                      |
+|  the log, and the line typed                        |
++-----------------------------------------------------+
+```
 
-The `cli` app is terminal only already: `command-line` on the terminal port, `inspect` and `library` ([recipe map](../architecture/recipe-map.md)). Step by step:
+## What changes, in lines
 
-| Step | Commands | Today |
-| --- | --- | --- |
-| a project | `view new`, `view load`, `view save`, `view close` | yes |
-| nodes and wires | `node new draw\|dispatch`, `node add`, `node set`, `node remove`, `connect`, `disconnect`, `param set`, `param unset` | yes |
-| read the graph | `ls`, `info` | yes |
-| write C++ and GLSL | — | **no**: the editor (`open`, `write`, `close`, `find`) is the `ide`'s, in a window only, and a row of code cannot pass through a command, which splits a line at blanks |
-| see it run | none needed: a hosted view draws into the window while its host draws nothing, the window opens with the first draw (B14), and a save swaps in ([live code](live-code.md)) | yes |
-| a part from a node | — | **no**: `recipe publish` (D17) was never built |
-| a component or an app from a project | — | **no**: the same command, its drops becoming uses |
-| reuse | `recipe drop`, `recipe sync` | yes |
-| replay | `source`, `log save` | yes |
-| type at ease | Tab, history, the arrows | **no**: the terminal port reads whole lines, so the shell edits the line and Tab does nothing (B11) |
+Lines of code, estimated (±50%); today the engine has 7,994 and the recipes 5,507.
 
-## Engine or not
+| Change | Decision | Engine | Recipes |
+| --- | --- | --: | --: |
+| `open` on a process port, and the cli's `editor` part | 2 | +40 | +40 |
+| the ide's editor and the quit guard go | 3 | −40 | −900 |
+| the current view: `view go`; `present` and the parts' own following go | 4 | +30 | −120 |
+| `delete` moves into the cli | 5 | 0 | 0 |
+| the ide under the cli | 1 | +75 | −10 |
+| vulpen hosts the views named after the first | 6 | +15 | 0 |
+| **without 7** | | **about +120** | **about −990** |
+| raw keys at the OS terminal | 7 | +150 | +50 |
 
-The rule is the principles' own. The engine is the floor a headless replay needs with no recipe loaded: the edits, the log, save, hosting, input and `quit` ([migration](../architecture/migration-and-implementation.md#commands-the-engine-keeps-the-mechanism-recipes-bring-the-vocabulary)); the general ports: commands, files, input, the terminal and graph reads ([recipe map](../architecture/recipe-map.md#core-ports)); and the machinery under them: the GPU, the window, the schedule and the live build. A job a recipe can do through those ports, with no private way in, is a recipe's. A recipe that needs more gets a general port, never the feature (V05), and a new port changes the architecture first, in a step of its own the lead decides (A00, A05).
-
-Applied to the gaps:
-
-| Gap | Engine | Recipes |
-| --- | --- | --- |
-| write code | a command word that keeps its blanks (decision 3), about 25 lines | the `text` part edits by rows, on the terminal and in the window (decision 2), about 120 lines |
-| publish | nothing: the file port reads, lists and saves | the `library` part (decision 4), about 120 lines |
-| see it run | nothing | nothing |
-| type at ease | the terminal port hands keys, in raw mode from the platform files (decision 7), about 150 lines | `command-line`'s terminal face edits the line as its window face does, about 50 lines |
-
-So the loop needs one small engine change, and ease a second; the rest is recipes, and the `cli` app gains one node, `text`. Two engine questions stand behind it, decisions 5 and 6, and neither blocks the loop.
+So the tree loses about 870 lines, and the ide's test the editor's run, about 80 more.
 
 ## Decisions
 
-### 1. Which app
+### 1. Where the ide and the projects run
 
-- **A. Grow the `cli` app** by addition: it gains a node of the `text` part with `param = on=terminal`, and the `library` part gains publishing. Recipes only. Pros: one terminal app, as now (C06), and RV07 keeps its name. Cons: none known.
-- **B. A new app beside `cli`.** Cons: two terminal apps that differ by one node.
+Today a view shows only the views it hosts: the `ide`, as the view vulpen starts with, hosts the projects it presents. With the cli as that view, the ide and the projects are hosted side by side, and the engine must let one view show another beside it.
+
+- **A. The cli hosts the ide and every project, side by side.** The ide presents a project beside it, as it presents one it hosts today. The window keeps one owner (A01): a view that presents another, else the view hosted first that draws, so a project the ide does not present draws nowhere, as today. Engine, about 75 lines: that owner; a connection from the window of a view beside its own; a project's work run before that of the view showing it; a node that reads any view by name, knows its own view's name, since the ide no longer is the view vulpen starts with, and knows whether the window is open; and a save that leaves out a connection from the window of a view beside the one saved, since a manifest names only what is inside it (V03).
+  - Pros: the projects are the cli's, with a window or without: `view close ide` leaves them running, the first of them drawing into the window again, and the ide, loaded again, presents them; `view new` and `view load` never ask whether a window runs, so the cli knows nothing of the ide (C08); a GUI of one's own presents them the same way, and the graph walks the cli, the ide and the projects as one tree of views (V01).
+  - Cons: the largest engine change here, and a structural one (A00); in the cli alone, a second project that draws, draws nowhere until the first closes, where today it draws over it.
+- **B. The ide hosts the projects**, and the cli hosts the ide. No engine change for the window.
+  - Cons: the cli must know whether an ide runs, to host a project in it, so the controller depends on its view; `view close ide` closes the projects too; a project loaded before the ide stays the cli's, and the ide cannot show it; the projects sit inside the ide, not beside it.
+- **C. The ide as nodes of the cli's view**: the `ide` app uses the `cli` app as a recipe and adds the window, as it adds the cli's parts today, and RV06 lets an app use an app. No engine change for the window, and `./run.sh src/recipes/apps/ide/view.vlp` starts it as now.
+  - Cons: the ide is no view of its own: it neither loads nor closes as one, and its nodes share the cli's manifest; the cli no longer has the ide as a child, the ide has the cli.
+- Pick: **A**, the boundary the remarks ask for; C is the cheaper fallback, by about 70 engine lines.
+
+### 2. Opening files
+
+- **A. `open [<file>]`**, a command of the cli, starts the person's editor on a file or a folder; with none, on the current view's folder, which VS Code opens as a workspace. The program is a param of the cli's new `editor` part, `program=code`; another is a `param set` for a session, or that line of the cli's manifest. The graph's press on a file sends `open`, as now. Engine, about 40 lines: a process port, which starts a program and does not wait for it, through the platform files (RA01), and refuses a program the PATH lacks, naming it (A02). Recipes, about 40: the `editor` part, named for its job (RV07).
+  - Pros: one command, any editor; a save there swaps in live, as a save from any editor does now; Vulpen keeps no editor.
+  - Cons: a program that needs more words than the file, as a terminal editor in a terminal of its own, is named through a two-line script; the program sits in a file the repo tracks, so a person's own choice shows as a change.
+- **B. The program from `$VISUAL` or `$EDITOR`.**
+  - Cons: those mostly name a terminal editor, which would fight the cli for the terminal; and a second place to set it, beside the manifest (C02).
 - Pick: **A**.
 
-### 2. Editing files by command
+### 3. The ide's own editor
 
-- **A. The `text` part edits by rows, in both faces.** It gains a terminal face, `param = on=terminal`, as `command-line` has, which prints where the window face draws, and one group of commands on the file shown (V06): `row show [<value>...]` prints rows numbered, all of them, one, or from and to; `row set <value> <text>` replaces a row; `row add <value> <text>` adds one after it; `row remove <value> [<value>]` removes one, or from and to. `open`, `write`, `close` and `find` stay as they are. In the `ide` the same commands edit the editor's buffer, so a script or an agent edits there by text too, where today only keys do. Recipes only, about 120 lines; `Text.cpp` would pass 800 lines, so the rows go to a file of the part's own (CPP12).
-  - Pros: one editor a run, and one owner of its commands (B5); an agent edits by rows, as it reads a file.
-  - Cons: rows by number are slow for a person writing much code at once.
-- **B. `edit <file>` runs the person's `$EDITOR`** in the terminal until it exits. Engine: a process port that hands the terminal to a program and waits (platform files, RA01).
-  - Pros: a real editor.
-  - Cons: the editing happens outside Vulpen (V01), an agent cannot use it, and the frames stop meanwhile (VK02).
-- **C. No editing in Vulpen**: files are written in any editor beside it, and the live scan swaps a save in.
-  - Pros: nothing to build.
-  - Cons: not command driven, which the aim asks.
-- Pick: **A**. B can come later, as a recipe on a process port, if a person wants it.
-
-### 3. A command word that keeps its blanks
-
-A row of code keeps its indent and its blanks, but the command port splits a line at blanks, and `input text` and `find` join their words with single blanks.
-
-- **A. A placeholder `<text>`**, last in a usage, takes the rest of the line as typed, blanks kept, but the one after the word before it. Engine: the command port's split and its list of kinds, about 25 lines; nothing to complete. The log keeps it as one word, which a replay splits back alike, since the usage is the same (V08). `input text` and `find` take it too, so typing two blanks types two.
-  - Pros: one rule, and no quoting to learn.
-  - Cons: only a usage's last argument can hold blanks.
-- **B. Quotes in the command language**, `"…"` with `\"` and `\\`, for any argument.
-  - Pros: any argument holds blanks.
-  - Cons: more rules for a person and for completion, which every placeholder kind must follow.
+- **A. It goes.** The editor panel, the `text` part with its syntax colors (872 lines of code), `text-area` and the empty `find-bar` leave, with `write`, `close`, `close force`, `find` and `control+s`. So does the quit guard, `Cook::hold` and `quit force` (about 40 engine lines), which only the editor used (C00). The dock keeps the graph beside the Perform panel, over the terminal.
+  - Pros: one way to write code, in a real editor; the largest cut (C04); `open` has one owner (B5).
+  - Cons: it undoes the editor built from 2026-10-10 to 10-15 (E11, F3), and the quit guard of 10-14 (D1); nothing is written inside the window.
+- **B. It stays**, beside `open`, under a name of its own, such as `edit`.
+  - Cons: two ways to write code, and two commands for one job (V06); about 900 lines kept.
 - Pick: **A**.
 
-### 4. Publishing
+### 4. The current view
 
-- **A. `recipe publish part|component|app <node>`**, the kind a word of the command, as in `node new draw|dispatch` (V06). A part copies the node's folder into `recipes/parts/<name>/` with its `view.vlp`, and each contract or shared code it includes that the library lacks (RV05, RV09). A component or an app writes a `view.vlp` whose nodes use what they were dropped from: a drop left as it was, its fingerprint holding, becomes `recipe = <name>` with its params, and the connections between them stay. A drop changed since is refused, naming it, since it is no longer the library's: it is published as a part first. Refused too: a name the library has, a part that holds drops, and a component or an app with code of its own (RV06). Recipes only, the `library` part, about 120 lines; `Library.cpp` would pass 800 lines, so publishing goes to a file of the part's own (CPP12). The recipe map is kept by hand until H2, so the answer names the row it needs there.
-  - Pros: the library grows by addition, from a project, by command (V01, V11).
-  - Cons: a changed drop takes two publishes, the part and then its composition.
-- **B. Parts only**; components and apps written by hand.
-  - Cons: composing, the step the `ide` is made of, is not command driven.
+Today the terminal's lines and the graph follow the view presented, else the newest hosted ([views and modes](views-and-modes.md), 1A). The cli and the ide cannot be presented, so they are reached only by `:` and `ide:`, and the graph never shows them.
+
+- **A. The command port keeps the current view**, where a line naming none goes. `view go <name>` moves it there, and `view go` alone to the cli; `view new` and `view load` move it to the view they host; `view close` of it, or of the view holding it, moves it to the closed view's host. Both terminals' prompts and tabs, the graph and the Perform panel follow it: the graph shows the cli's own nodes after `view go`, the ide's after `view go ide`, and a double click on a view's box goes into it. The Perform panel presents the current view while it is a project, keeps the one it presents while the current view is the cli or the ide, and with none presented, presents the newest project; so a Perform tab sends `view go <name>`, and `present` goes. `view go` changes no view, so the log keeps no line of it, and each line it keeps still names its view (V08). Engine, about 30 lines; recipes, about 120 fewer: the shared `Presented`, `present`, and the following that the command-line and the graph each do.
+  - Pros: one place says which view is worked on (C02), alike for both terminals, the graph, scripts and agents; the cli and the ide are walked through as any project is, in the terminal and in the graph (V01); one command still switches every panel, as 1A did.
+  - Cons: an engine change to the command port (A00). It revises 1A, built on 2026-10-16: `view go` in place of `present`. `view close` of the current view goes back to the cli, not to the project before. And once the view it presents closes, the Perform panel presents the newest project left, where the lead chose nothing on 2026-10-15: an ide presenting nothing would let a project take the window (decision 1).
+- **B. As now.**
+  - Cons: c) is not met: the graph shows neither the cli nor the ide.
+- **C. The graph walks the tree on its own**, by presses on views' boxes.
+  - Cons: the graph and the terminal follow different views again, which views and modes ended.
 - Pick: **A**.
 
-### 5. Which view the window shows
+### 5. Removing nodes
 
-In the terminal app every hosted view that draws, draws into the window, the newest over the older. The `ide` chooses one with `present`, through its modes part.
+- **A. `delete [<node>…]` moves into the cli**, to `inspect`, beside `info [<node>]`. It removes the nodes named, the nodes inside them and their connections, as the graph's does now, and closes the views named; with none, what the graph selects, asked with `selected`, as `info` asks. The graph keeps `select` and `selected`, which are the window's, and its Delete key sends `delete`. Recipes only: about 50 lines move.
+  - Pros: the cli removes a dropped recipe in one line, where now it removes each node, the innermost first, after its connections.
+  - Cons: `inspect` reads and now removes, which its name does not say.
+- **B. It stays the graph's.**
+  - Cons: the cli alone keeps the long way.
+- Pick: **A**.
 
-- **A. As now**: host the project you look at, and `view close` the others. Nothing changes.
-  - Pros: nothing to build; the loop works on one project at a time.
-  - Cons: two projects that draw overlap in the window.
-- **B. The window of a host that draws nothing goes to its newest hosted view alone.** Engine, about 15 lines, where the views gather their draws.
-  - Pros: the last `view load` shows alone, as the `ide` presents a view as it comes.
-  - Cons: an engine rule for what the `ide` does in a recipe; a view hosted to run beside the one shown stops drawing.
-- **C. A `present` part in the terminal app.**
-  - Cons: a part that draws opens the window at load, so the app would no longer start headless (V07).
-- Pick: **A**, until two drawing projects are worked on at once (C00).
+### 6. Starting the ide
 
-### 6. A project whose parts register commands the app has
+`./run.sh src/recipes/apps/ide/view.vlp` would run the ide without the cli's commands, so the ide starts inside the cli.
 
-A command name has one owner in a run (B5). So a project hosted in the terminal app cannot run a part that registers `open`, `help`, `ls` or any other name the app's parts own: the project's node is left out, naming the command. Building the `ide`'s own kinds of part, an editor or a command line, is such a case; so is a finished `ide` hosted in the terminal app, or an `ide` in the `ide`.
-
-- **A. Commands belong to a view.** A node's command answers the lines addressed to its view and to the views that view hosts, the nearest owner winning, and the engine's commands answer everywhere; `help` and `complete` list what the addressed view reaches. Engine: the command port's registry and lookup, and `usages()` by the view, about 150 lines; the parts that find a command by its name, as `inspect` finds `selected` and the keys part a keymap line's command, ask their own view.
-  - Pros: views are fractal for their commands too (V01, V03): an `ide` runs inside the terminal app, or inside itself.
-  - Cons: the largest engine change here, and a structural one (A00); a line's meaning then depends on the view it goes to.
-- **B. As now**: such a project runs as its own process, `./run.sh <project>/view.vlp`, with the library's `command-line` dropped into it to type to; publishing and composing stay in the terminal app.
-  - Pros: no engine change.
-  - Cons: two processes while building such a part, and no app is hosted by an app.
-- Pick: **B** for the loop, and **A** as a step of its own once the lead wants an `ide` inside an `ide`. This is where "what is engine" is open: B keeps command ownership where it is, and A moves it into the views.
+- **A. vulpen hosts the views named after the first**, each named for its folder, as `view load` names it: `./run.sh src/recipes/apps/cli/view.vlp src/recipes/apps/ide/view.vlp`, or the cli with a project. The log keeps each as a `view add`, so a replay hosts them (V08). Engine, about 15 lines in the runtime's arguments.
+  - Pros: one line starts both, and the ide, hosted first, has the window from the first frame.
+  - Cons: a longer line than now.
+- **B. Typed**: the cli, then `view load src/recipes/apps/ide`. Nothing to build.
+  - Cons: a line typed at every start.
+- Pick: **A**; B works either way.
 
 ### 7. Typing at the terminal
 
-- **A. Raw keys, once the loop runs.** The platform files put the terminal in raw mode where a person types (RA01), the terminal port hands its keys on as events, as the input port does the window's, and `command-line`'s terminal face edits the line with its window face's code: Tab, history, the arrows and a caret. The B11 row says the port's interface stays and no recipe changes; Tab cannot work so, since the part that completes must see the key, so B11 changes to this. Engine about 150 lines, recipes about 50; T41, the port's thread under TSan, comes with it.
-  - Pros: the terminal app types as the `ide`'s terminal does.
+- **A. Raw keys, as the last step.** The platform files put the terminal in raw mode where a person types (RA01), the terminal port hands its keys on, and the cli's `command-line` edits the line with the code its window face has: Tab, history, the arrows and a caret. Engine about 150 lines, recipes about 50; T41, the port's thread under TSan, comes with it.
+  - Pros: the cli alone types as the ide's terminal does.
   - Cons: escape sequences that differ between terminals, and the Windows console, to test.
-- **B. Now, before the loop.**
-  - Cons: ease before what the loop needs (C00).
-- **C. Never**: `rlwrap` gives history from outside.
-  - Cons: no Tab, though every usage declares its completion (RV04).
+- **B. Never**: `rlwrap` gives history from outside.
+  - Cons: no Tab, though every command declares its completion (RV04).
 - Pick: **A**.
 
-### 8. Row edits and the log
+## Smaller calls
 
-- **A. Out of the log**, as typing in the editor is: the file on disk is the record, and a replay needs the files in their folders, as it does today (V03, V08).
-  - Pros: the log stays the graph's.
-  - Cons: a session's edits to files replay only from the files.
-- **B. In the log**, so a replay writes the files too.
-  - Cons: a row edit replays right only on the file it was made on, so a replay over other files corrupts them without a word.
-- Pick: **A**.
+Made in this proposal; each is the lead's to undo.
+
+- **The terminal in the window registers no command.** `help`, `complete` and `clear` are the cli's, since a name has one owner (B5). Tab sends `complete` as now; `clear` answers the text that clears a terminal, which the window's terminal takes as a terminal does; and `control+l` sends `clear` from that terminal, not from the keymap, so the answer reaches it.
+- **Only the cli reads the terminal vulpen was started from.** That terminal still takes lines while the ide runs, as the lead chose on 2026-10-13; the ide's terminal no longer reads it too.
+- **The end of standard input ends the run only while no window is open**, so a launcher that gives none still starts the ide, and a piped script still ends a run with no window. A node then reads whether the window is open, a few engine lines, counted in decision 1.
+- **A node reads any view by its name**, as a command does, where now it reads only the views its own view hosts: the graph shows the cli, and the Perform panel's tabs list the projects beside the ide. Reads change nothing, so views still change only by commands (V06).
+- **A nested view shows through its project**: `view go inner`, for a view a project hosts, presents that project, as a nested view shows through its host ([views and modes](views-and-modes.md), 3.2A).
 
 ## Order
 
-Each step is a commit that runs, and is checked against the principles and requirements again as it lands.
+Each step is a commit that runs, checked against the principles and requirements again as it lands.
 
 | Step | Decisions | What runs after it |
 | --- | --- | --- |
-| 1 | 3 | `<text>`: `input text` and `find` keep blanks |
-| 2 | 1, 2, 8 | the `cli` opens a file, shows it and edits it by rows, and writes it |
-| 3 | 4 | `recipe publish`: the loop runs, from an empty folder to a component |
-| 4 | — | the loop as a test: a script piped into the `cli` publishes under a scratch name it removes after, and every file must hold exactly what the script wrote, since a row lost or doubled is silent |
-| 5 | 7 | raw keys: Tab and history at the terminal |
-| 6 | 6A, if chosen | commands per view |
+| 1 | 2, 3 | `open` starts VS Code, from the cli and from a press in the graph; the ide's editor and the quit guard are gone |
+| 2 | 4 | `view go`: both terminals, the graph and the Perform panel follow one current view, the ide's own included; `present` is gone |
+| 3 | 5 | `delete` in the cli; the graph's Delete key sends it |
+| 4 | 1 | the engine half of 1A, as a step of its own (A05): a view presents a view beside it, the window keeps one owner, a node reads any view; the ide is still the view vulpen starts with |
+| 5 | 1, 6 | the ide under the cli: it loses `inspect`, `library` and `editor`, which are the cli's, and the terminal it read; `./run.sh …/cli/view.vlp …/ide/view.vlp` starts both, and the graph shows the cli and the ide |
+| 6 | 7 | raw keys: Tab and history at the OS terminal |
 
-One detail for step 2: the end of piped input sends `quit`, which refuses while a file has changes, so a script that leaves a file unwritten would never end. The CLI then ends the run with `quit force`, the refusal above it naming the file.
+The ide's test, `ide.py`, follows each step: step 1 drops its editor run, and step 5 starts it as the cli with the ide.
 
 ## Not in it
 
-What the `ide` has and the loop does not need stays the `ide`'s: keys and focus, modes and `present`, the graph and its selection, the font's zoom, the palette and the panels. Each is a recipe the `ide` composes (V05); the terminal app needs none of them, and a project can drop any.
+- **`recipe publish`** (D17): neither app has it today, so it waits for a plan of its own (b).
+- **Editing by rows, the `<text>` word, row edits in the log**: no text is edited in Vulpen (a).
+- **Commands per view** (6A of the first version): each command has one owner, the engine, the cli or the ide, so no view needs commands of its own.
+- **In the cli alone, the window shows the first project that draws**, not the current view. Following `view go` there would flash a project over the ide for a frame as the ide presents its first one, so it waits until two drawing projects are worked on at once (C00).
