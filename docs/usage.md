@@ -36,10 +36,10 @@ How each part of Vulpen works today, shown the way you use it. Each section has 
 
 ## 2. Running a view
 
-`run.sh` (or `run.ps1` on Windows) builds the debug preset in parallel and runs `out/build/debug/vulpen` with your arguments; `--release` takes the release preset. `--cli` and `--ide` are the scripts' own and stand for an app's `view.vlp` (section 12), and with no view named the scripts run the app the line `default=--ide` at their top names. `--<name>` stands for a project's, `projects/<name>/view.vlp`, which then runs alone (section 12); vulpen's options come first, so a project named like one, as `log`, runs by its path.
+`run.sh` (or `run.ps1` on Windows) builds the debug preset in parallel and runs `out/build/debug/vulpen` with your arguments; `--release` takes the release preset. `--cli` and `--ide` are the scripts' own: `--cli` stands for the CLI's `view.vlp`, and `--ide` for the CLI's and the `ide`'s, which vulpen then hosts (section 12); with no view named the scripts run the app the line `default=--ide` at their top names. vulpen hosts each view named after the first, named for its folder as `view load` names a project, and builds it before `--source` runs, so a script uses its commands; the log keeps each as a `view add`. `--<name>` stands for a project's, `projects/<name>/view.vlp`, which then runs alone (section 12); vulpen's options come first, so a project named like one, as `log`, runs by its path.
 
 ```bash
-./run.sh projects/wave/view.vlp   # the view to run: one view.vlp, or --wave for a project
+./run.sh projects/wave/view.vlp   # the view to run, and any after it, which it hosts; --wave for a project
          --log info               # how much it says: error, warn (the default), info, debug
          --frames 61              # stop after 61 frames; 0, the default, runs until quit
          --fps 0                  # unpaced; the default is 60 frames a second
@@ -581,7 +581,7 @@ recipe = command-line        # no fingerprint: the library's own part, unfolded 
 
 ## 12. The CLI
 
-The `cli` app is four library parts used together: `command-line` (a line in, an answer out), `inspect` (`ls`, `info`), `library` (recipes and nodes) and `projects` (views of their own). It runs headless on the terminal.
+The `cli` app is five library parts used together: `command-line` (a line in, an answer out), `inspect` (`ls`, `info`), `library` (recipes and nodes), `projects` (views of their own) and `editor` (`open`). It runs headless on the terminal, and with `./run.sh --ide` hosts the `ide`, which adds the window.
 
 ```text
 $ ./run.sh --cli
@@ -601,6 +601,7 @@ cli/
   inspect/       recipe inspect
   library/       recipe library
   projects/      recipe projects
+  editor/        recipe editor
 projects/zz-demo> view save
 projects/zz-demo> view close zz-demo
 > ls                                     # no project now: lines go to the CLI itself
@@ -611,13 +612,14 @@ cli/
 
 - **The prompt** shows the folder of the project your lines go to, from where you started vulpen, as a shell shows its folder; `>` alone means the CLI itself. It shows only when you type at a terminal, so a piped script's output stays clean.
 - **A run in the background** (`./run.sh … &`) reads nothing from the terminal until it is brought to the foreground, since a read would stop it; what is typed meanwhile is the shell's.
-- **Keys edit the line**, as in the `ide`'s terminal: Tab completes, up and down recall the lines sent, left, right, home and end move the caret, and backspace and delete erase. control+c ends the run, as its signal did, unless a node holds work, as `quit` does, and so does control+d on an empty line, as the end of input does. The terminal takes each key as it comes, with no echo, from the first frame until the run ends, which gives it back as it found it; a run killed outright (`kill -9`) cannot, and `reset` then does. Each line the log prints takes the line's place, and the line comes back the frame after. A script piped in reads lines as before, and Windows' console types nothing yet.
+- **Keys edit the line**, as in the `ide`'s terminal: Tab completes, up and down recall the lines sent, left, right, home and end move the caret, and backspace and delete erase. control+c ends the run, as its signal did, unless a node holds work, as `quit` does, and so does control+d on an empty line; control+l clears the terminal, as `clear` does. The terminal takes each key as it comes, with no echo, from the first frame until the run ends, which gives it back as it found it; a run killed outright (`kill -9`) cannot, and `reset` then does. Each line the log prints takes the line's place, and the line comes back the frame after. A script piped in reads lines as before, and Windows' console types nothing yet.
+- **The end of the input**, as a piped script's, ends the run while no window is open; with one open, as `./run.sh --ide` from a launcher that gives no input, the window ends it.
 - **`ls` shows the view as folders**, as its nodes are (RV08): each node a folder under the node it is inside, its files under it, and beside it the recipe it uses, or was dropped from as `recipe probe@3f2a9c1e`; each view it hosts is a folder too, beside it the file it is hosted from. A node's connections are `info <node>`'s.
 - **Lines go to the current view**, which the command port keeps for every face: `view switch <name>` moves it to a hosted view, a view a project hosts too, and `view switch` alone to the CLI itself; `view new`, `view load`, `view save as` and `view rename` move it to the project they host. Once the current view is no longer hosted, as after `view close` of it or of the project holding it, it is the nearest view that held it, or the CLI. The CLI sends `zz-demo: ls` for your `ls`, so every log line names its view; a line from a script, or one a node sends, that names no view still goes to the CLI itself, so a log replays the same from any current view (V08). `view switch` changes no view, so the log keeps none of it. The log keeps to the current view too: another project's node lines stay off the console, its errors and warnings excepted. So does the window: it shows the current project while it draws, and the others draw nowhere and keep running (section 13).
 - **`name: …`** sends one line to another hosted project, and **`: …`** to the CLI itself.
 - **A new node builds at once.** In a debug build, the live build compiles `spinner/` a moment after `node new` wrote it, and swaps it in; until then the node is left out, naming the module it waits for (section 16).
 
-**`open [<file>]`** starts the person's editor on a file or a folder, and with none on the folder of the project lines go to, which VS Code opens as a workspace. The `editor` part owns it: its `program` param names the editor, `code` unless set otherwise, as `: param set cli.editor program vim` for a session or that line in the CLI's manifest; a program the PATH lacks is refused, naming it. Its `window` param names an editor in a window as `<view>:<node>`, which takes each file instead while that view runs: the CLI's names the `ide`'s, `ide:ide.editor.text`, for when the CLI hosts the `ide`, and the `ide`'s own `opener` node names its editor, `:ide.editor.text`. The program starts through the shell, in the background, so nothing waits for it; the graph's press on a file and the editor's tabs send `open` too.
+**`open [<file>]`** starts the person's editor on a file or a folder, and with none on the folder of the project lines go to, which VS Code opens as a workspace. The `editor` part owns it: its `program` param names the editor, `code` unless set otherwise, as `: param set cli.editor program vim` for a session or that line in the CLI's manifest; a program the PATH lacks is refused, naming it. Its `window` param names an editor in a window as `<view>:<node>`, which takes each file instead while that view runs: the CLI's names the `ide`'s, `ide:ide.editor.text`, so while the CLI hosts the `ide`, each file opens there. The program starts through the shell, in the background, so nothing waits for it; the graph's press on a file and the editor's tabs send `open` too.
 
 **Projects** are views of their own (V03) in `projects/` at the top of the repository, which git ignores but for the example projects, so each person's stay theirs, and a project can be a git repository of its own. The `projects` part keeps them:
 
@@ -655,7 +657,7 @@ projects/zz-demo> view load projects/wave    # this would mean projects/zz-demo/
 
 The first keeps every typed path meaning one thing wherever you are, and matches the prompt; the second keeps a project's files next to it. Lines from a script always count from the script's folder either way.
 
-**The `ide`.** The `ide` app is the CLI's parts in a window, with four panels in a dock: the theme, the font, the keys, the modes part, `inspect`, `library` and `projects` as in the CLI, and in the dock the editor, the graph, the Perform panel and the terminal. Each panel is a `panel` around a content, and each seam is a `split`'s:
+**The `ide`.** The `ide` app is a view the CLI hosts beside the projects: `./run.sh --ide` starts the CLI hosting it, and every command that reads or changes a view is the CLI's. It adds the window: the theme, the font, the keys, the modes part, and four panels in a dock, the editor, the graph, the Perform panel and the terminal. `view switch ide` goes into it, and `view switch` back to the CLI, so the graph and the terminals show either one. Each panel is a `panel` around a content, and each seam is a `split`'s:
 
 ```text
 +-------------------------+--------------------------+
@@ -672,7 +674,7 @@ The first keeps every typed path meaning one thing wherever you are, and matches
 
 `control` with `=` or `+` makes all of it larger, `control` with `-` smaller, and `control+0` puts it back (section 14). A session, from the terminal: `view load triangle` hosts the triangle, the graph shows its node, and the Perform panel shows its window under a tab of its own; a press on its box opens `triangle/Triangle.cpp` in the editor, and after an edit `control+s` writes it, which the live build swaps in, so the Perform panel shows the change a moment later (section 6). `f1` gives the triangle the whole window, and `f1` or `escape` gives it back. `escape` in edit mode lets go of what is selected, then of the focus, and then sends `quit`, which, as the window's close button, ends the run unless a file has changes (section 7).
 
-**The terminal in a window.** The terminal is the same `command-line` part with `param = on=window`: it reads the keyboard instead of standard input, and shows above the line typed what lines answer and the log, the lines typed in the accent color, what they answer and what nodes write (`{out}`) in the text color, the rest of the log muted, errors in red and warnings in amber, so a refused line names its cause there, a frame later. With views running side by side, the log keeps to the view the terminal's lines go to: a line about a node of another view stays out as it comes, on the console as in these rows, so one project's output never drowns another's. The lines about that view, the views it hosts and the `ide`'s own parts show, and so do every view's errors and warnings, which never hide (A02). The terminal vulpen was started from takes lines too, as the CLI's does: they go where the window's lines go, and what they answer prints there, while the log shows in both. The end of its input, as a launcher that gives none or a script piped in has, ends no run; the window does.
+**The terminal in a window.** The terminal is the same `command-line` part with `param = on=window`: it reads the keyboard instead of standard input, and shows above the line typed what lines answer and the log, the lines typed in the accent color, what they answer and what nodes write (`{out}`) in the text color, the rest of the log muted, errors in red and warnings in amber, so a refused line names its cause there, a frame later. With views running side by side, the log keeps to the view the terminal's lines go to: a line about a node of another view stays out as it comes, on the console as in these rows, so one project's output never drowns another's. The lines about that view, the views it hosts and the `ide`'s own parts show, and so do every view's errors and warnings, which never hide (A02). It registers no command: `help`, `complete` and `clear` are the CLI's terminal's, which answers them for both, and `control+l` sends `clear` from here, so what it answers clears these rows. The terminal vulpen was started from is the CLI's alone: its lines go to the same current view, and the log shows in both.
 
 ```text
 $ ./run.sh --ide      # the default, so ./run.sh alone does the same
@@ -855,7 +857,6 @@ frame.write(_rects, 1)[0] = {.offset = {24, 24}, .extent = {592, 88},
 
 ```ini
 # keymap.ini: a chord, = and the line it sends, as a line typed at the command port
-control+l       = clear
 control+s       = write
 control+=       = zoom in        # the = key, which types + with shift
 shift+control+= = zoom in
@@ -877,7 +878,7 @@ f1              = mode toggle
 
 | Command | What it does |
 | --- | --- |
-| `open [<file>]` | the editor part's: names the file in the editor's `file` param; with none, the `view.vlp` of the view the line goes to. A folder, or a file it cannot read, is refused, naming `: param unset ide.opener window`, which sends each `open` to the person's editor |
+| `open [<file>]` | the editor part's: names the file in the editor's `file` param; with none, the `view.vlp` of the view the line goes to. A folder, or a file it cannot read, is refused, naming `: param unset cli.editor window`, which sends each `open` to the person's editor |
 | `write` | saves the file shown; `control+s` sends it |
 | `close [<file>]` | closes a file the editor holds, or with none the file shown, unless it has changes; the close mark on a file's tab sends it with the file |
 | `close force [<file>]` | the same, dropping its changes, as `quit force` ends the run however `quit` was refused |
@@ -888,10 +889,10 @@ f1              = mode toggle
 - **Colors**: C++ and GLSL files, by their ending (`.cpp`, `.h`, `.glsl`, `.vert`, `.frag`, `.comp`, and the template's `.cpp.in` by its name), show comments, `#` directives, quotes, numbers, keywords and types in the theme's roles for them; a type is one of the languages' own, a name in CamelCase, as types are named here (RC01), one ending in `_t`, or a GLSL vector or matrix, as `uvec2`. A manifest and an `.ini` show their `#` comments, quotes, numbers, and each row's first word, its key or its section, so the manifest's words need no list of their own in the editor. Python (`.py`), CMake (`CMakeLists.txt`, `.cmake`) and shell (`.sh`), which the tooling is written in (RC00), show their `#` comments, quotes, numbers and keywords: Python its built-in types and names in CamelCase as types, a decorator as a directive, and a string in three quotes over every row it spans; CMake a command, a name before its `(`, as a keyword, a name in capitals as a type, and `${…}`, `$ENV{…}` and `$<…>` as directives; shell `$name`, `${…}`, `$1` and the like as directives. Markdown and any other file show in one color. A block comment's rows, and a Python string's, are found again from the file's top after an edit, not each frame.
 - **Files** are read once, as they open, so what was typed is never read over; a change on disk to a file open does not show. `write` saves through the file port (RA04), and a file not open is never written.
 - **The font draws ASCII**, so a character past it shows as a blank cell a byte, `—` as three. The caret steps over it whole and no edit splits it, so the rest of a file stays as it was.
-- **One editor a run**: its commands have one owner (B5), so a second text part is left out, as a second command-line is.
+- **One editor a run**: its commands have one owner (B5), so a second text part is left out, as a second command-line on the terminal is.
 - **Where:** `src/runtime/recipes/library/parts/text/`.
 
-**Modes and the Perform panel.** The `modes` part chooses what reaches the window, and shows a view the `ide` hosts without it drawing over the `ide` (section 13):
+**Modes and the Perform panel.** The `modes` part chooses what reaches the window, and shows a project, a view the CLI hosts beside the `ide`, without it drawing over the `ide` (section 13):
 
 | Command | What it does |
 | --- | --- |
@@ -904,15 +905,15 @@ f1              = mode toggle
 projects/triangle> mode perform   # the triangle, over the whole window
 ```
 
-- **The Perform panel** sits beside the editor in the dock's top row. Its tabs name the views the `ide` hosts, the one presented marked; a press on one sends `view switch` for it, and a press on its close mark sends `view close` for it, so nothing is presented in its place. Its image shows the view's window letterboxed, at the window's size, so a view draws as on its own; in perform mode it matches the view's own window pixel for pixel. A drag moves the window in the panel and the wheel zooms it about the pointer, as in the graph, cut at the panel's edge; the image part does so only with `param = moves=yes`, which the `ide` gives the panel and not the one that fills the window in perform mode. A press in the panel gives it the focus, and `h` then brings the window home, letterboxed as at first; `escape` lets go of the focus. Neither is kept: a restart, and another view presented, show the window letterboxed again.
-- **The Perform panel presents the current view** while it is a project, a view the `ide` hosts, each in a tab of its own, so the views loaded before keep theirs; a view a project hosts shows through its project, as the project composes its window (V03). While the current view is the `ide` itself, the panel keeps the one it presents, and when the `ide` starts, it presents the project hosted last. A view not presented draws nowhere and keeps running (section 13), so no project ever draws over the `ide`. `view load` of a view hosted already is refused, naming it and the file it is hosted from (`a view named wave is hosted already, from …/wave/view.vlp`), so a press on its tab shows it.
+- **The Perform panel** sits beside the editor in the dock's top row. Its tabs name the projects, the one presented marked; a press on one sends `view switch` for it, and a press on its close mark sends `view close` for it, so nothing is presented in its place. Its image shows the view's window letterboxed, at the window's size, so a view draws as on its own; in perform mode it matches the view's own window pixel for pixel. A drag moves the window in the panel and the wheel zooms it about the pointer, as in the graph, cut at the panel's edge; the image part does so only with `param = moves=yes`, which the `ide` gives the panel and not the one that fills the window in perform mode. A press in the panel gives it the focus, and `h` then brings the window home, letterboxed as at first; `escape` lets go of the focus. Neither is kept: a restart, and another view presented, show the window letterboxed again.
+- **The Perform panel presents the current view** while it is a project, each in a tab of its own, so the views loaded before keep theirs; a view a project hosts shows through its project, as the project composes its window (V03). While the current view is the `ide` or the CLI, the panel keeps the one it presents, and when the `ide` starts, it presents the project hosted last. A view not presented draws nowhere and keeps running (section 13), so no project ever draws over the `ide`. `view load` of a view hosted already is refused, naming it and the file it is hosted from (`a view named wave is hosted already, from …/wave/view.vlp`), so a press on its tab shows it.
 - **The terminals, the graph and the Perform panel follow one view**, the current one, so a press on a Perform tab, or `view switch b` typed, switches all of them, and the terminal's and the graph's tabs name it (`terminal - b`, `graph - b`). Once the project presented closes, the panel shows nothing.
 - **Perform mode needs something presented.** `mode perform`, and `f1` with it, is refused while nothing is (`nothing is presented to perform; view switch <name> shows a view this view hosts`), rather than giving the window to nothing; the current view's project is presented first, as the frame would, so `f1` just after `view load` finds it. Perform mode gives way to edit mode once the view presented goes, as `view close` takes it, and once the log shows an error, as a refused line's or that of `quit` refused while a file has changes, so the terminal shows why: perform mode hides the log.
 - **The mode is a param** of the modes node, `param set ide.modes mode perform`, which `mode` sends, so a save keeps it and a replay restores it; each switch rebuilds the `ide`. Perform mode leaves the panels no room, so it takes the focus from the part that had it, and edit mode gives it back.
 - **Presenting** makes one connection, `present`, from `<view>:` to the images the modes node's `to` param names, ports joined by commas, from the `ide`'s connections as the lines so far left them, so the next frame shows it; the log keeps it, so a replay presents the same view (V08). `view close` of the view presented lets go of `present` first, so the Perform panel shows nothing, and nothing else is presented in its place.
 - **Where:** `src/runtime/recipes/library/parts/modes/`, `src/runtime/recipes/library/parts/image/`.
 
-**The graph.** The `graph` part lays out the graph of the current view, the one the terminals' lines go to, and its tab names it, as `graph - wave`, or `graph` for the `ide` itself, whose own nodes it shows after `view switch`, as the CLI's will once the CLI hosts the `ide`. A second press on a view's box goes into that view, as `view switch` does. The `graph-editor` component is it with `curves`, `rects` and `glyphs`, and the `ide` seats one in a panel over the Perform panel.
+**The graph.** The `graph` part lays out the graph of the current view, the one the terminals' lines go to, and its tab names it, as `graph - wave`, or `graph` for the CLI itself, whose own nodes it shows after `view switch`, and the `ide`'s after `view switch ide`. A second press on a view's box goes into that view, as `view switch` does. The `graph-editor` component is it with `curves`, `rects` and `glyphs`, and the `ide` seats one in a panel over the Perform panel.
 
 ```text
 > view load wave       # the graph panel shows wave and probe, a curve between
