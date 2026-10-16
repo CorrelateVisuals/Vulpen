@@ -613,7 +613,7 @@ cli/
 - **A run in the background** (`./run.sh … &`) reads nothing from the terminal until it is brought to the foreground, since a read would stop it; what is typed meanwhile is the shell's.
 - **Keys edit the line**, as in the `ide`'s terminal: Tab completes, up and down recall the lines sent, left, right, home and end move the caret, and backspace and delete erase. control+c ends the run, as its signal did, unless a node holds work, as `quit` does, and so does control+d on an empty line, as the end of input does. The terminal takes each key as it comes, with no echo, from the first frame until the run ends, which gives it back as it found it; a run killed outright (`kill -9`) cannot, and `reset` then does. Each line the log prints takes the line's place, and the line comes back the frame after. A script piped in reads lines as before, and Windows' console types nothing yet.
 - **`ls` shows the view as folders**, as its nodes are (RV08): each node a folder under the node it is inside, its files under it, and beside it the recipe it uses, or was dropped from as `recipe probe@3f2a9c1e`; each view it hosts is a folder too, beside it the file it is hosted from. A node's connections are `info <node>`'s.
-- **Lines go to the current view**, which the command port keeps for every face: `view switch <name>` moves it to a hosted view, a view a project hosts too, and `view switch` alone to the CLI itself; `view new`, `view load`, `view save as` and `view rename` move it to the project they host. Once the current view is no longer hosted, as after `view close` of it or of the project holding it, it is the nearest view that held it, or the CLI. The CLI sends `zz-demo: ls` for your `ls`, so every log line names its view; a line from a script, or one a node sends, that names no view still goes to the CLI itself, so a log replays the same from any current view (V08). `view switch` changes no view, so the log keeps none of it. The log keeps to the current view too: another project's node lines stay off the console, its errors and warnings excepted.
+- **Lines go to the current view**, which the command port keeps for every face: `view switch <name>` moves it to a hosted view, a view a project hosts too, and `view switch` alone to the CLI itself; `view new`, `view load`, `view save as` and `view rename` move it to the project they host. Once the current view is no longer hosted, as after `view close` of it or of the project holding it, it is the nearest view that held it, or the CLI. The CLI sends `zz-demo: ls` for your `ls`, so every log line names its view; a line from a script, or one a node sends, that names no view still goes to the CLI itself, so a log replays the same from any current view (V08). `view switch` changes no view, so the log keeps none of it. The log keeps to the current view too: another project's node lines stay off the console, its errors and warnings excepted. So does the window: it shows the current project while it draws, and the others draw nowhere and keep running (section 13).
 - **`name: …`** sends one line to another hosted project, and **`: …`** to the CLI itself.
 - **A new node builds at once.** In a debug build, the live build compiles `spinner/` a moment after `node new` wrote it, and swaps it in; until then the node is left out, naming the module it waits for (section 16).
 
@@ -711,7 +711,7 @@ w …/wave/view.vlp                          # view list: the views this view ho
 ```
 
 - **Hosting follows the manifest.** Loading a view hosts the views it names; `view add` and `view close` are edits of the view a line addresses, which `view save` writes, and the log keeps. A child's own `[view]` sections host views in turn, and removing a child takes them along.
-- **`view close <name>` reaches the view that hosts it** from wherever the line goes, so `view close zz-demo` typed in zz-demo closes it. It lets go first of every connection that takes the view's window (below), in the same edit, so the log keeps one line, and nothing takes the view's place: the `ide`'s Perform panel shows nothing until another view is presented. Its files stay.
+- **`view close <name>` reaches the view that hosts it** from wherever the line goes, so `view close zz-demo` typed in zz-demo closes it. It lets go first of every connection that takes the view's window (below), its host's and a view beside it's, in the same edit, so the log keeps one line, and nothing takes the view's place: the `ide`'s Perform panel shows nothing until another view is presented. Its files stay.
 - **Each frame** cooks the host, then the hosted views in the order hosted, and runs all their passes. The window opens while a node of any view draws.
 - **A view whose `view.vlp` does not exist yet** starts empty, and its `view save` writes it, folder included: so a log can rebuild a project from nothing.
 - **No two hosted views share a name**, since a line addresses one by it; nor two views' folders, since the build tree mirrors each view by its folder's name.
@@ -719,7 +719,15 @@ w …/wave/view.vlp                          # view list: the views this view ho
 - **A line a command sends** goes to the same view as the line that ran it, unless it names one; a script's lines each stand alone.
 - **Where:** `src/runtime/Views.cpp`.
 
-**A hosted view's window.** A hosted view draws into the window over a host that draws nothing there, as the CLI. A host that draws into the window itself has it to itself (A01), so a view it hosts draws nowhere: it keeps running, its C++ cooking and its dispatches running, and its buffers and images kept, but it records no draw, as the `ide` keeps a project it does not present (`child triangle: draws nowhere, since its host draws there and no connection takes its window`, at `--log info`). A connection from `<view>:` takes what it draws into its window as one image, which the host's `Texture`s sample. The view runs as it would on its own and knows nothing of who takes it (V03):
+**A hosted view's window.** The window has one owner (A01). A host that draws into the window itself has it to itself, so a view it hosts draws nowhere: it keeps running, its C++ cooking and its dispatches running, and its buffers and images kept, but it records no draw, as the `ide` keeps a project it does not present (`child triangle: draws nowhere, since its host draws there and no connection takes its window`, at `--log info`). A hosted view draws over a host that draws nothing there, as a project's own views do. The CLI draws nothing, so of the views it hosts the window shows one, and the others draw nowhere (`child zz-demo: draws nowhere, since the window shows another view`):
+
+- one that takes the window of a view beside it, as a GUI presents a project (below), or has taken one, until it closes;
+- else the current view (section 12), or the view holding it, while it draws: so in the CLI alone, `view switch` switches what the window shows;
+- else the one hosted first that draws.
+
+A view in its first frame is one of them only while none of the others draws, so a view beside it may present it before it ever shows, and a window no view drew in yet opens at once, as at the start.
+
+A connection from `<view>:` takes what the view draws into its window as one image, which the `Texture`s of its host sample, or those of a view beside it, hosted by the same view, as a GUI presents a project hosted beside it. The view runs as it would on its own and knows nothing of who takes it (V03):
 
 ```ini
 # host/view.vlp
@@ -735,9 +743,10 @@ to   = show.picture          # repeat to for more readers
 
 - **What it holds**: the view's draws into its window, stacked in graph order, and those of the views it hosts that draw into its window, over them, as in a window of its own. It starts each frame cleared to nothing at all, so what they leave uncovered samples as transparent.
 - **Its format** is `R8G8B8A8_SRGB`, as the window takes it, so the view's draws blend and band as they would in its own window. **Its size** is the window's, or `--size`'s with none, as a draw's image is.
-- **Order**: the view's passes run first, its draws into the image in one render pass, then the host's, so a host's dispatch or draw samples what the view drew that frame.
+- **Order**: the view's passes run first, its draws into the image in one render pass, then those of the view taking it, its host or a view beside it, even one hosted before it, so that view's dispatch or draw samples what the view drew that frame.
+- **Beside it**: a manifest names only the views it hosts (V03), so a connection from the window of a view beside its view is made by a line, `ide: connect present box: ide.perform.picture`, and `view save` leaves it out; a replay of the log makes it again. `view close` of the view beside lets go of it.
 - **Connecting or disconnecting** rebuilds the hosted view too, so its draws' pipelines fit what they draw into now; drawing nowhere, its draws have none.
-- **Refused**, naming why: `<view>:` naming no view this view hosts (`connection stage is from inner:, but this view hosts no view inner`), a connection to a view's window, and a reader that is no `Texture`. `view close` of a view a connection takes lets go of the connection first.
+- **Refused**, naming why: `<view>:` naming no view this view hosts, nor one beside it (`connection stage is from inner:, but this view hosts no view inner, nor is one beside it`), and in a manifest one beside it, a connection to a view's window, and a reader that is no `Texture`. `view close` of a view a connection takes lets go of the connection first.
 
 ## 14. The library
 
@@ -997,14 +1006,16 @@ const VP::View *const shown = frame.view(frame.commands().current());
 A command reads a view by the name a line addresses it with, `call.view(name)`, empty for the one vulpen started with, as `:` addresses it, so it acts at once on another view than the one its line addressed. `mode perform` typed in the `ide`'s terminal addresses the project, and reads the `ide`'s own connections so:
 
 ```cpp
-const VP::View &own = *call.view("");   // the ide's, as the lines so far left it
+const VP::View &own = *call.view(_view);   // the ide's, as the lines so far left it
 ```
 
-**Its own name.** `node.name()` in `bind` is the node's name as a line names it, so a node can send a command about itself. The split part sends where its seam was dragged to this way, so the log keeps it and a replay puts the seam back:
+**Its own name.** `node.name()` in `bind` is the node's name as a line names it, and `node.view_name()` the name of the view it runs in, as a line addresses it, empty for the one vulpen started with, so a node can send a command about itself to its own view, whichever view the line that ran its command addressed. The split part sends where its seam was dragged to this way, so the log keeps it and a replay puts the seam back:
 
 ```cpp
-_name = node.name();                                                    // in bind
-frame.commands().send(std::format("param set {} ratio {:.3f}", _name, ratio)); // in cook
+_name = node.name();                                       // in bind
+_view = node.view_name();
+frame.commands().send(                                     // in cook
+    std::format("{}: param set {} ratio {:.3f}", _view, _name, ratio));
 ```
 
 **The terminal** (the command-line part's whole job):
