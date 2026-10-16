@@ -12,7 +12,7 @@ The core (`baseclasses/`, `runtime/`) knows no recipe. These are the ports the r
 | --- | --- | --- |
 | input | keys, pointer and clipboard | `InputPort` |
 | files | read, watch and save (RA04) | `FilePort` |
-| commands | send text, read the log, list the registered commands (RV04) | `CommandPort` |
+| commands | send text, read the log, each line about a node with the view it runs in, list the registered commands (RV04) | `CommandPort` |
 | graph | read the view; writes stay commands (V06) | `runtime/View.h`, once [D1](migration-and-implementation.md#open-decisions) is settled |
 | connections | the contracts on its connections | [D5](migration-and-implementation.md#open-decisions) |
 | terminal | stdin lines and stdout, for a CLI with no window (V07) | `TerminalPort` |
