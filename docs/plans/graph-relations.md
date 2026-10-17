@@ -194,6 +194,7 @@ The lead answered the todo's build in chat, with seven more asks:
 - "5. nodes with too many files 10+ should show 10 and '...' for the rest, hovering on the dots should show the left over files. take the docs/logs/* files for example."
 - "6. triangle.cpp shows no code connections to glsl, but they are connected somehow."
 - "7. double clicking a file like run.sh should open it in editor. clicking it once now resets all wires, it shouldn't."
+- "8. the highlited hover corners on boxes interfere when the box has the blue select line, the highlite should then be a tint of the selection rather."
 
 - **1 and 2, built** (2026-10-17): `.` goes into the box selected last, or the one under the pointer, and `,` up a level, as the wheel and a second press do, while the graph has the focus; and a level gone up to shows the box it was left from in focus: under the pointer, or in the middle of the area with the pointer out of it, two steps of the wheel short of going into it again, never farther than home. A level gone into starts at home, as before, and so does any other. Checked under Wayland, `select cli` then `.` going into the `cli`, `,` out of it and `,` again up to `Vulpen/src/runtime/recipes`, each read back with `info`; and by eye, the wheel out of the `cli`'s inside showing its box under the pointer, filling the graph. Calls made while building it:
   - **The keys are the graph's own, while it has the focus**, as `h` and `delete` are, not chords of the keymap: what they do depends on where the pointer is and what is selected, which only the graph knows.
@@ -206,6 +207,8 @@ The lead answered the todo's build in chat, with seven more asks:
   - **One `.ini` a repository, at its top**, where a folder holds `.git`, for every folder of it: a folder outside any repository keeps its own. A folder's box is named by its path from the folder holding the repository's top, as the relations part now names a folder, so a box keeps its name, and its place, whichever level shows it: `Vulpen/src/runtime`, the tab's own words.
   - **Every box moves and is made larger now**, so the flag that told a folder's from a view's went, and with it decision 44: a drag on a box moves the box, never the graph.
   - **Decision 26 of the handoff before last, and 52, change**: folders are still no nodes, which a press and `select` select, so a press raises a folder and lets go of the selection, but it is placed and sized as a node is.
+- **8, built** (2026-10-17): on a box selected, whose border is the accent's, the corners the pointer shows are a tint of the accent, and the one under the pointer the text's color, where muted arms had broken the border and the accent's had vanished in it; a box not selected keeps muted arms and the accent's corner. Checked on `inspect`, selected, its lower right corner under the pointer. Calls made while building it:
+  - **The tint is a role of the theme, `highlight`**, a fifteenth, `0.45 0.65 1.0` beside the accent's `0.2 0.45 0.9`, so the theme keeps every color (C02) and a person's theme changes it: `contracts/Palette.h` names it, `Palette.glsl` counts it, and `theme.ini` gives it, which a theme of a person's own must now give too, as the palette part refuses one that leaves a role out (A02).
 
 ## Not in it
 
