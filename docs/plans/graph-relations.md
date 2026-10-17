@@ -121,6 +121,11 @@ The lead accepted decisions 1 to 5, each with its pick, on 2026-10-16 ("all 20 h
   - **A box's relations of a layer share their lanes, and every box's reaching out share one track a layer**, so the `ide`'s inside, whose nodes all include contracts and cite the principles, keeps three tracks for them rather than forty.
   - **A row of `outside` names its path from the folder holding the folder shown, or from the view's folder**, as `../../Operator.h` from the `ide`'s.
   - **The hues**: a connection in the accent color, structure in the directive color, code in the keyword color, build in the number color, docs in the string color, as the theme colors code.
+- **Step 5, built** (2026-10-17): the graph's `relations` param names the layers shown, as decision 3 has it, `flow,structure,code,build,docs` joined by commas, or `none`, and unset every layer; a row of buttons along the graph's bottom edge, a layer each, lit while it shows, sends the line turning it off or on. In the `ide`, a press on `docs` and one on `code` left the connections alone. Calls made while building it:
+  - **The buttons sit in a row of their own**, which a `bar` at the bottom of the `graph-editor` keeps, the graph taking the rest, rather than over the graph's ground, as the POC drew them, so they hide no box; the host connects its Rect to `bar.area` now. A `list` lays them out and a `hit` sends the line of the one pressed, as a panel's tabs, with `rects` and `glyphs` of their own: four nodes more in the component, and in the `ide`'s manifest the theme, the font, its atlas and its metrics to them.
+  - **A layer hidden takes no lanes**: the graph lays out again without its curves, rather than leaving their room empty.
+  - **Every layer shown leaves the param unset**, as it was, so a save of a view never holds the choice it started with.
+  - **`Graph.cpp` runs past 800 lines**, saying why at its top (CPP12): a class in the unnamed namespace keeps its methods to one file.
 
 ## Not in it
 
