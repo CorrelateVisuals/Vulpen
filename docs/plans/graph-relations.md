@@ -209,6 +209,9 @@ The lead answered the todo's build in chat, with seven more asks:
   - **Decision 26 of the handoff before last, and 52, change**: folders are still no nodes, which a press and `select` select, so a press raises a folder and lets go of the selection, but it is placed and sized as a node is.
 - **8, built** (2026-10-17): on a box selected, whose border is the accent's, the corners the pointer shows are a tint of the accent, and the one under the pointer the text's color, where muted arms had broken the border and the accent's had vanished in it; a box not selected keeps muted arms and the accent's corner. Checked on `inspect`, selected, its lower right corner under the pointer. Calls made while building it:
   - **The tint is a role of the theme, `highlight`**, a fifteenth, `0.45 0.65 1.0` beside the accent's `0.2 0.45 0.9`, so the theme keeps every color (C02) and a person's theme changes it: `contracts/Palette.h` names it, `Palette.glsl` counts it, and `theme.ini` gives it, which a theme of a person's own must now give too, as the palette part refuses one that leaves a role out (A02).
+- **5, built** (2026-10-17): a box lists ten of the nodes, folders and files it holds at most, and a row `... 54 more` for the rest, which the pointer over it shows in the tip, as many names a row as fit; a double click on that row goes into the box, where each is a box of its own. Checked on `Vulpen/docs`: `logs` listing `.gitkeep` and nine handoffs, then `... 54 more`, whose tip listed the rest. Calls made while building it:
+  - **The ten count what a box holds**, its nodes, folders and files; its ports, its recipe and the file a view is hosted from always show.
+  - **A tip shows as many rows as the area holds, 16 at most**, the last saying how many more: one of every name would run past the area, as `docs/logs` holds 64 files.
 
 ## Not in it
 
