@@ -183,6 +183,24 @@ Recipes only, each item, as the ports a part needs are there (V05).
   - **The pointer is over a curve within 4 pixels of it**, measured along its lines and along a bend in 16 pieces; of two that near, the one drawn later.
   - **Which curve the pointer is over, and its tip, live in `Hover.h`**, beside `Covered.h`, as `Graph.cpp`'s top says what needs none of its state lives in the headers beside it: `Graph.cpp` runs to 1,134 lines after this session's 1,249, past the about 800 of CPP12, saying why at its top, and `Layout.h` to 827.
 
+## The lead's word of 2026-10-17, later
+
+The lead answered the todo's build in chat, with seven more asks:
+
+- "1. ',' should zoom out and '.' into a node."
+- "2. when zooming in to a node it should start at the 'h' /default zoom level, zooming out should focus on the node you come out off, so zooming in a bit would land you there again and giving you a good point of reference."
+- "3. nodes/folders in folders are now not dragable as we are panning instead."
+- "4. folders and files should be able to be moved around and rescaled interacted with just like normal nodes."
+- "5. nodes with too many files 10+ should show 10 and '...' for the rest, hovering on the dots should show the left over files. take the docs/logs/* files for example."
+- "6. triangle.cpp shows no code connections to glsl, but they are connected somehow."
+- "7. double clicking a file like run.sh should open it in editor. clicking it once now resets all wires, it shouldn't."
+
+- **1 and 2, built** (2026-10-17): `.` goes into the box selected last, or the one under the pointer, and `,` up a level, as the wheel and a second press do, while the graph has the focus; and a level gone up to shows the box it was left from in focus: under the pointer, or in the middle of the area with the pointer out of it, two steps of the wheel short of going into it again, never farther than home. A level gone into starts at home, as before, and so does any other. Checked under Wayland, `select cli` then `.` going into the `cli`, `,` out of it and `,` again up to `Vulpen/src/runtime/recipes`, each read back with `info`; and by eye, the wheel out of the `cli`'s inside showing its box under the pointer, filling the graph. Calls made while building it:
+  - **The keys are the graph's own, while it has the focus**, as `h` and `delete` are, not chords of the keymap: what they do depends on where the pointer is and what is selected, which only the graph knows.
+  - **`.` goes into the box selected last that has an inside**, before the one under the pointer, as a key acts on the selection as `delete` does.
+  - **The box left is kept by name, or a folder by its path**, until the next level shows; `h`, or going into a box, lets go of it.
+  - **Two steps of the wheel short of going in**, from the level's home, so the steps up again from there to leave are as many as from home: going in and out again stays a rhythm.
+
 ## Not in it
 
 - **Typed paths from the current project.** Items 1 and 2 of the note, `open Triangle.cpp` in the triangle project, are a question of where a typed path counts from, which the [handoff](../logs/development-20261016T205135Z.md) put to the lead, who picked 15B; built on 2026-10-17, as the [handoff](../logs/development-20261017T060352Z.md) says: a word without a `/` names a file the view holds.
