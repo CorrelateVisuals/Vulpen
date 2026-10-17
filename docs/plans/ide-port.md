@@ -150,7 +150,7 @@ The engine registers only the primitive edits, the log, save and migrate, hostin
 | [x] | D20 | `relations <kinds>`. Built on 2026-10-17 as the graph's `relations` param rather than a command ([graph and relations](graph-relations.md), 3A): its layers joined by commas, or `none`, which a button a layer along the graph's bottom edge sets | `relations`, `tiles`, `route`, `deps` | part `graph` | 30 | E16 | later |
 | [ ] | D21 | `keys` | `keys` | part `keys` | 20 | E10 | later |
 | [ ] | D22 | `probe watch <connection>`: adds a probe node on the connection, as the wave example's probe, and prints the min, max, NaN count and hash of what it reads back | `probe watch` | part `inspect` | 50 | C2 | later |
-| [ ] | D23 | `heat`, `probe stats`. `probe stats [<node>]` built on 2026-10-17 as step 27 of [next](#next-proposed-2026-10-17), in `inspect` | `heat`, `probe stats` | parts `graph`, `inspect` | 60 | A13 | later |
+| [x] | D23 | `heat`, `probe stats`. Built on 2026-10-17 as steps 27 and 28 of [next](#next-proposed-2026-10-17): `probe stats [<node>]` in `inspect`, and the heat as the graph's `heat` param, which two buttons beside the layer buttons set | `heat`, `probe stats` | parts `graph`, `inspect` | 60 | A13 | later |
 | [ ] | D24 | `screenshot`, `capture` | `engine screenshot`, `probe capture` | a part (in A8) | in A8 | A8 | later |
 
 Core: the 31 commands in D1–D12 replace 46 POC verbs; D10's five were cut on 2026-10-07, with the five verbs on its row. Later: 19 commands replace 31 more. The remaining 61 are cut:
@@ -303,6 +303,14 @@ On 2026-10-17 the lead answered "phase 5 first", so steps 26 to 28 are built on 
   - **A node that neither cooks nor has a pass, nor holds one that does, has no row**, as one holding only files, which costs nothing.
   - **A time under half a microsecond prints 0.000 and has no bar**, so a row of tiny draws does not light up beside each other; a pass the GPU did not time shows `?`.
   - **The rows name the nodes as the view runs them**, each recipe a node uses unfolded under the node, as `ide.graph.graph` under `graph`.
+- **Step 28, built** (2026-10-17): the graph's `heat` param, `gpu` or `cpu`, fills each box by what its node and the nodes inside it cost, on a ramp of five theme roles, `cold`, `cool`, `mild`, `warm` and `hot`, blended between the two its share of the costliest box beside it falls between; the kind's color stays on the border, as it was; the pointer over a box shows its times in the tip; and two buttons after the layer buttons, `gpu` and `cpu`, set it. The Rect contract gains `blend_role` and `blend`, which `rects` mixes toward. Recipes, about 190 lines of code more, 298 with comments, most in `Heat.h` beside `Graph.cpp`, which runs to 1,261 lines (72), where the plan said about 165. Checked by eye under XWayland: at the `cli`'s top on the CPU, the `ide`'s box hot and the `cli`'s cool; in the `ide`'s inside on the CPU, `graph` hot and every other box near cold; on the GPU, the nodes with no pass left unfilled, `dock` mild and `graph` hot, its tip reading `cpu 3.332 ms a frame, 2.110 the last frame` and `gpu 0.055 ms a frame, 0.030 the last frame`. The suite passes, the fail-loud fixture's copy of the Rect brought member for member, as the loader refused the old one (A02). Calls made while building it:
+  - **A budget is written after a colon**, `gpu:2.5` or `cpu:16`, as a param's value is one word; it colors against that many milliseconds rather than the costliest box beside it.
+  - **The frame takes a fill only by a budget**: it holds every box beside it, so against the costliest beside it it would always be hot.
+  - **A hosted view's box carries every node of its view**, through `frame.costs(<view>)`; a file's box, the manifest's, a folder's and what lies outside cost nothing, so they keep the panel's fill.
+  - **The five roles are dark**, so the text over them reads, their hue rising from green through yellow to red, the cold end near the panel's ground, as the POC's ramp; a pass the GPU has not timed is `muted`, off the ramp, as unknown must not look cheap. A theme of a person's own must now give the five, as the palette refuses one that leaves a role out (A02).
+  - **A Rect blends toward a second role**, 8 bytes more, 32 a Rect, rather than five roles with no blending, so cost reads as a continuum, as the POC's did: the pick of call 4.
+  - **No legend and no heat on the curves** (C00): the tip gives a box's times, and the POC's curve taking its writer's heat waits until someone misses it.
+  - **The tip over a box shows only while the heat is on**, before a curve's tip and after the tip of a box's row for the rest.
 
 ## Decisions this needs (A00)
 
