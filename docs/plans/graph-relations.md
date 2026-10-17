@@ -151,6 +151,13 @@ Recipes only, each item, as the ports a part needs are there (V05).
   - **Only a frame's rows hide what lies under them**: a press, the wheel and a select box on its inside reach the ground, and a select box touching only its inside selects no frame.
   - **The order lasts while the view shows**, so a restart draws the boxes as built, the frame first, then each box after the box holding it: it is a look of the moment, as the pan is, which the `.ini` leaves out (C00).
   - **A row cut at the boxes over it is a Label a piece**, at most 16 a row, each holding only the characters it shows; glyphs draws every row after rects draws every box, so the graph cuts the rows rather than drawing a box at a time (A14's depth is a later row). The order and the pieces live in a header of their own, `Covered.h`.
+- **1d, built** (2026-10-17): a drag on a corner of a box pulls that corner while the opposite one stays, making the box larger, or smaller down to the size its rows and the boxes inside it need, and the `.ini` keeps the size, `size <box> = width height`, in pixels at zoom 1. Checked on the `cli`'s inside: `inspect` pulled larger by its lower right corner, whose column widened and pushed the boxes under it down, and `outside` by its upper left, which moved it up and left while its lower right stayed. Calls made while building it:
+  - **The corners show while the pointer is over a box**: two short arms along its edges from each corner, muted, the one under the pointer in the accent color; a press within 8 pixels of a corner, or a quarter of a small box's side, takes it.
+  - **A size the box needs anyway leaves the `.ini`**, so it keeps only boxes made larger, and a box whose rows later need more grows past what was kept.
+  - **A left or a top corner moves the box too**, so its first drag places every box where it shows, as a move does.
+  - **At a level the graph lays out, a box made larger widens its column and pushes the boxes below it down**, as a larger box would; at one placed by hand, every other box stays where it is.
+  - **A frame is a box that holds boxes**, as the layout says, rather than one taller than its rows: a box made taller is filled whole.
+  - **A folder's boxes keep their size**, as they keep their places: no `.ini` holds them.
 
 ## Not in it
 
