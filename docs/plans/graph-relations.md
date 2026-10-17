@@ -224,6 +224,8 @@ The [handoff](../logs/development-20261017T130403Z.md) that closed the lead's wo
   - **Every column wraps, not only the first**, where the boxes no relation orders stack: a column of boxes the relations order is a tower too.
   - **A column reaches as tall as a level holding its boxes and the room between them would be at 1.6 times as wide as tall**, as a window is, or as its tallest box: one number, `wrap_aspect`, rather than the area's own shape, which would lay a level out again at each resize of a panel.
   - **A box reading from the first part of a wrapped column passes the parts after it on a track**, as any curve passes a column.
+- **A row of what lies outside opens what it names, built** (2026-10-17): a second press on a row of `outside` that a relation reaches, as `src/tools/fetch-statistics.py` beside `Vulpen/docs`, opens that file in the editor, as a second press on a file's row does (7), and one naming a folder shows that folder, as `open` does. Checked on `Vulpen/docs`, a double click by `input` on that row opening it in a tab. Calls made while building it:
+  - **A row a connection reaches opens nothing**: it names a port, as `ide.dock.split.area`, no file.
 
 ## Not in it
 
