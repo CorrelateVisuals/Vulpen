@@ -199,7 +199,9 @@ The lead answered the todo's build in chat, with seven more asks:
   - **The keys are the graph's own, while it has the focus**, as `h` and `delete` are, not chords of the keymap: what they do depends on where the pointer is and what is selected, which only the graph knows.
   - **`.` goes into the box selected last that has an inside**, before the one under the pointer, as a key acts on the selection as `delete` does.
   - **The box left is kept by name, or a folder by its path**, until the next level shows; `h`, or going into a box, lets go of it.
-  - **Two steps of the wheel short of going in**, from the level's home, so the steps up again from there to leave are as many as from home: going in and out again stays a rhythm.
+  - **Two steps of the wheel short of going in again**: zooming on out from there goes up a level once it passes half of home, as from home.
+- **7, built** (2026-10-17): a second press on a file's row, or on a file's box, as `run.sh`'s at the top of the repository, opens it in the editor, and a single press no longer opens anything: it selects, raises and grabs, as on any box. Opening a file sets the editor's param, an edit of the `ide`, which binds every node of the `ide` again, and the relations part had read its folder again on every bind, so a big folder's curves went until it was read again: it reads again now only as its folder or its documents change. Checked under Wayland: the top of the repository read once, `open run.sh` set the editor's file, and no reading followed. Calls made while building it:
+  - **A second press opens the file of the row pressed before going into the box**, so a double click on a node's file row opens the file, and one on its name or its ports goes into it.
 
 ## Not in it
 
