@@ -212,6 +212,9 @@ The lead answered the todo's build in chat, with seven more asks:
 - **5, built** (2026-10-17): a box lists ten of the nodes, folders and files it holds at most, and a row `... 54 more` for the rest, which the pointer over it shows in the tip, as many names a row as fit; a double click on that row goes into the box, where each is a box of its own. Checked on `Vulpen/docs`: `logs` listing `.gitkeep` and nine handoffs, then `... 54 more`, whose tip listed the rest. Calls made while building it:
   - **The ten count what a box holds**, its nodes, folders and files; its ports, its recipe and the file a view is hosted from always show.
   - **A tip shows as many rows as the area holds, 16 at most**, the last saying how many more: one of every name would run past the area, as `docs/logs` holds 64 files.
+- **6, built** (2026-10-17): a name a node's C++ binds to its shaders, quoted after `value`, `upload`, `readback` or `texture` of its `Bind`, as `upload<glm::vec2>("corners")`, links its file to the shader of the same folder whose pass block declares it, a curve in the code layer, the name what the tip says: so `Triangle.cpp` links to `Triangle.glsl`, by `corners` and `tint`. Checked on the triangle's inside, the new curve beside the shaders' includes. Calls made while building it:
+  - **The seam is read as the other relations are**, from the lines that say it, no compiler asked: the C++ calls that reach a shader's pass block by name, and the members of a shader's `uniform Pass` block, which every shader of the tree declares so. A name an upload hands another node's shader, through a connection, links nothing, as no shader of its own folder declares it.
+  - **A relation shows once for each name that says it**, at its first line, rather than once a pair of files: the tip of `Triangle.cpp`'s curve lists `corners` and `tint`, and a file citing two ids of one document lists both.
 
 ## Not in it
 
