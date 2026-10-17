@@ -191,7 +191,7 @@ Parts are the panels' building blocks, with the jobs the [recipe map](../archite
 | [x] | E17 | `inspect` | reads the graph and registers `ls`, `info`, `schedule` and `probe watch`. On 2026-10-16 ([views and modes](views-and-modes.md), 3.1A), `info` shows a view the view hosts too, as the graph selects one: under `[view "…"]`, its file and the connections that take its window | 582 | in D7 | B5, B8 | core |
 | [x] | E18 | `library` | works on recipe and view folders through the file port, and registers `recipe list`, `recipe drop`, `recipe sync`, `recipe publish`, `node new`, `view new`, `view load`, `node duplicate` and `file rename`. On 2026-10-16, on the lead's word ([views and modes](views-and-modes.md), 2A), `view load` and `view new` of a name hosted already are refused, naming the view and the file it is hosted from | (in C2's) | in C2, D4 | B5, B7, C1 | core |
 | [ ] | E15 | `command-items` | offers the commands for a target as Items, for menus and the popup | 398 | 60 | B1, B8 | later |
-| [ ] | E16 | `relations` | finds CMake, doc and include relations and publishes them as Relations | 325 + 822 | 160 | B7 | later |
+| [x] | E16 | `relations` | finds CMake, doc and include relations and publishes them as Relations. Built on 2026-10-17 ([graph and relations](graph-relations.md), 2A): includes, imports, sourced scripts, CMake names, document links, cited ids and recipes used, read through the file port for the view or the folder shown, whose folder it holds, as `open` sets it | 325 + 822 | 160 | B7 | later |
 
 ## 6. Components and apps
 
@@ -203,7 +203,7 @@ A component is only a `view.vlp` (RV06), so it costs manifest lines, and it can 
 | [x] | F2 | `dock` | split, rects; built on 2026-10-07, with no hit, since split takes its own seam's drag | 2,228 (the POC's runtime dock, which E7 and D18 replace) | 20 | C1, E7 | core |
 | [x] | F3 | `text-area` | text, rects, glyphs; built on 2026-10-10, and the `ide` seats one in a panel in the dock's top row | text panel, in three copies (in E11's) | 20 | E11 | core |
 | [x] | F4 | `terminal` | command-line, list, hit, rects, glyphs; built on 2026-10-07. On 2026-10-16, on the lead's word, Tab prints what it lists among the rows, so list and hit left it: command-line, rects, glyphs | the same text panel | 25 | B6, E12 | core |
-| [x] | F5 | `graph-editor` | graph, rects, glyphs, curves; relations once E16 lands. Built on 2026-10-10, and the `ide` seats it in a panel over the Perform panel; on 2026-10-13 its boxes list their files, are dragged and zoom (E13) | node grid (in E13's) | 30 | E13 | core |
+| [x] | F5 | `graph-editor` | graph, rects, glyphs, curves, and relations since 2026-10-17 (E16). Built on 2026-10-10, and the `ide` seats it in a panel over the Perform panel; on 2026-10-13 its boxes list their files, are dragged and zoom (E13) | node grid (in E13's) | 30 | E13 | core |
 | [ ] | F6 | `menu` | command-items, list, hit, rects, glyphs | 298 | 30 | E15 | later |
 | [ ] | F7 | `tooltip` | list, rects, glyphs | 112 | 20 | E8 | later |
 | [ ] | F8 | `find-bar` | command-line, rects, glyphs | 20 | 20 | E11, E12 | later |

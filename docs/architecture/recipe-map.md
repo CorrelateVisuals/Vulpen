@@ -55,8 +55,8 @@ Parts hold all of the library's code but the shared code, and use no other recip
 | `text` | `Text` | input, files, commands | Font, Rect, Typed | Label, Rect, Item (a tab a file open) |
 | `command-line` | `CommandLine` | input, commands (the log too), terminal | Font, Rect, Typed | Label, Item (its tab), Rect |
 | `command-items` | `CommandItems` | commands | Item | Item |
-| `graph` | `Graph`, shaders | input, files, commands, graph | Rect, Font, Typed, Palette (Relation once relations land) | Rect: its boxes; Label, Curve, Item (its tab); draws its ground, lines that move and zoom with it |
-| `relations` | `Relations` | files | — | Relation |
+| `graph` | `Graph`, shaders | input, files, commands, graph | Rect, Font, Typed, Palette, Relation | Rect: its boxes; Label, Curve, Item (its tab); draws its ground, lines that move and zoom with it |
+| `relations` | `Relations` | files, commands, graph | — | Relation: what links the files of the view or the folder shown, and the folder |
 | `modes` | `Modes` | commands (the log too), graph | Rect, Typed (the keys no part in focus takes) | Rect: two, the dock's room and what is presented; Item (a tab a project, a view beside its own); the connection that presents one |
 | `inspect` | `Inspect` | commands, graph | — | — |
 | `library` | `Library` | files, commands | — | — |
