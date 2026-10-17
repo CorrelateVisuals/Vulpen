@@ -158,6 +158,13 @@ Recipes only, each item, as the ports a part needs are there (V05).
   - **At a level the graph lays out, a box made larger widens its column and pushes the boxes below it down**, as a larger box would; at one placed by hand, every other box stays where it is.
   - **A frame is a box that holds boxes**, as the layout says, rather than one taller than its rows: a box made taller is filled whole.
   - **A folder's boxes keep their size**, as they keep their places: no `.ini` holds them.
+- **2a, 2b and 5, built** (2026-10-17): zooming out of the top of a view another hosts shows that view's top, through `view switch`, as entering a view's box shows its inside; a view's top shows a box for its manifest, which a press opens, and a view's box lists its top nodes before the file it is hosted from; and a node holding files is a box one goes into, as one holding nodes is, its inside showing a box a file and the relations between them. Checked on the triangle project: its node's inside showed `Triangle.cpp`, `Triangle.frag`, `Triangle.vert` and `Triangle.glsl`, the two shaders' includes of `Triangle.glsl` as curves; its top showed the node and `view.vlp`; and the wheel out of it showed the `cli`'s top, `view.vlp` there too, and the `ide`'s and the triangle's boxes listing `node ide` and `node triangle`. Calls made while building it:
+  - **A view's manifest is a box at its top**, named `/view.vlp` in the `.ini`, the name of the view's own folder being empty, as a file's box inside a node is named `<node>/<file>`: a `/`, which no node's name holds. Not a frame round the top, as a node's inside has: that would hold every view's top boxes in one more box and move every place a person kept there.
+  - **The manifest's lines draw no relations**, as the relations part reads the files of the view's nodes; its `recipe =` lines show already as each box's `recipe <name>` row.
+  - **A view's box lists the nodes at its top, `node <name>`**, as a box holding nodes lists them, so the `ide`'s box reads `node ide` above `view.vlp`; the graph builds its boxes again as a view hosted changes.
+  - **The view vulpen started with has no view above it** until item 3: zooming out of its top goes nowhere.
+  - **A node's files leave its rows once its inside shows**, as a folder's did, each a box of its own; a recipe's node shows the recipe's files so.
+  - **An include the build's include path finds, as `runtime/Operator.h` from a project, draws no curve**: the relations part finds a name from the file's folder and the folders holding it, as before, so `Triangle.cpp` shows none.
 
 ## Not in it
 
