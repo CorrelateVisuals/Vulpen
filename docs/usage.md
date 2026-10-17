@@ -383,6 +383,7 @@ open [<path>]                    opens a file in the editor in a window while on
 param
   set <node> <key> <value>       sets a param of a node
   unset <node> <key>             removes a param of a node
+probe stats [<node>]             prints what each node costs a frame on the CPU and the GPU, in milliseconds …
 quit                             ends the run before its next frame, unless a node holds work the end would lose, …
   force                          ends the run before its next frame, even while a node holds work the end would lose
 recipe
@@ -402,7 +403,7 @@ view
   switch [<name>]                makes a hosted view the current one, where the lines typed go and which every …
 ```
 
-- **Who registers them.** The engine registers the edits, the log, save, `view list`, `view switch`, `image clear`, `input` and `quit`; every other command is a node's: `help`, `complete` and `clear` are the command-line part's, `ls` and `info` the inspect part's, `recipe …` and `node new …` the library part's, `view new`, `view load`, `view save as` and `view rename` the projects part's, `open` the editor part's, `focus` the keys part's, `write`, `close`, `close force` and `find` the text part's, `mode edit`, `mode perform` and `mode toggle` the modes part's, `zoom in`, `zoom out` and `zoom reset` the font part's, and `select` and `selected` the graph part's; the `ide` has these last five parts and the CLI has not (V05).
+- **Who registers them.** The engine registers the edits, the log, save, `view list`, `view switch`, `image clear`, `input` and `quit`; every other command is a node's: `help`, `complete` and `clear` are the command-line part's, `ls`, `info` and `probe stats` the inspect part's, `recipe …` and `node new …` the library part's, `view new`, `view load`, `view save as` and `view rename` the projects part's, `open` the editor part's, `focus` the keys part's, `write`, `close`, `close force` and `find` the text part's, `mode edit`, `mode perform` and `mode toggle` the modes part's, `zoom in`, `zoom out` and `zoom reset` the font part's, and `select` and `selected` the graph part's; the `ide` has these last five parts and the CLI has not (V05).
 - **A usage is its completion.** Its placeholders say what can come there, so `complete` knows. The last may end in `...`, one argument or more, and stand in brackets, which a line may leave out: `node add ui` adds a group. Such a placeholder completes each word after it too, as `<node>` does for every node `[<node>...]` takes.
 
   ```text
@@ -1028,6 +1029,13 @@ A command reads a view by the name a line addresses it with, `call.view(name)`, 
 
 ```cpp
 const VP::View &own = *call.view(_view);   // the ide's, as the lines so far left it
+```
+
+**What the nodes cost.** `frame.costs(name)` hands what each node of a view costs a frame, by the view's name, in the order the view runs them, and `call.costs()` the same for the view a command addresses: a `Cost` a node, as the view runs it, each recipe unfolded, with its operator's `cook` on the CPU and its pass on the GPU, in milliseconds, smoothed over about a second and as the last frame took them. `runs` says a node has a pass, and `timed` that the GPU timed it, as a GPU without timestamps cannot. Times differ from run to run, so only what a person reads shows them, never a node's output (C01). The inspect part's `probe stats` prints them so:
+
+```cpp
+for (const VP::Cost &cost : call.costs())   // the view the line addresses, as it runs
+  call.reply(std::format("{} {:.3f} {:.3f}", cost.node, cost.cpu, cost.gpu));
 ```
 
 **Its own name.** `node.name()` in `bind` is the node's name as a line names it, and `node.view_name()` the name of the view it runs in, as a line addresses it, empty for the one vulpen started with, so a node can send a command about itself to its own view, whichever view the line that ran its command addressed. The split part sends where its seam was dragged to this way, so the log keeps it and a replay puts the seam back:

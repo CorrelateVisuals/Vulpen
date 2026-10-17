@@ -82,7 +82,7 @@ Of the POC's 13 channel kinds, `UBO`, `SSBO`, `STAGING_UPLOAD` and `READBACK` ar
 | [ ] | A10 | Storage images: a compute shader writes an `image2D`. | (in A5's) | 40 | A5 | later |
 | [ ] | A11 | Indirect draws and dispatches, with counts a shader writes. | – | 50 | A4 | later |
 | [ ] | A12 | More than one frame in flight: blocks, uploads and readbacks per frame (VK02). | 338 | 120 | — | later |
-| [ ] | A13 | GPU timestamps per pass (C03). | 417 | 80 | — | later |
+| [x] | A13 | GPU timestamps per pass (C03). Built on 2026-10-17 as step 26 of [next](#next-proposed-2026-10-17), with each node's CPU time in `cook`: two timestamps a pass, read after the frame's fence, and what each node costs, smoothed and as the last frame took it, through `frame.costs(<view>)` and `call.costs()` | 417 | 80 | — | later |
 | [ ] | A14 | Depth: every target gets a depth attachment, tested less-or-equal, so flat draws are unaffected and no manifest word is needed. Example 2's cubes need it. | – | 40 | — | later, for 3D recipes |
 | [ ] | A15 | Image and mesh loaders. | 395 | 150 | A5 | later, as recipes |
 | [ ] | A16 | Vertex and index buffers, vertex input layouts, mesh presets. | 496 + | 0 | — | cut: shaders fetch vertices through buffer addresses, as the triangle already does |
@@ -150,7 +150,7 @@ The engine registers only the primitive edits, the log, save and migrate, hostin
 | [x] | D20 | `relations <kinds>`. Built on 2026-10-17 as the graph's `relations` param rather than a command ([graph and relations](graph-relations.md), 3A): its layers joined by commas, or `none`, which a button a layer along the graph's bottom edge sets | `relations`, `tiles`, `route`, `deps` | part `graph` | 30 | E16 | later |
 | [ ] | D21 | `keys` | `keys` | part `keys` | 20 | E10 | later |
 | [ ] | D22 | `probe watch <connection>`: adds a probe node on the connection, as the wave example's probe, and prints the min, max, NaN count and hash of what it reads back | `probe watch` | part `inspect` | 50 | C2 | later |
-| [ ] | D23 | `heat`, `probe stats` | `heat`, `probe stats` | parts `graph`, `inspect` | 60 | A13 | later |
+| [ ] | D23 | `heat`, `probe stats`. `probe stats [<node>]` built on 2026-10-17 as step 27 of [next](#next-proposed-2026-10-17), in `inspect` | `heat`, `probe stats` | parts `graph`, `inspect` | 60 | A13 | later |
 | [ ] | D24 | `screenshot`, `capture` | `engine screenshot`, `probe capture` | a part (in A8) | in A8 | A8 | later |
 
 Core: the 31 commands in D1–D12 replace 46 POC verbs; D10's five were cut on 2026-10-07, with the five verbs on its row. Later: 19 commands replace 31 more. The remaining 61 are cut:
@@ -288,6 +288,21 @@ Calls the phases need, each with a pick:
 7. **The menus are lines in a `menu.ini`** (30), as `view/save = view save`, so a menu does nothing a typed line cannot (V06) and a person changes it in a file, rather than menus made from every registered command, about fifty in no order a person chose; E15 waits for a menu on a right press. Pick: `menu.ini`.
 8. **A panel moved is an edit of the ide's own manifest** (31): a `dock` node added to split the panel dropped on, the panel connected to its new side, and the split it left removed, one log group, so a save keeps the layout, a replay rebuilds it (V08) and the graph shows the docks change. The other way, one `layout` param naming the whole tree, would hold the layout twice, in the param and in the docks (C02). Pick: the edits.
 9. **A panel holds several contents** (32): those not shown get no room and do no work, as now; a tab dragged out takes its content with all its tabs, but an editor's file, which opens in a new editor. D18's three commands become one, `panel move <panel> <target> <side>`, the side `left`, `right`, `top`, `bottom` or `middle` (V06). Pick: yes.
+
+On 2026-10-17 the lead answered "phase 5 first", so steps 26 to 28 are built on the picks of calls 1 to 5, and step 29 waits on call 6, as proposed:
+
+- **Step 26, built** (2026-10-17): the engine times each node's `cook` with the steady clock, and each pass on the GPU with a timestamp before it and one after it, in a pool of two a pass, reset at the start of the frame's commands and read once the frame's fence passed, so no read waits (VK02); a queue that keeps no time writes none, and its passes stay untimed (RVK01). Each schedule keeps a `Cost` a node, smoothed and as the last frame took it, which `frame.costs(<view>)` hands a node and `call.costs()` a command, for the view it addresses. Engine, 196 lines of code more, 259 with comments, where the plan said about 110: the reading of the timestamps, and the times handed back to the schedule that made each pass. Checked: the suite in the debug and asan presets, every run writing timestamps under validation, on lavapipe and the machine's GPU. Calls made while building it:
+  - **The schedule smooths, a frame at a time**: each frame's time moves the smoothed one 1/54 of the way, about 0.9 s at 60 frames a second, as the POC's; at another rate it smooths over as many frames, as times count frames there too (C01).
+  - **A node keeps what it cost through a rebuild**, by its name, so an edit does not start its times over.
+  - **A pass's two timestamps are as the GPU takes it up and once it and all before it are done**, so passes the GPU runs side by side, with no barrier between them, have times that overlap, and the times of a frame's passes may add up to more than the frame.
+  - **A draw given no instances, or into an image with no size yet, takes no time**: its two timestamps go on with nothing between them, so it shows 0, not unknown; the draws into the window of a frame with no window image stay untimed that frame, their smoothed times kept.
+  - **No pointer into a schedule crosses a frame**: each schedule keeps where its passes landed among the frame's, and the runtime hands it the times by those places right after the frame's wait, before a swap or a rebuild may replace it.
+  - **`Call::costs()` reads the view the command addresses, and `Cook::costs(<view>)` any view by name**, as their users need (C00).
+  - **`schedule` (D14) is not built**: `probe stats` shows where the time goes; the order of the passes would take a field more in `Cost`, and what each reads and writes the unfolded view in a command, for a command no one has asked for yet (C00).
+- **Step 27, built** (2026-10-17): `probe stats [<node>]` prints the view as it runs, a node a row under the node it is inside, as `ls` lists them: its milliseconds a frame on the CPU and on the GPU, each with a bar of up to ten `#` to the costliest beside it, a node holding others counting theirs with its own, and a line for the frame. Checked on the wave project, `wave` 0.006 ms on the CPU and 0.004 on the GPU, and on the `ide`, 0.649 ms on the CPU, of which the graph part 0.239 and the relations part 0.100, and 0.035 ms on the GPU. Calls made while building it:
+  - **A node that neither cooks nor has a pass, nor holds one that does, has no row**, as one holding only files, which costs nothing.
+  - **A time under half a microsecond prints 0.000 and has no bar**, so a row of tiny draws does not light up beside each other; a pass the GPU did not time shows `?`.
+  - **The rows name the nodes as the view runs them**, each recipe a node uses unfolded under the node, as `ide.graph.graph` under `graph`.
 
 ## Decisions this needs (A00)
 
