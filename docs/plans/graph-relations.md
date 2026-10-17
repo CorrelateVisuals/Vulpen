@@ -181,6 +181,7 @@ Recipes only, each item, as the ports a part needs are there (V05).
   - **A `Relation` keeps the line that says it, counted from 1, and what there names the other**: an include's name, a module, a script, a recipe, a CMake word, a link's target or a cited id. A relation shows once however many lines of its file say it, at the first.
   - **A connection's tip lists every reader**, not only the one the curve reaches, as a developer asks what a connection feeds. What it carries, its contract, is no part of the view the graph reads, so the tip names ports alone.
   - **The pointer is over a curve within 4 pixels of it**, measured along its lines and along a bend in 16 pieces; of two that near, the one drawn later.
+  - **Which curve the pointer is over, and its tip, live in `Hover.h`**, beside `Covered.h`, as `Graph.cpp`'s top says what needs none of its state lives in the headers beside it: `Graph.cpp` runs to 1,134 lines after this session's 1,249, past the about 800 of CPP12, saying why at its top, and `Layout.h` to 827.
 
 ## Not in it
 
