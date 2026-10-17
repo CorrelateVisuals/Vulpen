@@ -105,7 +105,7 @@ The engine's general ports ([recipe map](../architecture/recipe-map.md#core-port
 | [x] | B9 | Terminal port: lines from stdin, text to stdout. It reads standard input without a thread, once a frame and only when a node asks, so nothing waits on it at exit and a run in the background never reads the terminal. A node sends a line to the command port and gets back what its command answers. B11 gives it a thread of its own. | 279 | 60 | — | core |
 | [x] | B14 | Window on demand: an edit that adds the first draw opens the window, and one that removes the last draw closes it. The instance takes every surface extension the loader offers and the device its swapchain where it has one, so a run that starts headless can open a window; a window at start still steers the choice of GPU. | – | 30 | B2 | core |
 | [ ] | B10 | Undo and redo, one log group at a time. The log keeps `view save`, so a rebuild for undo skips saves. | 83 | 80 | B3 | later |
-| [ ] | B11 | Terminal raw mode, so TAB completion works in a shell. The port reads on a thread of its own, as the Windows console needs too; its interface stays, so no recipe changes (the lead, 2026-10-03). | (in B9's) | 80 | B9 | later |
+| [ ] | B11 | Terminal raw mode, so TAB completion works in a shell. The port reads on a thread of its own, as the Windows console needs too; its interface stays, so no recipe changes (the lead, 2026-10-03). The raw keys were built on 2026-10-16 as step 5 of the [terminal app](terminal-app.md), with no thread; the thread waits for the Windows console | (in B9's) | 80 | B9 | later |
 | [x] | B12 | Clipboard, through GLFW. Built on 2026-10-13, on the lead's word: the input port gains `clipboard()` and `copy(text)`, the window's clipboard while one is open and a text of the run's own without; the editor copies, cuts and pastes with `control` and `c`, `x` and `v`, and the terminal selects what it shows by a drag, copies it and pastes into the line | 19 | 20 | B6 | later |
 | [ ] | B13 | Named command blocks in the `.vlp`: the manifest word decided on 2026-09-27. | – | 80 | B1 | later, until a recipe needs one |
 
@@ -253,6 +253,41 @@ The ticked rows, in the order they would land. Each step needs only rows from ea
 | | 25 | G2 | the `ide` app |
 
 [Example 1](cli-examples.md#example-1-a-triangle) also needs D15 (`node new`), which moved to core at step 10. [Example 2](cli-examples.md#example-2-instanced-cubes-on-the-triangle) needs phase 1, A1 to A5 (steps 12 to 14) and A7 (step 22), plus three later rows: A9 (`mat4` values), A14 (depth) and D17 (`recipe publish`). It needs nothing else from phases 2 to 4, so it could run straight after phase 1 if those nine rows came next.
+
+## Next, proposed 2026-10-17
+
+Every core row is built, and of the later ones B12, D19, D20, E16, F7 and B11's raw keys. On 2026-10-17 the lead asked in which order the rest could come, naming what they want first: "heat probe graph map for gpu and cpu as POC had is (but better obviously and terminal first) and menubar together with being able to drag and drop panels and tabs". Three phases after phase 4, in that order, for the lead to tick (A00); the calls they need follow the table.
+
+| Phase | Step | Rows | What runs after it |
+| --- | --: | --- | --- |
+| 5. Measure, terminal first (about 475) | 26 | A13, and each node's CPU time | the engine times each node's `cook` and each pass on the GPU, two timestamps a pass read after the frame's fence (VK02), and hands a part each node's time, smoothed and as the last frame took it, through `frame.stats()`; engine, about 110 |
+| | 27 | D23's `probe stats`, D14 | `probe stats [<node>]` prints the view as `ls` does, a node a line with its CPU and GPU milliseconds and a bar of `#` scaled to the costliest at its level, a node holding others carrying their sum; `schedule` prints the passes in the order they run, what each reads and writes, and its GPU time; recipes, about 120 |
+| | 28 | D23's heat | the graph's `heat` param, `gpu`, `cpu` or a budget in milliseconds, set by two buttons beside the layer buttons: each box filled by its cost on a ramp of the theme, its kind's color moving to its border, a pass with no time in grey, the exact times in its tip; recipes about 150, the Rect contract about 15 |
+| | 29 | D22 | `probe watch <connection>` prints what a connection carries every so many frames, its least, its most, its NaNs and a hash, through a probe node it adds, as the wave project's; about 80, and a readback of a connection's bytes the engine lacks (call 6) |
+| 6. Menubar and docking (about 520) | 30 | E8's anchor, F6 | a menubar along the window's top, its menus and their lines in `menu.ini`, as the keymap's chords are; an item whose line wants a word types it into the terminal's line, which takes the focus; about 120 |
+| | 31 | D18's `panel move` | a panel dragged by its tab strip onto another's edge splits that one there, its old place closing; one log group of the ide's own edits, which `view save` keeps; about 200 |
+| | 32 | D18's tabs | a panel holds several contents under one strip of their tabs, one shown; a tab dropped on a panel's middle moves its content there, and an editor's file dragged out opens in a second editor; about 200 |
+| 7. Guard (about 280) | 33 | A8, D24, H1 | `screenshot` and `capture`, and GUI tests as command logs checked against goldens |
+| | 34 | B10, D13 | `undo` and `redo`, a log group at a time, so a drop or a delete is undone |
+
+Why this order:
+
+- **Measuring first**: it is the lead's first ask, mostly recipes on one small general port (V05), and C03's "measure before and after" takes `perf` from outside today, as the session that proposed this did to find what the graph costs.
+- **Menubar and docking second**: they edit the ide's own manifest while it runs, which wants calls 7 to 9 first, and those can be made while phase 5 is built.
+- **Guarding third**: a golden catches a drawing gone wrong silently, while a panel dropped wrong shows at once ([tests](tests.md)).
+- **The rest stays later**, each row when a recipe needs it (C00): A9 to A12, A14, A15, B13, D16, D17, D21, F8, H2 and H3.
+
+Calls the phases need, each with a pick:
+
+1. **The engine measures every node, always** (26): a clock read a node and two timestamps a pass, a few microseconds a frame, smoothed over about a second, as the POC's 0.9 s, so a number can be read, and the last frame's beside it, so a spike shows. The other way is an arming command, as the POC's `probe stats` and `probe off`: a state more to keep. A GPU without timestamps gives no GPU time, shown as unknown (RVK01). Pick: always.
+2. **Times differ from run to run** (C01): they reach only what a person reads, `probe stats`'s lines and the graph's colors, never a node's output or what a test compares, and the tests run with heat off. Pick: accept, with that rule.
+3. **Heat is the graph's param, not a command** (28), as `relations` became (D20): a save keeps it and a replay restores it, and the buttons send it; D23's `heat` command goes. Pick: the param.
+4. **The ramp is five theme roles, a box's fill blended between the two its cost falls between** (28), as the POC's five stops: "five buckets would read as five classes of node, and cost is a continuum". The Rect contract gains a second role and how far toward it, which every Rect leaves at none. The other way, five roles unblended, needs no contract change. Pick: blended.
+5. **`probe stats` prints once** (27), as `ls` does; run again for new numbers. A table that keeps itself current would need the terminal's cursor, which the log's lines never move. Pick: once.
+6. **`probe watch` needs a readback of a connection's bytes** (29), as floats, as the POC's: a probe of any connection cannot name its type in C++, which the loader checks against the shader (A02); about 30 lines of engine. Pick: decide when a probe is wanted beyond the wave project's own, after steps 26 to 28.
+7. **The menus are lines in a `menu.ini`** (30), as `view/save = view save`, so a menu does nothing a typed line cannot (V06) and a person changes it in a file, rather than menus made from every registered command, about fifty in no order a person chose; E15 waits for a menu on a right press. Pick: `menu.ini`.
+8. **A panel moved is an edit of the ide's own manifest** (31): a `dock` node added to split the panel dropped on, the panel connected to its new side, and the split it left removed, one log group, so a save keeps the layout, a replay rebuilds it (V08) and the graph shows the docks change. The other way, one `layout` param naming the whole tree, would hold the layout twice, in the param and in the docks (C02). Pick: the edits.
+9. **A panel holds several contents** (32): those not shown get no room and do no work, as now; a tab dragged out takes its content with all its tabs, but an editor's file, which opens in a new editor. D18's three commands become one, `panel move <panel> <target> <side>`, the side `left`, `right`, `top`, `bottom` or `middle` (V06). Pick: yes.
 
 ## Decisions this needs (A00)
 
