@@ -216,6 +216,15 @@ The lead answered the todo's build in chat, with seven more asks:
   - **The seam is read as the other relations are**, from the lines that say it, no compiler asked: the C++ calls that reach a shader's pass block by name, and the members of a shader's `uniform Pass` block, which every shader of the tree declares so. A name an upload hands another node's shader, through a connection, links nothing, as no shader of its own folder declares it.
   - **A relation shows once for each name that says it**, at its first line, rather than once a pair of files: the tip of `Triangle.cpp`'s curve lists `corners` and `tint`, and a file citing two ids of one document lists both.
 
+## The handoff's open ends
+
+The [handoff](../logs/development-20261017T130403Z.md) that closed the lead's word left four open ends, each a call, which the session went on with:
+
+- **Columns wrap, built** (2026-10-17): a column taller than its level should be goes on beside itself, a box at a time, so a folder of many files reads as a block rather than a tower; the columns after it move right, so every curve still runs left to right. Checked on the repository's top before its relations arrive: four columns, `.git`, `assets` and `docs` in the first two, the files in the last, where they had stood in one column twice the area's height. Calls made while building it:
+  - **Every column wraps, not only the first**, where the boxes no relation orders stack: a column of boxes the relations order is a tower too.
+  - **A column reaches as tall as a level holding its boxes and the room between them would be at 1.6 times as wide as tall**, as a window is, or as its tallest box: one number, `wrap_aspect`, rather than the area's own shape, which would lay a level out again at each resize of a panel.
+  - **A box reading from the first part of a wrapped column passes the parts after it on a track**, as any curve passes a column.
+
 ## Not in it
 
 - **Typed paths from the current project.** Items 1 and 2 of the note, `open Triangle.cpp` in the triangle project, are a question of where a typed path counts from, which the [handoff](../logs/development-20261016T205135Z.md) put to the lead, who picked 15B; built on 2026-10-17, as the [handoff](../logs/development-20261017T060352Z.md) says: a word without a `/` names a file the view holds.
