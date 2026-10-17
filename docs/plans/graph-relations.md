@@ -129,5 +129,5 @@ The lead accepted decisions 1 to 5, each with its pick, on 2026-10-16 ("all 20 h
 
 ## Not in it
 
-- **Typed paths from the current project.** Items 1 and 2 of the note, `open Triangle.cpp` in the triangle project, are a question of where a typed path counts from, which the [handoff](../logs/development-20261016T205135Z.md) puts to the lead.
+- **Typed paths from the current project.** Items 1 and 2 of the note, `open Triangle.cpp` in the triangle project, are a question of where a typed path counts from, which the [handoff](../logs/development-20261016T205135Z.md) put to the lead, who picked 15B; built on 2026-10-17, as the [handoff](../logs/development-20261017T060352Z.md) says: a word without a `/` names a file the view holds.
 - **Editing the graph by drag**, as drawing a connection between two ports: E13's "drags that edit the graph wait for ports in the model".

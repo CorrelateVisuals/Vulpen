@@ -379,7 +379,7 @@ node
     draw <name>                  adds a draw node, and writes its first files from the template into its folder: …
   remove <node>                  removes a node with the nodes inside it, the connections they write, and them …
   set <node> <word=value>...     gives a node the words named, clearing those given empty; param and image words …
-open [<file>]                    opens a file in the editor in a window while one runs, else a file or a folder …
+open [<path>]                    opens a file in the editor in a window while one runs, and a folder in the …
 param
   set <node> <key> <value>       sets a param of a node
   unset <node> <key>             removes a param of a node
@@ -426,7 +426,7 @@ view
   ```
 
 - **A line may name the view it addresses** as `<name>: <command>`, and `:` alone names the one vulpen started with (section 13).
-- **A `<file>` argument arrives resolved:** beside the script that runs the line, or from where vulpen started for a typed line (section 12). A `<view>` is a project's name while it holds no `/`, and arrives as typed; with a `/` it is a folder's path, and arrives resolved as a `<file>` does. It completes as a `<file>` does.
+- **A `<file>` argument arrives resolved:** beside the script that runs the line, or from where vulpen started for a typed line (section 12). A `<view>` is a project's name while it holds no `/`, and arrives as typed; with a `/` it is a folder's path, and arrives resolved as a `<file>` does. It completes as a `<file>` does. A `<path>` is the name of a file the view holds while it holds no `/`, and arrives as typed, completing from the names of the files the view's nodes hold, as it runs, each recipe unfolded; with a `/` it is a path, as a `<file>`.
 - **Where:** `src/runtime/Commands.cpp`.
 
 ## 8. Graph edits
@@ -619,7 +619,7 @@ cli/
 - **`name: …`** sends one line to another hosted project, and **`: …`** to the CLI itself.
 - **A new node builds at once.** In a debug build, the live build compiles `spinner/` a moment after `node new` wrote it, and swaps it in; until then the node is left out, naming the module it waits for (section 16).
 
-**`open [<file>]`** starts the person's editor on a file or a folder, and with none on the folder of the project lines go to, which VS Code opens as a workspace. The `editor` part owns it: its `program` param names the editor, `code` unless set otherwise, as `: param set cli.editor program vim` for a session or that line in the CLI's manifest; a program the PATH lacks is refused, naming it. Its `window` param names an editor in a window as `<view>:<node>`, which takes each file instead while that view runs: the CLI's names the `ide`'s, `ide:ide.editor.text`, so while the CLI hosts the `ide`, each file opens there. Its `folders` param names a node so, which takes each folder: the CLI's names the `ide`'s relations part, `ide:ide.graph.relations`, whose folder the graph shows, so while the CLI hosts the `ide`, `open src/baseclasses` shows that folder in the graph, as below, and any folder outside the projects too. The program starts through the shell, in the background, so nothing waits for it; the graph's press on a file and the editor's tabs send `open` too. A path that names nothing is refused either way, so a misspelt one fails loud rather than opening as a new, empty file (A02), naming a file of that name the view holds, as a typed path counts from where vulpen started: `…/Vulpen/Triangle.cpp names nothing, as a typed path counts from where vulpen started; the view holds projects/triangle/triangle/Triangle.cpp`.
+**`open [<path>]`** starts the person's editor on a file or a folder, and with none on the folder of the project lines go to, which VS Code opens as a workspace. A word without a `/` names a file the view lines go to holds, as a project's name does for `view load`: in the triangle project, `open Triangle.cpp` opens `triangle/Triangle.cpp`, and Tab completes it from the names the view's files have; in the `ide`, `open Graph.cpp` opens the graph recipe's. A name two files of the view share is refused, naming both, and one none has, naming the path's way, `./README.md` from where vulpen started. The `editor` part owns it: its `program` param names the editor, `code` unless set otherwise, as `: param set cli.editor program vim` for a session or that line in the CLI's manifest; a program the PATH lacks is refused, naming it. Its `window` param names an editor in a window as `<view>:<node>`, which takes each file instead while that view runs: the CLI's names the `ide`'s, `ide:ide.editor.text`, so while the CLI hosts the `ide`, each file opens there. Its `folders` param names a node so, which takes each folder: the CLI's names the `ide`'s relations part, `ide:ide.graph.relations`, whose folder the graph shows, so while the CLI hosts the `ide`, `open src/baseclasses` shows that folder in the graph, as below, and any folder outside the projects too. The program starts through the shell, in the background, so nothing waits for it; the graph's press on a file and the editor's tabs send `open` too. A path that names nothing is refused either way, so a misspelt one fails loud rather than opening as a new, empty file (A02), naming a file of that name the view holds, as a typed path counts from where vulpen started: `…/Vulpen/src/Triangle.cpp names nothing, as a typed path counts from where vulpen started; the view holds projects/triangle/triangle/Triangle.cpp`.
 
 **Projects** are views of their own (V03) in `projects/` at the top of the repository, which git ignores but for the example projects, so each person's stay theirs, and a project can be a git repository of its own. The `projects` part keeps them:
 
@@ -878,7 +878,7 @@ f1              = mode toggle
 
 | Command | What it does |
 | --- | --- |
-| `open [<file>]` | the editor part's: names the file in the editor's `file` param; with none, the `view.vlp` of the view the line goes to. A folder, or a file it cannot read, is refused, naming `: param unset cli.editor window`, which sends each `open` to the person's editor |
+| `open [<path>]` | the editor part's: names the file in the editor's `file` param, a word without a `/` a file the view holds; with none, the `view.vlp` of the view the line goes to. A folder goes to the relations part's `folder` param, which the graph shows; a file it cannot read is refused, naming `: param unset cli.editor window`, which sends each `open` to the person's editor |
 | `write` | saves the file shown; `control+s` sends it |
 | `close [<file>]` | closes a file the editor holds, or with none the file shown, unless it has changes; the close mark on a file's tab sends it with the file |
 | `close force [<file>]` | the same, dropping its changes, as `quit force` ends the run however `quit` was refused |
