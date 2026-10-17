@@ -127,6 +127,31 @@ The lead accepted decisions 1 to 5, each with its pick, on 2026-10-16 ("all 20 h
   - **Every layer shown leaves the param unset**, as it was, so a save of a view never holds the choice it started with.
   - **`Graph.cpp` runs past 800 lines**, saying why at its top (CPP12): a class in the unnamed namespace keeps its methods to one file.
 
+## The lead's todo of 2026-10-17
+
+The lead's note `docs/todo.md`, written once the steps above were built, asks for more of the graph, "always aim for improvement and adhere to principles and requirements", the POC a reference where needed:
+
+- "1a. 'graph - cli - cli' view and outside boxes in graph cannot be selected or moved. Have their title bar be dragable."
+- "1b. dragging inside of the transparent box area of a view (like 'graph - ide - ide' does) not work, it should as we can see the grid there."
+- "1c. nodes that overlap should hide the box and text behind the top one. The one selected should move to/on top."
+- "1d. nodes should be resizable by grabbing corners, minimal size has to be current size, but they should be able to be made bigger and changed proportions if desired."
+- "2a. zooming into 'graph - cli' node allows to be zoomed out again. however zooming into 'graph - ide' node, only containing view.vlp(?), we cannot zoom back out again."
+- "2b. For 'graph - cli' no view.vlp file to be seen (neither for traingle and wave)."
+- "3. can we load baseclasses and runtime to see them as nodes too? perhaps by zooming out of start graph? In fact we want to be able to see this whole repository. It's okay that we have cli and ide loaded, but if we go out we should be able to find all our files and folders from the repository. Including the .hidden files."
+- "4. hovering on a connection should show its useful details for the developer."
+- "5. entering a node with files, like triangle with it's internal .cpp and frag, vert and glsl files should show the files as nodes, and their connections between them."
+
+Recipes only, each item, as the ports a part needs are there (V05).
+
+- **1a to 1c, built** (2026-10-17): the frame, the box of the node whose inside shows, and the boxes of what lies outside move as any box does, by a drag on their rows, and the `.ini` keeps where they were left; a drag on the frame's inside, below its rows, where the ground shows through, moves the graph, and with shift draws a select box, as on the ground; and a box shows over those beside it once a press or `select` raises it, the box holding it with it, its fill hiding the boxes behind it and each row of text cut where a box drawn after it lies over it. Checked on the `cli`'s inside, its frame dragged, then `outside` over the frame's boxes, whose rows it cut, then a drag on the frame's inside, which moved the graph; and on the `ide`'s inside, whose boxes the lead's `.ini` overlaps, each row cut at the box over it. Calls made while building it:
+  - **The frame is a node of the view, so a press and `select` select it**, as at the level above, and `delete` removes it, which shows the level above; its place is kept by its node's name, which its box at the level above uses too: one place a node, so at the top a frame shows where its box was.
+  - **What lies outside is no node**, so no line selects it: a press raises it and lets go of the selection, and a drag moves it alone, kept in the `.ini` as `<frame> outside left` or `<frame> outside right`, or `outside left` at the top, a name with a blank, which no node's holds.
+  - **A box a recipe brings moves itself**, kept by its name, as each node's name is one in the view as it runs: decision 6 of the [handoff](../logs/development-20261017T060352Z.md) had a press on it select its user's box and a drag move that box, when every level showed nested; one level at a time, its user is the frame.
+  - **A drag on a box nothing moves**, as a folder's, which no `.ini` keeps, **moves the graph**, as the ground does, and letting go where it was still opens its row.
+  - **Only a frame's rows hide what lies under them**: a press, the wheel and a select box on its inside reach the ground, and a select box touching only its inside selects no frame.
+  - **The order lasts while the view shows**, so a restart draws the boxes as built, the frame first, then each box after the box holding it: it is a look of the moment, as the pan is, which the `.ini` leaves out (C00).
+  - **A row cut at the boxes over it is a Label a piece**, at most 16 a row, each holding only the characters it shows; glyphs draws every row after rects draws every box, so the graph cuts the rows rather than drawing a box at a time (A14's depth is a later row). The order and the pieces live in a header of their own, `Covered.h`.
+
 ## Not in it
 
 - **Typed paths from the current project.** Items 1 and 2 of the note, `open Triangle.cpp` in the triangle project, are a question of where a typed path counts from, which the [handoff](../logs/development-20261016T205135Z.md) put to the lead, who picked 15B; built on 2026-10-17, as the [handoff](../logs/development-20261017T060352Z.md) says: a word without a `/` names a file the view holds.
